@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import chainer
 import chainer.functions as F
 import matplotlib.pyplot as plt
