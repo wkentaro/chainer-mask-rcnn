@@ -4,7 +4,7 @@ import chainer.links as L
 import numpy as np
 
 from chainercv.links.model.faster_rcnn.faster_rcnn_vgg import \
-    _roi_pooling_2d_yx, VGG16FeatureExtractor
+    VGG16FeatureExtractor
 from chainercv.links.model.faster_rcnn.region_proposal_network import \
     RegionProposalNetwork
 
@@ -44,7 +44,7 @@ class MaskRCNN(chainer.Chain):
             h, img_size, scale)
         roi_cls_locs, roi_scores, roi_masks = self.head(
             h, rois, roi_indices)
-        return roi_cls_locs, roi_scores, rois, roi_indices, roi_masks
+        return roi_cls_locs, roi_scores, roi_masks, rois, roi_indices
 
     def _copy_imagenet_pretrained_vgg16(self):
         pretrained_model = L.VGG16Layers()
@@ -92,10 +92,18 @@ class VGG16RoIHead(chainer.Chain):
         self.spatial_scale = spatial_scale
 
     def __call__(self, x, rois, roi_indices):
+        """Predict class scores and mask in ROIs.
+
+        Parameters
+        ----------
+        rois: Variable
+            (y1, x1, y2, x2)
+        """
         roi_indices = roi_indices.astype(np.float32)
+        # (batch_index, y1, x1, y2, x2)
         indices_and_rois = self.xp.concatenate(
             (roi_indices[:, None], rois), axis=1)
-        pool = _roi_pooling_2d_yx(
+        pool = _roi_align_2d_yx(
             x, indices_and_rois, self.roi_size, self.roi_size,
             self.spatial_scale)
 
@@ -107,3 +115,10 @@ class VGG16RoIHead(chainer.Chain):
         deconv6 = F.relu(self.deconv6(pool))
         roi_masks = self.mask(deconv6)
         return roi_cls_locs, roi_scores, roi_masks
+
+
+def _roi_align_2d_yx(x, indices_and_rois, outh, outw, spatial_scale):
+    xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
+    pool = F.roi_align_2d(
+        x, xy_indices_and_rois, outh, outw, spatial_scale)
+    return pool
