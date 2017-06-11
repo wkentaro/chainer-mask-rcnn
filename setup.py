@@ -8,6 +8,7 @@ setup(
     packages=find_packages(),
     author='Kentaro Wada',
     author_email='www.kentaro.wada@gmail.com',
+    description='Chainer Implementation of Mask R-CNN.',
     url='http://github.com/wkentaro/mask-rcnn',
     license='MIT',
 )
