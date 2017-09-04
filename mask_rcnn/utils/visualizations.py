@@ -324,16 +324,16 @@ def roi_scores_to_label(img_shape, rois, cls_scores, roi_mask_probs,
         if i in accumulated:
             continue
 
-        roi_mask_probs_cum = np.zeros((height, width, fcis_C+1),
+        roi_mask_probs_cum = np.zeros((height, width, fcis_C + 1),
                                       dtype=np.float64)
-        # cls_score_cum = np.zeros((self.C+1,), dtype=np.float64)
+        # cls_score_cum = np.zeros((self.C + 1,), dtype=np.float64)
 
         roi_i = rois[i]
         cls_score_i = cls_scores[i]
         # cls_score_cum += cls_score_i
         roi_mask_prob_i = roi_mask_probs[i]
         x1, y1, x2, y2 = roi_i
-        roi_mask_prob_i = np.array([resize_image(m, (y2-y1, x2-x1))
+        roi_mask_prob_i = np.array([resize_image(m, (y2 - y1, x2 - x1))
                                     for m in roi_mask_prob_i])
         roi_mask_prob_i = roi_mask_prob_i.transpose(1, 2, 0)
         roi_mask_prob_i = 2 * roi_mask_prob_i - 1
@@ -351,7 +351,7 @@ def roi_scores_to_label(img_shape, rois, cls_scores, roi_mask_probs,
             roi_mask_prob_j = roi_mask_probs[j]
             x1, y1, x2, y2 = roi_j
             roi_mask_prob_j = np.array([
-                resize_image(m, (y2-y1, x2-x1))
+                resize_image(m, (y2 - y1, x2 - x1))
                 for m in roi_mask_prob_j])
             roi_mask_prob_j = roi_mask_prob_j.transpose(1, 2, 0)
             roi_mask_prob_j = 2 * roi_mask_prob_j - 1
