@@ -1,1 +1,1 @@
-from .mask_rcnn import MaskRCNN  # NOQA
+from .mask_rcnn import MaskRcnn  # NOQA

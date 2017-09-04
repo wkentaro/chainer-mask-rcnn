@@ -13,7 +13,7 @@ gpu = 0
 if gpu >= 0:
     cuda.get_device(gpu).use()
 
-model = mask_rcnn.models.MaskRCNN()
+model = mask_rcnn.models.MaskRcnn()
 if gpu >= 0:
     model.to_gpu()
 

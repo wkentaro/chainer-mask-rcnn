@@ -9,12 +9,12 @@ from chainercv.links.model.faster_rcnn.region_proposal_network import \
     RegionProposalNetwork
 
 
-class MaskRCNN(chainer.Chain):
+class MaskRcnn(chainer.Chain):
 
     feat_stride = 16
 
     def __init__(self):
-        super(MaskRCNN, self).__init__()
+        super(MaskRcnn, self).__init__()
         with self.init_scope():
             self.extractor = VGG16FeatureExtractor(
                 initialW=chainer.initializers.Normal(0.01),
