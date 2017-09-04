@@ -12,30 +12,12 @@ from .. import utils
 class VOCInstanceSegBase(chainer.dataset.DatasetMixin):
 
     class_names = fcn.datasets.voc.VOCClassSegBase.class_names
-    mean_bgr = np.array([104.00698793, 116.66876762, 122.67891434])
-
-    @classmethod
-    def transform(cls, img, lbl_cls=None, lbl_ins=None):
-        img = img[:, :, ::-1]  # RGB -> BGR
-        img = img.astype(np.float32)
-        img -= cls.mean_bgr
-        img = img.transpose(2, 0, 1)
-        return img, lbl_cls, lbl_ins
-
-    @classmethod
-    def untransform(cls, img, lbl_cls=None, lbl_ins=None):
-        img = img.transpose(1, 2, 0)
-        img += cls.mean_bgr
-        img = img.astype(np.uint8)
-        img = img[:, :, ::-1]
-        return img, lbl_cls, lbl_ins
 
 
 class VOC2012InstanceSeg(VOCInstanceSegBase):
 
-    def __init__(self, split, transform=True):
+    def __init__(self, split):
         assert split in ('train', 'val')
-        self._transform = transform
         dataset_dir = osp.expanduser('~/data/datasets/VOC/VOCdevkit/VOC2012')
         imgsets_file = osp.join(
             dataset_dir, 'ImageSets/Segmentation/{}.txt'.format(split))
@@ -88,16 +70,13 @@ class VOC2012InstanceSeg(VOCInstanceSegBase):
         lbl_ins = PIL.Image.open(seg_object_file)
         lbl_ins = np.array(lbl_ins, dtype=np.int32)
         lbl_ins[lbl_ins == 255] = -1
-        if self._transform:
-            return self.transform(img), lbl_cls, lbl_ins
-        else:
-            return img, lbl_cls, lbl_ins
+        return img, lbl_cls, lbl_ins
 
 
 if __name__ == '__main__':
     import cv2
     split = 'val'
-    dataset = VOC2012InstanceSeg(split, transform=False)
+    dataset = VOC2012InstanceSeg(split)
     for i in xrange(len(dataset)):
         img, lbl_cls, lbl_ins = dataset[i]
         viz = utils.visualize_instance_segmentation(
