@@ -1,7 +1,5 @@
 import collections
 
-from chainercv.links.model.faster_rcnn.utils.proposal_target_creator\
-    import ProposalTargetCreator
 import numpy as np
 
 
@@ -54,6 +52,15 @@ def augment_bboxes(bboxes, H, W):
 
 def create_proposal_targets(rois, boxes, labels, masks,
                             loc_normalize_mean, loc_normalize_std):
+    import chainer
+    from chainercv.links.model.faster_rcnn.utils.proposal_target_creator\
+        import ProposalTargetCreator
+    xp = chainer.cuda.get_array_module(rois)
+    rois = chainer.cuda.to_cpu(rois)
+    boxes = chainer.cuda.to_cpu(boxes)
+    labels = chainer.cuda.to_cpu(labels)
+    masks = chainer.cuda.to_cpu(masks)
+
     labels -= 1
     proposal_target_creator = ProposalTargetCreator()
     sample_rois, gt_roi_locs, gt_roi_labels = \
@@ -63,19 +70,25 @@ def create_proposal_targets(rois, boxes, labels, masks,
 
     gt_roi_masks = []
     # yx -> xy
-    boxes = boxes[:, [1, 0, 3, 2]].astype(np.int64)
-    sample_rois = sample_rois[:, [1, 0, 3, 2]].astype(np.int64)
-    for id_cls, roi in zip(gt_roi_labels, sample_rois):
+    boxes_xy = boxes[:, [1, 0, 3, 2]].astype(np.int32)
+    sample_rois_xy = sample_rois[:, [1, 0, 3, 2]].astype(np.int32)
+    for id_cls, roi in zip(gt_roi_labels, sample_rois_xy):
         if id_cls == 0:
-            gt_roi_masks.append(None)
+            gt_roi_masks.append(np.zeros_like(mask_ins))
             continue
-        idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes])
+        idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes_xy])
         mask_ins = masks[idx_ins]
         x1, y1, x2, y2 = roi
-        mask_roi = np.zeros_like(mask_ins, dtype=bool)
-        mask_roi[y1:y2, x1:x2] = True
+        mask_roi = np.zeros_like(mask_ins)
+        mask_roi[y1:y2, x1:x2] = 1
         mask_ins = mask_ins & mask_roi
         gt_roi_masks.append(mask_ins)
+    gt_roi_masks = np.asarray(gt_roi_masks, dtype=np.int32)
+    if xp != np:
+        sample_rois = chainer.cuda.to_gpu(sample_rois)
+        gt_roi_locs = chainer.cuda.to_gpu(gt_roi_locs)
+        gt_roi_labels = chainer.cuda.to_gpu(gt_roi_labels)
+        gt_roi_masks = chainer.cuda.to_gpu(gt_roi_masks)
     return sample_rois, gt_roi_locs, gt_roi_labels, gt_roi_masks
 
 

@@ -1,4 +1,5 @@
 import chainer
+import numpy as np
 
 from ..utils import label2instance_boxes
 
@@ -15,6 +16,9 @@ class MaskRcnnDataset(chainer.dataset.DatasetMixin):
         img, lbl_cls, lbl_ins = self._instance_dataset.get_example(i)
         labels, bboxes, masks = label2instance_boxes(
             lbl_ins, lbl_cls, return_masks=True)
-        scale = 1.
+        labels = labels.astype(np.int32, copy=False)
         bboxes = bboxes[:, [1, 0, 3, 2]]  # xy -> yx
+        bboxes = bboxes.astype(np.float32, copy=False)
+        masks = masks.astype(np.int32, copy=False)
+        scale = np.array(1, dtype=np.float32)
         return img, bboxes, labels, masks, scale
