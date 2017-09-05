@@ -9,7 +9,7 @@ from chainercv.links.model.faster_rcnn.utils.anchor_target_creator import\
 from ..utils import create_proposal_targets
 
 
-class MaskRCNNTrainChain(chainer.Chain):
+class MaskRcnnTrainChain(chainer.Chain):
 
     """Calculate losses for Faster R-CNN and report them.
 
@@ -46,7 +46,7 @@ class MaskRCNNTrainChain(chainer.Chain):
 
     def __init__(self, mask_rcnn, rpn_sigma=3., roi_sigma=1.,
                  anchor_target_creator=AnchorTargetCreator()):
-        super(MaskRCNNTrainChain, self).__init__()
+        super(MaskRcnnTrainChain, self).__init__()
         with self.init_scope():
             self.mask_rcnn = mask_rcnn
         self.rpn_sigma = rpn_sigma
@@ -136,8 +136,19 @@ class MaskRCNNTrainChain(chainer.Chain):
             roi_loc, gt_roi_loc, gt_roi_label, self.roi_sigma)
         roi_cls_loss = F.softmax_cross_entropy(roi_score, gt_roi_label)
 
-        roi_mask_loss = F.sigmoid_cross_entropy(
-            roi_mask[:, gt_roi_label, :, :], masks)
+        # Losses for outputs of mask branch
+        roi_mask_loss = 0
+        for i in range(n_sample):
+            k = gt_roi_label[i]
+            if k == 0:
+                continue
+            y1, x1, y2, x2 = map(int, sample_roi[i])
+            roi_mask_ik = roi_mask[i, k, :, :][None, None, :, :]
+            roi_mask_ik = F.resize_images(roi_mask_ik, (y2 - y1, x2 - x1))
+            roi_mask_ik = roi_mask_ik[0, 0, :, :]
+            roi_mask_loss += F.sigmoid_cross_entropy(
+                roi_mask_ik, gt_roi_mask[i, y1:y2, x1:x2])
+        roi_mask_loss /= (gt_roi_label != 0).sum()
 
         loss = (rpn_loc_loss + rpn_cls_loss + roi_loc_loss +
                 roi_cls_loss + roi_mask_loss)

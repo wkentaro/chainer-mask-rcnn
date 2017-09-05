@@ -36,6 +36,9 @@ class MaskRcnn(chainer.Chain):
                 score_initialW=chainer.initializers.Normal(0.01),
             )
 
+        self.loc_normalize_mean = (0., 0., 0., 0.)
+        self.loc_normalize_std = (0.1, 0.1, 0.2, 0.2)
+
     def __call__(self, x, scale=1.):
         img_size = x.shape[2:]
 
