@@ -5,6 +5,7 @@ import mask_rcnn
 
 def visualize_func(dataset, index):
     img, bboxes, labels, masks, scale = dataset[index]
+    bboxes = bboxes[:, [1, 0, 3, 2]]  # yx -> xy
 
     viz = mask_rcnn.utils.draw_instance_boxes(
         img, bboxes, labels, n_class=dataset.n_class)

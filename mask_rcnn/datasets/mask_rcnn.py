@@ -16,4 +16,5 @@ class MaskRcnnDataset(chainer.dataset.DatasetMixin):
         labels, bboxes, masks = label2instance_boxes(
             lbl_ins, lbl_cls, return_masks=True)
         scale = 1.
+        bboxes = bboxes[:, [1, 0, 3, 2]]  # xy -> yx
         return img, bboxes, labels, masks, scale

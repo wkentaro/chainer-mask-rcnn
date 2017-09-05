@@ -136,7 +136,6 @@ class MaskRCNNTrainChain(chainer.Chain):
             roi_loc, gt_roi_loc, gt_roi_label, self.roi_sigma)
         roi_cls_loss = F.softmax_cross_entropy(roi_score, gt_roi_label)
 
-        # FIXME: not work
         roi_mask_loss = F.sigmoid_cross_entropy(
             roi_mask[:, gt_roi_label, :, :], masks)
 
