@@ -148,7 +148,9 @@ class MaskRcnnTrainChain(chainer.Chain):
             roi_mask_ik = roi_mask_ik[0, 0, :, :]
             roi_mask_loss += F.sigmoid_cross_entropy(
                 roi_mask_ik, gt_roi_mask[i, y1:y2, x1:x2])
-        roi_mask_loss /= (gt_roi_label != 0).sum()
+        n_sample_pos = (gt_roi_label != 0).sum()
+        if n_sample_pos > 0:
+            roi_mask_loss /= n_sample_pos
 
         loss = (rpn_loc_loss + rpn_cls_loss + roi_loc_loss +
                 roi_cls_loss + roi_mask_loss)
