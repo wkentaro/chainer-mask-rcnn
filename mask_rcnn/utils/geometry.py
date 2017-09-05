@@ -52,14 +52,17 @@ def augment_bboxes(bboxes, H, W):
     return bboxes_aug
 
 
-def create_proposal_targets(rois, boxes, labels, masks):
+def create_proposal_targets(rois, boxes, labels, masks,
+                            loc_normalize_mean, loc_normalize_std):
     # xy -> yx
     boxes = boxes[:, [1, 0, 3, 2]].astype(np.float64)
     rois = rois[:, [1, 0, 3, 2]].astype(np.float64)
     labels -= 1
     proposal_target_creator = ProposalTargetCreator()
     sample_rois, gt_roi_locs, gt_roi_labels = \
-        proposal_target_creator(rois, boxes, labels)
+        proposal_target_creator(
+            rois, boxes, labels,
+            loc_normalize_mean, loc_normalize_std)
     # yx -> xy
     boxes = boxes[:, [1, 0, 3, 2]].astype(np.int64)
     sample_rois = sample_rois[:, [1, 0, 3, 2]].astype(np.int64)
