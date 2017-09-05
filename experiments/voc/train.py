@@ -48,15 +48,21 @@ def main():
         trigger=(5, 'epoch'))
 
     trainer.extend(
-        extensions.LogReport(trigger=(1, 'epoch'), log_name='log.json'))
+        extensions.LogReport(trigger=(20, 'iteration'), log_name='log.json'))
 
     if extensions.PlotReport.available():
         trainer.extend(
-            extensions.PlotReport(['main/loss'],
-                                  'epoch', file_name='loss.png'))
+            extensions.PlotReport([
+                'main/loss', 'main/rpn_loc_loss', 'main/rpn_cls_loss',
+                'main/roi_loc_loss', 'main/roi_cls_loss',
+                'main/roi_mask_loss'
+            ], 'epoch', file_name='loss.png'))
 
     trainer.extend(extensions.PrintReport(
-        ['epoch', 'iteration', 'main/loss', 'elapsed_time']))
+        ['epoch', 'iteration', 'elapsed_time',
+         'main/loss', 'main/rpn_loc_loss', 'main/rpn_cls_loss',
+         'main/roi_loc_loss', 'main/roi_cls_loss',
+         'main/roi_mask_loss']))
 
     trainer.extend(extensions.ProgressBar())
 
