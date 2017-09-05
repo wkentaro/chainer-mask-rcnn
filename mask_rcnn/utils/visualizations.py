@@ -6,6 +6,9 @@ import numpy as np
 import PIL.Image
 import skimage.color
 
+from .geometry import get_bbox_overlap
+from .geometry import get_mask_overlap
+
 
 def label2instance_boxes(label_instance, label_class,
                          ignore_instance=-1, ignore_class=(-1, 0),
@@ -70,7 +73,7 @@ def label2instance_boxes(label_instance, label_class,
 
 
 def draw_instance_boxes(img, boxes, instance_classes, n_class,
-                        captions=None, bg_class=0):
+                        captions=None, bg_class=0, thickness=0):
     """Draw labeled rectangles on image.
 
     Parameters
@@ -106,7 +109,8 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
         color = (color * 255).tolist()
 
         x1, y1, x2, y2 = box
-        cv2.rectangle(img_viz, (x1, y1), (x2, y2), color[::-1], 0, CV_AA)
+        cv2.rectangle(img_viz, (x1, y1), (x2, y2), color[::-1],
+                      thickness=thickness, lineType=CV_AA)
 
         if captions is not None:
             caption = captions[i_box]
@@ -155,17 +159,6 @@ def label_to_bboxes(label, ignore_label=-1):
     return np.array(bboxes)
 
 
-def get_bbox_overlap(bbox1, bbox2):
-    x11, y11, x12, y12 = bbox1
-    x21, y21, x22, y22 = bbox2
-    w1, h1 = x12 - x11, y12 - y11
-    w2, h2 = x22 - x21, y22 - y21
-    intersect = (max(0, min(x12, x22) - max(x11, x21)) *
-                 max(0, min(y12, y22) - max(y11, y21)))
-    union = w1 * h1 + w2 * h2 - intersect
-    return 1.0 * intersect / union
-
-
 def label_rois(rois, label_instance, label_class, overlap_thresh=0.5):
     """Label rois for instance classes.
 
@@ -202,12 +195,6 @@ def label_rois(rois, label_instance, label_class, overlap_thresh=0.5):
         roi_inst_masks.append(roi_inst_mask)
     roi_clss = np.array(roi_clss, dtype=np.int32)
     return roi_clss, roi_inst_masks
-
-
-def get_mask_overlap(mask1, mask2):
-    intersect = np.bitwise_and(mask1, mask2).sum()
-    union = np.bitwise_or(mask1, mask2).sum()
-    return 1.0 * intersect / union
 
 
 def instance_label_accuracy_score(lbl_ins1, lbl_ins2):
