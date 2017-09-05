@@ -22,12 +22,6 @@ def get_mask_overlap(mask1, mask2):
     return 1.0 * intersect / union
 
 
-def bboxes_xyyx(bboxes):
-    bboxes[:, :2] = bboxes[:, :2][:, ::-1]
-    bboxes[:, 2:] = bboxes[:, 2:][:, ::-1]
-    return bboxes
-
-
 def validate_bboxes(bboxes, H, W):
     bboxes = np.asarray(bboxes)
     bboxes[:, 0][bboxes[:, 0] < 0] = 0
@@ -60,15 +54,15 @@ def augment_bboxes(bboxes, H, W):
 
 def create_proposal_targets(rois, boxes, labels, masks):
     # xy -> yx
-    boxes = bboxes_xyyx(boxes).astype(np.float64)
-    rois = bboxes_xyyx(rois).astype(np.float64)
+    boxes = boxes[:, [1, 0, 3, 2]].astype(np.float64)
+    rois = rois[:, [1, 0, 3, 2]].astype(np.float64)
     labels -= 1
     proposal_target_creator = ProposalTargetCreator()
     sample_rois, gt_roi_locs, gt_roi_labels = \
         proposal_target_creator(rois, boxes, labels)
     # yx -> xy
-    boxes = bboxes_xyyx(boxes).astype(np.int32)
-    sample_rois = bboxes_xyyx(sample_rois).astype(np.int32)
+    boxes = boxes[:, [1, 0, 3, 2]].astype(np.int64)
+    sample_rois = sample_rois[:, [1, 0, 3, 2]].astype(np.int64)
 
     gt_roi_masks = []
     for id_cls, roi in zip(gt_roi_labels, sample_rois):

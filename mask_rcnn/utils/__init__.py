@@ -1,6 +1,5 @@
 # flake8: noqa
 from .geometry import augment_bboxes
-from .geometry import bboxes_xyyx
 from .geometry import create_proposal_targets
 from .geometry import get_bbox_overlap
 from .geometry import get_mask_overlap
