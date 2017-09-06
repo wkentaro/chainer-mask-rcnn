@@ -6,9 +6,24 @@ import datetime
 import chainer
 from chainer import training
 from chainer.training import extensions
-import fcn
+import numpy as np
 
 import mask_rcnn
+
+
+def transform_lsvrc2012_vgg16(inputs):
+    img = inputs[0]
+
+    # LSVRC2012 used by VGG16
+    MEAN_BGR = np.array([104.00698793, 116.66876762, 122.67891434])
+
+    img = img.astype(np.float32)
+    img -= MEAN_BGR[::-1]
+    img = img.transpose(2, 0, 1)  # H, W, C -> C, H, W
+
+    transformed = list(inputs)
+    transformed[0] = img
+    return transformed
 
 
 def main():
@@ -30,7 +45,7 @@ def main():
 
     dataset = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
     dataset = chainer.datasets.TransformDataset(
-        dataset, fcn.datasets.transform_lsvrc2012_vgg16)
+        dataset, transform_lsvrc2012_vgg16)
     dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset)
     iter_train = chainer.iterators.SerialIterator(dataset, batch_size=1)
 
@@ -48,7 +63,7 @@ def main():
         trigger=(5, 'epoch'))
 
     trainer.extend(
-        extensions.LogReport(trigger=(20, 'iteration'), log_name='log.json'))
+        extensions.LogReport(trigger=(1, 'iteration'), log_name='log.json'))
 
     if extensions.PlotReport.available():
         trainer.extend(
