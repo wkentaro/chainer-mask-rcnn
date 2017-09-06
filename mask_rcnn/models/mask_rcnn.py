@@ -3,8 +3,7 @@ import chainer.functions as F
 import chainer.links as L
 import numpy as np
 
-from chainercv.links.model.faster_rcnn.faster_rcnn_vgg import \
-    VGG16FeatureExtractor
+from chainercv.links.model.vgg.vgg16 import VGG16
 from chainercv.links.model.faster_rcnn.region_proposal_network import \
     RegionProposalNetwork
 
@@ -17,9 +16,9 @@ class MaskRcnn(chainer.Chain):
     def __init__(self, pretrained_model=None):
         super(MaskRcnn, self).__init__()
         with self.init_scope():
-            self.extractor = VGG16FeatureExtractor(
-                initialW=chainer.initializers.Normal(0.01),
-            )
+            self.extractor = VGG16(initialW=chainer.initializers.Zero())
+            self.extractor.feature_names = 'conv5_3'
+            self.extractor.remove_unused()
             self.rpn = RegionProposalNetwork(
                 512, 512,
                 ratios=[0.5, 1, 2],
@@ -59,7 +58,7 @@ class MaskRcnn(chainer.Chain):
         return roi_cls_locs, roi_scores, roi_masks, rois, roi_indices
 
     def _copy_imagenet_pretrained_vgg16(self):
-        pretrained_model = L.VGG16Layers()
+        pretrained_model = VGG16(pretrained_model='imagenet')
         self.extractor.conv1_1.copyparams(pretrained_model.conv1_1)
         self.extractor.conv1_2.copyparams(pretrained_model.conv1_2)
         self.extractor.conv2_1.copyparams(pretrained_model.conv2_1)
