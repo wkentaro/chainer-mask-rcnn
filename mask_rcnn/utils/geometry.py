@@ -62,7 +62,7 @@ def create_proposal_targets(rois, boxes, labels, masks,
     masks = chainer.cuda.to_cpu(masks)
 
     labels -= 1
-    proposal_target_creator = ProposalTargetCreator()
+    proposal_target_creator = ProposalTargetCreator(n_sample=64)
     sample_rois, gt_roi_locs, gt_roi_labels = \
         proposal_target_creator(
             rois, boxes, labels,
