@@ -18,7 +18,7 @@ def main():
 
     gpu = args.gpu
 
-    mask_rcnn_model = mask_rcnn.models.MaskRcnn()
+    mask_rcnn_model = mask_rcnn.models.MaskRcnn(pretrained_model='imagenet')
     model = mask_rcnn.models.MaskRcnnTrainChain(mask_rcnn_model)
     if gpu >= 0:
         chainer.cuda.get_device_from_id(gpu).use()

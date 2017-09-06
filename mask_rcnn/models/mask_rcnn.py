@@ -12,8 +12,9 @@ from chainercv.links.model.faster_rcnn.region_proposal_network import \
 class MaskRcnn(chainer.Chain):
 
     feat_stride = 16
+    _models = {}
 
-    def __init__(self):
+    def __init__(self, pretrained_model=None):
         super(MaskRcnn, self).__init__()
         with self.init_scope():
             self.extractor = VGG16FeatureExtractor(
@@ -38,6 +39,14 @@ class MaskRcnn(chainer.Chain):
 
         self.loc_normalize_mean = (0., 0., 0., 0.)
         self.loc_normalize_std = (0.1, 0.1, 0.2, 0.2)
+
+        if pretrained_model in self._models:
+            pretrained_model = self._models[pretrained_model]
+            chainer.serializers.load_npz(pretrained_model, self)
+        elif pretrained_model == 'imagenet':
+            self._copy_imagenet_pretrained_vgg16()
+        elif pretrained_model:
+            chainer.serializers.load_npz(pretrained_model, self)
 
     def __call__(self, x, scale=1.):
         img_size = x.shape[2:]
