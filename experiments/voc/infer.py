@@ -5,12 +5,9 @@ import chainer
 import mask_rcnn
 
 
-
-pretrained_model = 'logs/cfg001_20170906_170003/model_snapshot_iter_00021960.npz'  # NOQA
+pretrained_model = 'logs/cfg001_20170906_224832/model_snapshot_iter_00014640.npz'  # NOQA
 model = mask_rcnn.models.MaskRcnn()
-train_chain = mask_rcnn.models.MaskRcnnTrainChain(mask_rcnn=model)
-chainer.serializers.load_npz(pretrained_model, train_chain)
-model = train_chain.mask_rcnn
+chainer.serializers.load_npz(pretrained_model, model)
 
 gpu = 0
 if gpu >= 0:
@@ -20,3 +17,8 @@ if gpu >= 0:
 dataset = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
 img, lbl_cls, lbl_ins = dataset.get_example(0)
 bboxes, labels, scores, masks = model.predict([img])
+
+for bbox, label, score, mask in zip(bboxes, labels, scores, masks):
+    print(bbox)
+    print(label)
+    print(score)
