@@ -139,8 +139,8 @@ class MaskRcnnTrainChain(chainer.Chain):
         # Losses for outputs of mask branch
         roi_mask_loss = 0
         for i in range(n_sample):
-            k = gt_roi_label[i]
-            if k == 0:
+            k = int(gt_roi_label[i]) - 1
+            if k == -1:
                 continue
             y1, x1, y2, x2 = map(int, sample_roi[i])
             roi_mask_ik = roi_mask[i, k, :, :][None, None, :, :]
