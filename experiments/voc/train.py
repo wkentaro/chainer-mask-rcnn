@@ -39,9 +39,9 @@ def main():
         chainer.cuda.get_device_from_id(gpu).use()
         model.to_gpu()
 
-    optimizer = chainer.optimizers.MomentumSGD(lr=0.02, momentum=0.9)
+    optimizer = chainer.optimizers.MomentumSGD(lr=1e-5, momentum=0.9)
     optimizer.setup(model)
-    optimizer.add_hook(chainer.optimizer.WeightDecay(0.0001))
+    optimizer.add_hook(chainer.optimizer.WeightDecay(0.005))
 
     dataset = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
     dataset = chainer.datasets.TransformDataset(
@@ -54,16 +54,17 @@ def main():
     updater = training.StandardUpdater(iter_train, optimizer, device=gpu)
     trainer = training.Trainer(updater, (100, 'epoch'), out=out)
 
-    trainer.extend(chainer.training.extensions.ExponentialShift('lr', 0.97),
-                   trigger=(1, 'epoch'))
+    trainer.extend(chainer.training.extensions.ExponentialShift('lr', 0.1),
+                   trigger=(50000, 'epoch'))
 
     trainer.extend(
         extensions.snapshot_object(
-            model, filename='model_snapshot_iter_{.updater.iteration:08}.npz'),
+            model.mask_rcnn,
+            filename='model_snapshot_iter_{.updater.iteration:08}.npz'),
         trigger=(5, 'epoch'))
 
     trainer.extend(
-        extensions.LogReport(trigger=(1, 'iteration'), log_name='log.json'))
+        extensions.LogReport(trigger=(20, 'iteration'), log_name='log.json'))
 
     if extensions.PlotReport.available():
         trainer.extend(
