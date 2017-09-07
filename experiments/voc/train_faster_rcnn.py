@@ -1,14 +1,20 @@
 #!/usr/bin/env python
 
+from __future__ import division
+
 import argparse
-import datetime
+import numpy as np
 
 import chainer
 from chainer import training
 from chainer.training import extensions
-import numpy as np
+from chainer.training.triggers import ManualScheduleTrigger
+
+from chainercv.datasets import voc_detection_label_names
+from chainercv.extensions import DetectionVOCEvaluator
 
 import mask_rcnn
+
 
 from train import transform_lsvrc2012_vgg16
 
@@ -33,63 +39,101 @@ class FasterRcnnDataset(chainer.dataset.DatasetMixin):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', '-g', type=int, required=True)
+    parser = argparse.ArgumentParser(
+        description='ChainerCV training example: Faster R-CNN')
+    parser.add_argument('--gpu', '-g', type=int, default=0)
+    parser.add_argument('--lr', '-l', type=float, default=1e-3)
+    parser.add_argument('--out', '-o', default='logs/faster_rcnn',
+                        help='Output directory')
+    parser.add_argument('--seed', '-s', type=int, default=0)
+    parser.add_argument('--step_size', '-ss', type=int, default=50000)
+    parser.add_argument('--iteration', '-i', type=int, default=70000)
     args = parser.parse_args()
 
-    gpu = args.gpu
+    np.random.seed(args.seed)
 
-    faster_rcnn_model = mask_rcnn.models.faster_rcnn.FasterRCNNVGG16(
-        n_fg_class=20, pretrained_model='imagenet')
-    model = mask_rcnn.models.faster_rcnn.FasterRCNNTrainChain(
-        faster_rcnn_model)
-    if gpu >= 0:
-        chainer.cuda.get_device_from_id(gpu).use()
+    # 1. dataset
+
+    train_data = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
+    class_names = train_data.class_names
+    train_data = FasterRcnnDataset(train_data)
+    train_data = chainer.datasets.TransformDataset(
+        train_data, transform_lsvrc2012_vgg16)
+    test_data = mask_rcnn.datasets.VOC2012InstanceSeg(split='val')
+    test_data = FasterRcnnDataset(test_data)
+    test_data = chainer.datasets.TransformDataset(
+        test_data, transform_lsvrc2012_vgg16)
+
+    train_iter = chainer.iterators.MultiprocessIterator(
+        train_data, batch_size=1, n_processes=None, shared_mem=100000000)
+    test_iter = chainer.iterators.SerialIterator(
+        test_data, batch_size=1, repeat=False, shuffle=False)
+
+    # 2. model
+
+    faster_rcnn = mask_rcnn.models.faster_rcnn.FasterRCNNVGG16(
+        n_fg_class=len(class_names), pretrained_model='imagenet')
+    faster_rcnn.use_preset('evaluate')
+    model = mask_rcnn.models.faster_rcnn.FasterRCNNTrainChain(faster_rcnn)
+    if args.gpu >= 0:
+        chainer.cuda.get_device_from_id(args.gpu).use()
         model.to_gpu()
 
-    optimizer = chainer.optimizers.MomentumSGD(lr=1e-3, momentum=0.9)
+    # 3. optimizer
+
+    optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     optimizer.setup(model)
-    optimizer.add_hook(chainer.optimizer.WeightDecay(0.005))
+    optimizer.add_hook(chainer.optimizer.WeightDecay(rate=0.0005))
+    updater = chainer.training.updater.StandardUpdater(
+        train_iter, optimizer, device=args.gpu)
 
-    dataset = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
-    dataset = chainer.datasets.TransformDataset(
-        dataset, transform_lsvrc2012_vgg16)
-    dataset = FasterRcnnDataset(dataset)
-    iter_train = chainer.iterators.SerialIterator(dataset, batch_size=1)
+    # trainer
 
-    out = 'logs/faster_rcnn_cfg001_%s' % \
-        datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-
-    updater = training.StandardUpdater(iter_train, optimizer, device=gpu)
-    trainer = training.Trainer(updater, (100, 'epoch'), out=out)
-
-    trainer.extend(chainer.training.extensions.ExponentialShift('lr', 0.1),
-                   trigger=(50000, 'epoch'))
+    trainer = training.Trainer(
+        updater, (args.iteration, 'iteration'), out=args.out)
 
     trainer.extend(
-        extensions.snapshot_object(
-            model.faster_rcnn,
-            filename='model_snapshot_iter_{.updater.iteration:08}.npz'),
-        trigger=(5, 'epoch'))
+        extensions.snapshot_object(model.faster_rcnn, 'snapshot_model.npz'),
+        trigger=(args.iteration, 'iteration'))
+    trainer.extend(extensions.ExponentialShift('lr', 0.1),
+                   trigger=(args.step_size, 'iteration'))
 
-    trainer.extend(
-        extensions.LogReport(trigger=(20, 'iteration'), log_name='log.json'))
+    log_interval = 20, 'iteration'
+    plot_interval = 3000, 'iteration'
+    print_interval = 20, 'iteration'
+
+    trainer.extend(chainer.training.extensions.observe_lr(),
+                   trigger=log_interval)
+    trainer.extend(extensions.LogReport(
+        trigger=log_interval, log_name='log.json'))
+    trainer.extend(extensions.PrintReport(
+        ['iteration', 'epoch', 'elapsed_time', 'lr',
+         'main/loss',
+         'main/roi_loc_loss',
+         'main/roi_cls_loss',
+         'main/rpn_loc_loss',
+         'main/rpn_cls_loss',
+         'validation/main/map',
+         ]), trigger=print_interval)
+    trainer.extend(extensions.ProgressBar(update_interval=10))
 
     if extensions.PlotReport.available():
         trainer.extend(
-            extensions.PlotReport([
-                'main/loss', 'main/rpn_loc_loss', 'main/rpn_cls_loss',
-                'main/roi_loc_loss', 'main/roi_cls_loss',
-                'main/roi_mask_loss'
-            ], 'epoch', file_name='loss.png'))
+            extensions.PlotReport(
+                ['main/loss'],
+                file_name='loss.png', trigger=plot_interval
+            ),
+            trigger=plot_interval
+        )
 
-    trainer.extend(extensions.PrintReport(
-        ['epoch', 'iteration', 'elapsed_time',
-         'main/loss', 'main/rpn_loc_loss', 'main/rpn_cls_loss',
-         'main/roi_loc_loss', 'main/roi_cls_loss',
-         'main/roi_mask_loss']))
+    trainer.extend(
+        DetectionVOCEvaluator(
+            test_iter, model.faster_rcnn, use_07_metric=True,
+            label_names=voc_detection_label_names),
+        trigger=ManualScheduleTrigger(
+            [args.step_size, args.iteration], 'iteration'))
 
-    trainer.extend(extensions.ProgressBar())
+    trainer.extend(extensions.dump_graph('main/loss'))
 
     trainer.run()
 

@@ -23,7 +23,7 @@ def transform_lsvrc2012_vgg16(inputs):
 
     transformed = list(inputs)
     transformed[0] = img
-    return transformed
+    return tuple(transformed)
 
 
 def main():
