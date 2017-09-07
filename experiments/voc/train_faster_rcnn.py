@@ -115,7 +115,7 @@ def main():
                    trigger=(args.step_size, 'iteration'))
 
     log_interval = 20, 'iteration'
-    plot_interval = 3000, 'iteration'
+    plot_interval = 1000, 'iteration'
     print_interval = 20, 'iteration'
 
     trainer.extend(chainer.training.extensions.observe_lr(),
