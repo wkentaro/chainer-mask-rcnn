@@ -126,12 +126,12 @@ def main():
             trigger=plot_interval
         )
 
-    trainer.extend(
-        DetectionVOCEvaluator(
-            test_iter, model.faster_rcnn, use_07_metric=True,
-            label_names=voc_detection_label_names),
-        trigger=ManualScheduleTrigger(
-            [args.step_size, args.iteration], 'iteration'))
+    # trainer.extend(
+    #     DetectionVOCEvaluator(
+    #         test_iter, model.faster_rcnn, use_07_metric=True,
+    #         label_names=voc_detection_label_names),
+    #     trigger=ManualScheduleTrigger(
+    #         [args.step_size, args.iteration], 'iteration'))
 
     trainer.extend(extensions.dump_graph('main/loss'))
 
