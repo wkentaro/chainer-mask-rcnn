@@ -3,12 +3,19 @@
 from __future__ import division
 
 import argparse
-import numpy as np
+
+import matplotlib
+matplotlib.use('Agg')
 
 import chainer
 from chainer import training
 from chainer.training import extensions
+from chainer.training.triggers import ManualScheduleTrigger
+from chainercv.datasets import voc_detection_label_names
+from chainercv.datasets import VOCDetectionDataset
+from chainercv.extensions import DetectionVOCEvaluator
 from chainercv import transforms
+import numpy as np
 
 import mask_rcnn
 
@@ -78,15 +85,13 @@ def main():
     train_data = FasterRcnnDataset(train_data)
     train_data = chainer.datasets.TransformDataset(
         train_data, Transform(faster_rcnn))
-    # test_data = mask_rcnn.datasets.VOC2012InstanceSeg(split='val')
-    # test_data = FasterRcnnDataset(test_data)
-    # test_data = chainer.datasets.TransformDataset(
-    #     test_data, Transform(faster_rcnn))
-
     train_iter = chainer.iterators.MultiprocessIterator(
         train_data, batch_size=1, n_processes=None, shared_mem=100000000)
-    # test_iter = chainer.iterators.SerialIterator(
-    #     test_data, batch_size=1, repeat=False, shuffle=False)
+
+    test_data = VOCDetectionDataset(split='test', year='2007',
+                                    use_difficult=True, return_difficult=True)
+    test_iter = chainer.iterators.SerialIterator(
+        test_data, batch_size=1, repeat=False, shuffle=False)
 
     # 2. model
 
@@ -136,20 +141,24 @@ def main():
     if extensions.PlotReport.available():
         trainer.extend(
             extensions.PlotReport(
-                ['main/loss'],
+                [
+                    'main/loss',
+                    'main/roi_loc_loss',
+                    'main/roi_cls_loss',
+                    'main/rpn_loc_loss',
+                    'main/rpn_cls_loss',
+                ],
                 file_name='loss.png', trigger=plot_interval
             ),
             trigger=plot_interval
         )
 
-    # trainer.extend(
-    #     DetectionVOCEvaluator(
-    #         test_iter, model.faster_rcnn, use_07_metric=True,
-    #         label_names=voc_detection_label_names),
-    #     trigger=ManualScheduleTrigger(
-    #         [args.step_size, args.iteration], 'iteration'))
-
-    # trainer.extend(extensions.dump_graph('main/loss'))
+    trainer.extend(
+        DetectionVOCEvaluator(
+            test_iter, model.faster_rcnn, use_07_metric=True,
+            label_names=voc_detection_label_names),
+        trigger=ManualScheduleTrigger(
+            [args.step_size, args.iteration], 'iteration'))
 
     trainer.run()
 
