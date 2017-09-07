@@ -8,15 +8,31 @@ import numpy as np
 import chainer
 from chainer import training
 from chainer.training import extensions
-from chainer.training.triggers import ManualScheduleTrigger
-
-from chainercv.datasets import voc_detection_label_names
-from chainercv.extensions import DetectionVOCEvaluator
+from chainercv import transforms
 
 import mask_rcnn
 
 
-from train import transform_lsvrc2012_vgg16
+class Transform(object):
+
+    def __init__(self, faster_rcnn):
+        self.faster_rcnn = faster_rcnn
+
+    def __call__(self, in_data):
+        img, bbox, label = in_data
+        _, H, W = img.shape
+        img = self.faster_rcnn.prepare(img)
+        _, o_H, o_W = img.shape
+        scale = o_H / H
+        bbox = transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
+
+        # horizontally flip
+        img, params = transforms.random_flip(
+            img, x_random=True, return_param=True)
+        bbox = transforms.flip_bbox(
+            bbox, (o_H, o_W), x_flip=params['x_flip'])
+
+        return img, bbox, label, scale
 
 
 class FasterRcnnDataset(chainer.dataset.DatasetMixin):
@@ -30,12 +46,12 @@ class FasterRcnnDataset(chainer.dataset.DatasetMixin):
     def get_example(self, i):
         from mask_rcnn.utils import label2instance_boxes
         img, lbl_cls, lbl_ins = self._instance_dataset.get_example(i)
+        img = img.transpose((2, 0, 1)).astype(np.float32, copy=False)
         labels, bboxes = label2instance_boxes(lbl_ins, lbl_cls)
         labels = labels.astype(np.int32, copy=False)
         bboxes = bboxes[:, [1, 0, 3, 2]]  # xy -> yx
         bboxes = bboxes.astype(np.float32, copy=False)
-        scale = np.array(1, dtype=np.float32)
-        return img, bboxes, labels, scale
+        return img, bboxes, labels
 
 
 def main():
@@ -54,26 +70,26 @@ def main():
 
     # 1. dataset
 
+    faster_rcnn = mask_rcnn.models.faster_rcnn.FasterRCNNVGG16(
+        n_fg_class=20, pretrained_model='imagenet')
+    faster_rcnn.use_preset('evaluate')
+
     train_data = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
-    class_names = train_data.class_names
     train_data = FasterRcnnDataset(train_data)
     train_data = chainer.datasets.TransformDataset(
-        train_data, transform_lsvrc2012_vgg16)
-    test_data = mask_rcnn.datasets.VOC2012InstanceSeg(split='val')
-    test_data = FasterRcnnDataset(test_data)
-    test_data = chainer.datasets.TransformDataset(
-        test_data, transform_lsvrc2012_vgg16)
+        train_data, Transform(faster_rcnn))
+    # test_data = mask_rcnn.datasets.VOC2012InstanceSeg(split='val')
+    # test_data = FasterRcnnDataset(test_data)
+    # test_data = chainer.datasets.TransformDataset(
+    #     test_data, Transform(faster_rcnn))
 
     train_iter = chainer.iterators.MultiprocessIterator(
         train_data, batch_size=1, n_processes=None, shared_mem=100000000)
-    test_iter = chainer.iterators.SerialIterator(
-        test_data, batch_size=1, repeat=False, shuffle=False)
+    # test_iter = chainer.iterators.SerialIterator(
+    #     test_data, batch_size=1, repeat=False, shuffle=False)
 
     # 2. model
 
-    faster_rcnn = mask_rcnn.models.faster_rcnn.FasterRCNNVGG16(
-        n_fg_class=len(class_names), pretrained_model='imagenet')
-    faster_rcnn.use_preset('evaluate')
     model = mask_rcnn.models.faster_rcnn.FasterRCNNTrainChain(faster_rcnn)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
@@ -133,7 +149,7 @@ def main():
     #     trigger=ManualScheduleTrigger(
     #         [args.step_size, args.iteration], 'iteration'))
 
-    trainer.extend(extensions.dump_graph('main/loss'))
+    # trainer.extend(extensions.dump_graph('main/loss'))
 
     trainer.run()
 
