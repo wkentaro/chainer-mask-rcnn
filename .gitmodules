@@ -2,3 +2,7 @@
 	path = chainer
 	url = https://github.com/wkentaro/chainer.git
 	version = roi_align_2d
+[submodule "chainercv"]
+	path = chainercv
+	url = https://github.com/wkentaro/chainercv.git
+	version = faster_rcnn_resnet
