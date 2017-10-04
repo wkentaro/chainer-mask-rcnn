@@ -73,12 +73,12 @@ def create_proposal_targets(rois, boxes, labels, masks,
     boxes_xy = boxes[:, [1, 0, 3, 2]].astype(np.int32)
     sample_rois_xy = sample_rois[:, [1, 0, 3, 2]].astype(np.int32)
     for id_cls, roi in zip(gt_roi_labels, sample_rois_xy):
+        x1, y1, x2, y2 = roi
         if id_cls == 0:
-            gt_roi_masks.append(np.zeros_like(mask_ins))
+            gt_roi_masks.append(np.zeros_like((y2 - y1, x2 - x1)))
             continue
         idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes_xy])
         mask_ins = masks[idx_ins]
-        x1, y1, x2, y2 = roi
         mask_roi = np.zeros_like(mask_ins)
         mask_roi[y1:y2, x1:x2] = 1
         mask_ins = mask_ins & mask_roi
