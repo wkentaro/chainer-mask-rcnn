@@ -75,20 +75,20 @@ def create_proposal_targets(rois, boxes, labels, masks,
     for id_cls, roi in zip(gt_roi_labels, sample_rois_xy):
         x1, y1, x2, y2 = roi
         if id_cls == 0:
-            gt_roi_masks.append(np.zeros_like(masks[0], dtype=np.int32))
+            gt_roi_masks.append(None)
             continue
         idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes_xy])
         mask_ins = masks[idx_ins]
         mask_roi = np.zeros_like(mask_ins)
         mask_roi[y1:y2, x1:x2] = 1
         mask_ins = mask_ins & mask_roi
-        gt_roi_masks.append(mask_ins)
-    gt_roi_masks = np.asarray(gt_roi_masks, dtype=np.int32)
+        if xp != np:
+            mask_ins = chainer.cuda.to_gpu(mask_ins)
+        gt_roi_masks.append(mask_ins[y1:y2, x1:x2])
     if xp != np:
         sample_rois = chainer.cuda.to_gpu(sample_rois)
         gt_roi_locs = chainer.cuda.to_gpu(gt_roi_locs)
         gt_roi_labels = chainer.cuda.to_gpu(gt_roi_labels)
-        gt_roi_masks = chainer.cuda.to_gpu(gt_roi_masks)
     return sample_rois, gt_roi_locs, gt_roi_labels, gt_roi_masks
 
 
