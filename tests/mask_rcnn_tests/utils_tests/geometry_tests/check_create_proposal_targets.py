@@ -19,7 +19,10 @@ def visualize_func(dataset, index):
     rois = mask_rcnn.utils.augment_bboxes(boxes, H, W)
 
     sample_rois, gt_roi_locs, gt_roi_labels, gt_roi_masks = \
-        mask_rcnn.utils.create_proposal_targets(rois, boxes, labels, masks)
+        mask_rcnn.utils.create_proposal_targets(
+            rois, boxes, labels, masks,
+            loc_normalize_mean=(0., 0., 0., 0.),
+            loc_normalize_std=(0.1, 0.1, 0.2, 0.2))
 
     viz = mask_rcnn.utils.draw_instance_boxes(
         img, sample_rois, gt_roi_labels, n_class=21, bg_class=-1)
