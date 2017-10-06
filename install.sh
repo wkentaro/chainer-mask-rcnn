@@ -3,22 +3,20 @@
 set -e
 set -x
 
-if [ ! -e ~/.anaconda2/envs/mask_rcnn ]; then
-  set +x
-  source ~/.anaconda2/bin/activate
-  set -x
-
-  conda create -q -y --name=mask_rcnn python=2.7
+if [ ! -e venv ]; then
+  unset PYTHONPATH
+  virtualenv venv
 fi
 
 set +x
-source ~/.anaconda2/bin/activate mask_rcnn
+. venv/bin/activate
 set -x
 
-conda info -e
+cp $(/usr/bin/python -c 'import cv2; print(cv2.__file__)') venv/lib/python2.7/site-packages
+pip install -U numpy
 
-conda install -q -y -c menpo opencv
-conda install -q -y pyqt
+cp -r $(dirname $(/usr/bin/python -c 'import PyQt4; print(PyQt4.__file__)')) venv/lib/python2.7/site-packages
+cp $(/usr/bin/python -c 'import sip; print(sip.__file__)') venv/lib/python2.7/site-packages
 
 pip install Cython
 
