@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source ~/.anaconda2/envs/mask_rcnn/bin/activate || \
+  source ~/.anaconda2/bin/activate && \
   conda create --name mask_rcnn && \
   source activate mask_rcnn
 
