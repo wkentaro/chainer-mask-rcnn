@@ -2,6 +2,7 @@ import math
 
 import cv2
 import mvtk
+import numpy as np
 
 import mask_rcnn
 
@@ -9,6 +10,8 @@ import mask_rcnn
 def visualize_func(dataset, index):
     img, bboxes, labels, masks, scale = dataset[index]
     bboxes = bboxes[:, [1, 0, 3, 2]]  # yx -> xy
+    bboxes = bboxes.astype(np.int32)
+    masks = masks.astype(bool)
 
     viz = mask_rcnn.utils.draw_instance_boxes(
         img, bboxes, labels, n_class=dataset.n_class)
