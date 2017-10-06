@@ -17,7 +17,12 @@ set -x
 
 conda info -e
 
+conda install -q -y -c menpo opencv
+conda install -q -y pyqt
+
 pip install Cython
+
+pip install git+https://github.com/wkentaro/mvtk.git
 
 (cd chainer && pip install -e .)
 
