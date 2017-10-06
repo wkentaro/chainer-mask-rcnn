@@ -1,16 +1,21 @@
 #!/bin/bash
 
 set -e
+set -x
 
-if [ -e ~/.anaconda2/envs/mask_rcnn ]; then
-  source ~/.anaconda2/envs/mask_rcnn/bin/activate
-else
+if [ ! -e ~/.anaconda2/envs/mask_rcnn ]; then
+  set +x
   source ~/.anaconda2/bin/activate
-  conda create --name mask_rcnn
-  source activate mask_rcnn
+  set -x
+
+  conda create -q -y --name=mask_rcnn python=2.7
 fi
 
+set +x
+source ~/.anaconda2/bin/activate mask_rcnn
 set -x
+
+conda info -e
 
 pip install Cython
 
@@ -21,5 +26,4 @@ pip install Cython
 pip install -e .
 
 set +x
-
 set +e
