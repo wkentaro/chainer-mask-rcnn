@@ -20,7 +20,7 @@ class MaskRcnn(chainer.Chain):
         super(MaskRcnn, self).__init__()
         with self.init_scope():
             self.extractor = VGG16(initialW=chainer.initializers.Zero())
-            self.extractor.feature_names = 'conv5_3'
+            self.extractor.pick = 'conv5_3'
             self.extractor.remove_unused()
             self.rpn = RegionProposalNetwork(
                 512, 512,
