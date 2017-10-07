@@ -33,39 +33,42 @@ optimizer.add_hook(chainer.optimizer.WeightDecay(rate=0.0005))
 # dataset
 dataset_ins = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
 dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset_ins)
-img, bbox, label, mask = dataset[0]
-img = img.transpose(2, 0, 1)
-label -= 1
-
-img_org = img.copy()
-
-_, H, W = img.shape
-img = model.mask_rcnn.prepare(img)
-_, o_H, o_W = img.shape
-scale = 1. * o_H / H
-bbox = chainercv.transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
-mask_resized = [None] * len(mask)
-for i in range(len(mask)):
-    if mask[i] is None:
-        continue
-    mask_resized[i] = cv2.resize(mask[i], None, None, fx=scale, fy=scale,
-                                 interpolation=cv2.INTER_NEAREST)
-mask = mask_resized
-
-imgs = np.asarray([img])
-bboxes = np.asarray([bbox])
-labels = np.asarray([label])
-masks = np.asarray([mask])
-scale = np.array([scale], dtype=np.float32)
-if gpu >= 0:
-    imgs = cuda.to_gpu(imgs)
-    bboxes = cuda.to_gpu(bboxes)
-    labels = cuda.to_gpu(labels)
-    masks = cuda.to_gpu(masks)
-    scale = cuda.to_gpu(scale)
 
 # training
 for i in xrange(10000):
+    idx = np.random.randint(0, 3)
+    img, bbox, label, mask = dataset[idx]
+    img = img.transpose(2, 0, 1)
+    label -= 1
+
+    img_org = img.copy()
+
+    _, H, W = img.shape
+    img = model.mask_rcnn.prepare(img)
+    _, o_H, o_W = img.shape
+    scale = 1. * o_H / H
+    bbox = chainercv.transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
+    mask_resized = [None] * len(mask)
+    for i_m in range(len(mask)):
+        if mask[i_m] is None:
+            continue
+        mask_resized[i_m] = cv2.resize(
+            mask[i_m], None, None, fx=scale, fy=scale,
+            interpolation=cv2.INTER_NEAREST)
+    mask = mask_resized
+
+    imgs = np.asarray([img])
+    bboxes = np.asarray([bbox])
+    labels = np.asarray([label])
+    masks = np.asarray([mask])
+    scale = np.array([scale], dtype=np.float32)
+    if gpu >= 0:
+        imgs = cuda.to_gpu(imgs)
+        bboxes = cuda.to_gpu(bboxes)
+        labels = cuda.to_gpu(labels)
+        masks = cuda.to_gpu(masks)
+        scale = cuda.to_gpu(scale)
+
     if i % 10 == 0:
         bboxes_pred, labels_pred, scores_pred, masks_pred, rois_pred = \
             model.mask_rcnn.predict([img_org.copy()])
