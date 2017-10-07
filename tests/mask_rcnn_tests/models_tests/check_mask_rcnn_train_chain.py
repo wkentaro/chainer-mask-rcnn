@@ -65,9 +65,9 @@ if gpu >= 0:
     scale = cuda.to_gpu(scale)
 
 # training
-for i in xrange(50):
+for i in xrange(10000):
     if i % 10 == 0:
-        bboxes_pred, labels_pred, scores_pred, masks_pred = \
+        bboxes_pred, labels_pred, scores_pred, masks_pred, rois_pred = \
             model.mask_rcnn.predict([img_org.copy()])
 
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
@@ -78,14 +78,34 @@ for i in xrange(50):
         print(labels_pred)
         print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
-        # bbox_pred = bboxes_pred[0]
-        # bbox_pred = bbox_pred[:, [1, 0, 3, 2]]
-        # label_pred = labels_pred[0]
-        # viz = img_org.transpose(1, 2, 0).astype(np.uint8)
-        # viz = mask_rcnn.utils.draw_instance_boxes(
-        #     viz, bbox_pred, label_pred, n_class=20, bg_class=-1)
-        # cv2.imshow('viz', viz[:, :, ::-1])
-        # cv2.waitKey(0)
+        # visualize
+        import fcn
+        bbox_pred = bboxes_pred[0]
+        bbox_pred = bbox_pred[:, [1, 0, 3, 2]]
+        roi_pred = rois_pred[0]
+        roi_pred = roi_pred[:, [1, 0, 3, 2]]
+        label_pred = labels_pred[0]
+        mask_pred = masks_pred[0]
+        viz = img_org.transpose(1, 2, 0).astype(np.uint8)
+        viz = np.ascontiguousarray(viz)
+        cmap = fcn.utils.label_colormap(20)
+        cmap = (cmap * 255).astype(np.uint8)
+        for j in range(len(bbox_pred)):
+            x1, y1, x2, y2 = map(int, roi_pred[j])
+            H_roi, W_roi = y2 - y1, x2 - x1
+            m = mask_pred[j]
+            m = cv2.resize(m, (W_roi, H_roi))
+            m = m >= 0.5
+            mask_ins = np.zeros(viz.shape[:2], dtype=bool)
+            mask_ins[y1:y2, x1:x2] = m
+
+            color = cmap[label_pred[j]]
+            x1, y1, x2, y2 = map(int, bbox_pred[j])
+            cv2.rectangle(viz, (x1, y1), (x2, y2), color=(0, 0, 0))
+            viz[mask_ins] = viz[mask_ins] * 0.5 + color * 0.5
+            viz = viz.astype(np.uint8)
+        cv2.imshow('viz', viz[:, :, ::-1])
+        cv2.waitKey(500)
 
     model.zerograds()
     loss = model(imgs, bboxes, labels, masks, scale)
