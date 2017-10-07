@@ -151,7 +151,7 @@ class MaskRCNNTrainChain(chainer.Chain):
                 continue
             y1, x1, y2, x2 = map(int, sample_roi[i])
             roi_mask_ik = roi_mask[i, k, :, :][None, None, :, :]
-            roi_mask_ik = F.resize_images(roi_mask_ik, (y2 - y1, x2 - x1))
+            roi_mask_ik = F.resize_images(roi_mask_ik, gt_roi_mask[i].shape)
             roi_mask_ik = roi_mask_ik[0, 0, :, :]
             roi_mask_loss += F.sigmoid_cross_entropy(
                 roi_mask_ik, gt_roi_mask[i])
