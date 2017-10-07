@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import chainer
 from chainer import cuda
 import chainercv
 import matplotlib.pyplot as plt
