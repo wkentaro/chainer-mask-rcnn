@@ -6,8 +6,8 @@ import chainer.functions as F
 
 from chainercv.links.model.faster_rcnn.utils.anchor_target_creator import\
     AnchorTargetCreator
-# from chainercv.links.model.faster_rcnn.utils.proposal_target_creator import\
-#     ProposalTargetCreator
+from chainercv.links.model.faster_rcnn.utils.proposal_target_creator import\
+    ProposalTargetCreator
 
 from ...utils import create_proposal_targets
 
@@ -48,7 +48,9 @@ class MaskRCNNTrainChain(chainer.Chain):
     """
 
     def __init__(self, mask_rcnn, rpn_sigma=3., roi_sigma=1.,
-                 anchor_target_creator=AnchorTargetCreator()):
+                 anchor_target_creator=AnchorTargetCreator(),
+                 proposal_target_creator=ProposalTargetCreator(),
+                 ):
         super(MaskRCNNTrainChain, self).__init__()
         with self.init_scope():
             self.mask_rcnn = mask_rcnn
@@ -114,12 +116,19 @@ class MaskRCNNTrainChain(chainer.Chain):
         rpn_score = rpn_scores[0]
         rpn_loc = rpn_locs[0]
         roi = rois
+        mask = masks[0]
 
         # Sample RoIs and forward
-        sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
-            create_proposal_targets(
-                roi, bbox, label, mask,
+        # FIXME
+        if True:
+            sample_roi, gt_roi_loc, gt_roi_label = self.proposal_target_creator(
+                roi, bbox, label,
                 self.loc_normalize_mean, self.loc_normalize_std)
+        else:
+            sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
+                create_proposal_targets(
+                    roi, bbox, label, mask,
+                    self.loc_normalize_mean, self.loc_normalize_std)
         sample_roi_index = self.xp.zeros((len(sample_roi),), dtype=np.int32)
         roi_cls_loc, roi_score, roi_mask = self.mask_rcnn.head(
             features, sample_roi, sample_roi_index)
@@ -142,20 +151,21 @@ class MaskRCNNTrainChain(chainer.Chain):
         # Losses for outputs of mask branch
         n_sample_pos = 0
         roi_mask_loss = 0
-        for i in range(n_sample):
-            k = int(gt_roi_label[i]) - 1  # class_label
-            if k == -1:  # background
-                continue
-            y1, x1, y2, x2 = map(int, sample_roi[i])
-            roi_mask_ik = roi_mask[i, k, :, :][None, None, :, :]
-            roi_mask_ik = F.resize_images(roi_mask_ik, (y2 - y1, x2 - x1))
-            roi_mask_ik = roi_mask_ik[0, 0, :, :]
-            assert roi_mask_ik.shape == (14, 14)
-            roi_mask_loss += F.sigmoid_cross_entropy(
-                roi_mask_ik, gt_roi_mask[i])
-            n_sample_pos += 1
-        if n_sample_pos > 0:
-            roi_mask_loss /= n_sample_pos  # mean
+        # FIXME
+        if False:
+            for i in range(n_sample):
+                k = int(gt_roi_label[i]) - 1  # class_label
+                if k == -1:  # background
+                    continue
+                y1, x1, y2, x2 = map(int, sample_roi[i])
+                roi_mask_ik = roi_mask[i, k, :, :][None, None, :, :]
+                roi_mask_ik = F.resize_images(roi_mask_ik, (y2 - y1, x2 - x1))
+                roi_mask_ik = roi_mask_ik[0, 0, :, :]
+                roi_mask_loss += F.sigmoid_cross_entropy(
+                    roi_mask_ik, gt_roi_mask[i])
+                n_sample_pos += 1
+            if n_sample_pos > 0:
+                roi_mask_loss /= n_sample_pos  # mean
 
         loss = rpn_loc_loss + rpn_cls_loss + roi_loc_loss + roi_cls_loss + \
             roi_mask_loss
