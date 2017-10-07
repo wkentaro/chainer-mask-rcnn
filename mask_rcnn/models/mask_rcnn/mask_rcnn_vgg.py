@@ -13,20 +13,8 @@ from chainercv.utils import download_model
 
 class MaskRCNNVGG16(MaskRCNN):
 
-    _models = {
-        'voc07': {
-            'n_fg_class': 20,
-            'url': 'https://github.com/yuyu2172/share-weights/releases/'
-            'download/0.0.4/'
-            'faster_rcnn_vgg16_voc07_trained_2017_08_06.npz'
-        },
-        'voc0712': {
-            'n_fg_class': 20,
-            'url': 'https://github.com/yuyu2172/share-weights/releases/'
-            'download/0.0.4/faster_rcnn_vgg16_voc0712_trained_2017_07_21.npz'
-        },
-    }
     feat_stride = 16
+    _models = {}
 
     def __init__(self,
                  n_fg_class=None,
@@ -87,6 +75,8 @@ class MaskRCNNVGG16(MaskRCNN):
             chainer.serializers.load_npz(path, self)
         elif pretrained_model == 'imagenet':
             self._copy_imagenet_pretrained_vgg16()
+        elif pretrained_model == 'voc0712_faster_rcnn':
+            self._copy_voc_pretrained_faster_rcnn()
         elif pretrained_model:
             chainer.serializers.load_npz(pretrained_model, self)
 
@@ -107,6 +97,16 @@ class MaskRCNNVGG16(MaskRCNN):
         self.extractor.conv5_3.copyparams(pretrained_model.conv5_3)
         self.head.fc6.copyparams(pretrained_model.fc6)
         self.head.fc7.copyparams(pretrained_model.fc7)
+
+    def _copy_voc_pretrained_faster_rcnn(self):
+        from chainercv.links.model.faster_rcnn import FasterRCNNVGG16
+        pretrained_model = FasterRCNNVGG16(pretrained_model='voc0712')
+        self.extractor.copyparams(pretrained_model.extractor)
+        self.rpn.copyparams(pretrained_model.rpn)
+        self.head.fc6.copyparams(pretrained_model.head.fc6)
+        self.head.fc7.copyparams(pretrained_model.head.fc7)
+        self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
+        self.head.score.copyparams(pretrained_model.head.score)
 
 
 class VGG16RoIHead(chainer.Chain):

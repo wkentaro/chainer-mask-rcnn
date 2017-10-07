@@ -17,10 +17,12 @@ if gpu >= 0:
     cuda.get_device(gpu).use()
 
 # model
-frcnn = mask_rcnn.models.MaskRCNNVGG16(
-    n_fg_class=20, pretrained_model='imagenet')
-# frcnn = mask_rcnn.models.MaskRCNNVGG16(
-#     n_fg_class=20, pretrained_model='voc07')
+if False:
+    frcnn = mask_rcnn.models.MaskRCNNVGG16(
+        n_fg_class=20, pretrained_model='imagenet')
+else:
+    frcnn = mask_rcnn.models.MaskRCNNVGG16(
+        n_fg_class=20, pretrained_model='voc0712_faster_rcnn')
 model = mask_rcnn.models.MaskRCNNTrainChain(frcnn)
 if gpu >= 0:
     model.to_gpu()
