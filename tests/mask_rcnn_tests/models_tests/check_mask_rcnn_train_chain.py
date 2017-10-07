@@ -106,6 +106,9 @@ for i in xrange(10000):
 
             color = cmap[label_pred[j]]
             x1, y1, x2, y2 = map(int, bbox_pred[j])
+            mask_ins_bbox = np.zeros(viz.shape[:2], dtype=bool)
+            mask_ins_bbox[y1:y2, x1:x2] = True
+            mask_ins = mask_ins & mask_ins_bbox
             cv2.rectangle(viz, (x1, y1), (x2, y2), color=(0, 0, 0))
             viz[mask_ins] = viz[mask_ins] * 0.5 + color * 0.5
             viz = viz.astype(np.uint8)
