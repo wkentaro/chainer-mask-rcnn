@@ -219,7 +219,7 @@ class MaskRCNN(chainer.Chain):
         img = (img - self.mean).astype(np.float32, copy=False)
         return img
 
-    def _suppress(self, raw_cls_bbox, raw_prob):
+    def _suppress(self, raw_cls_bbox, raw_prob, raw_mask):
         bbox = list()
         label = list()
         score = list()
@@ -295,12 +295,13 @@ class MaskRCNN(chainer.Chain):
                     chainer.function.no_backprop_mode():
                 img_var = chainer.Variable(self.xp.asarray(img[None]))
                 scale = img_var.shape[3] / size[1]
-                roi_cls_locs, roi_scores, rois, _ = self.__call__(
+                roi_cls_locs, roi_scores, rois, _, roi_masks = self.__call__(
                     img_var, scale=scale)
             # We are assuming that batch size is 1.
             roi_cls_loc = roi_cls_locs.data
             roi_score = roi_scores.data
             roi = rois / scale
+            roi_mask = roi_masks.data
 
             # Convert predictions to bounding boxes in image coordinates.
             # Bounding boxes are scaled to the scale of the input images.
