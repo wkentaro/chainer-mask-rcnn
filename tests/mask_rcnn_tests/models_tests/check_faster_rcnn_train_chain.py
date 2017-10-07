@@ -25,14 +25,14 @@ optimizer = chainer.optimizers.MomentumSGD(lr=1e-3, momentum=0.9)
 optimizer.setup(model)
 optimizer.add_hook(chainer.optimizer.WeightDecay(rate=0.0005))
 
-if True:
+if False:
     dataset = chainercv.datasets.VOCDetectionDataset(
         split='train', year='2012', use_difficult=True)
     img, bbox, label = dataset.get_example(0)
 else:
     dataset_ins = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
     dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset_ins)
-    img, bbox, label, _, _ = dataset[0]
+    img, bbox, label, _ = dataset[0]
     img = img.transpose(2, 0, 1)
     label -= 1
 
