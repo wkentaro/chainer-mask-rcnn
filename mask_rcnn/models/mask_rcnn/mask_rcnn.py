@@ -219,22 +219,25 @@ class MaskRCNN(chainer.Chain):
         img = (img - self.mean).astype(np.float32, copy=False)
         return img
 
-    def _suppress(self, raw_cls_bbox, raw_prob, raw_mask):
+    def _suppress(self, raw_cls_bbox, raw_prob, raw_mask, raw_cls_roi):
         bbox = list()
         label = list()
         score = list()
         mask = list()
+        roi = list()
         # skip cls_id = 0 because it is the background class
         for l in range(1, self.n_class):
             cls_bbox_l = raw_cls_bbox.reshape((-1, self.n_class, 4))[:, l, :]
             prob_l = raw_prob[:, l]
             mask_l = raw_mask[:, l - 1]
+            cls_roi_l = raw_cls_roi[:, l, :]
 
             # thresholding by score
             keep = prob_l > self.score_thresh
             cls_bbox_l = cls_bbox_l[keep]
             prob_l = prob_l[keep]
             mask_l = mask_l[keep]
+            cls_roi_l = cls_roi_l[keep]
 
             # thresholding by nms
             keep = non_maximum_suppression(
@@ -244,11 +247,13 @@ class MaskRCNN(chainer.Chain):
             label.append((l - 1) * np.ones((len(keep),)))
             score.append(prob_l[keep])
             mask.append(mask_l[keep])
+            roi.append(cls_roi_l[keep])
         bbox = np.concatenate(bbox, axis=0).astype(np.float32)
         label = np.concatenate(label, axis=0).astype(np.int32)
         score = np.concatenate(score, axis=0).astype(np.float32)
-        mask = np.concatenate(mask, axis=0).astype(bool)
-        return bbox, label, score, mask
+        mask = np.concatenate(mask, axis=0).astype(np.float32)
+        roi = np.concatenate(roi, axis=0).astype(np.float32)
+        return bbox, label, score, mask, roi
 
     def predict(self, imgs):
         """Detect objects from images.
@@ -290,6 +295,7 @@ class MaskRCNN(chainer.Chain):
         labels = list()
         scores = list()
         masks = list()
+        bboxes_raw = list()
         for img, size in zip(prepared_imgs, sizes):
             with chainer.using_config('train', False), \
                     chainer.function.no_backprop_mode():
@@ -325,14 +331,14 @@ class MaskRCNN(chainer.Chain):
             raw_cls_bbox = cuda.to_cpu(cls_bbox)
             raw_prob = cuda.to_cpu(prob)
             raw_mask = cuda.to_cpu(mask)
+            raw_cls_roi = cuda.to_cpu(roi)
 
-            raw_mask = raw_mask >= 0.5
-
-            bbox, label, score, mask = self._suppress(
-                raw_cls_bbox, raw_prob, raw_mask)
+            bbox, label, score, mask, roi = self._suppress(
+                raw_cls_bbox, raw_prob, raw_mask, raw_cls_roi)
             bboxes.append(bbox)
             labels.append(label)
             scores.append(score)
             masks.append(mask)
+            bboxes_raw.append(roi)
 
-        return bboxes, labels, scores, masks
+        return bboxes, labels, scores, masks, bboxes_raw
