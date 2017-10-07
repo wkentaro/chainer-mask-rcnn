@@ -2,6 +2,9 @@
 
 from __future__ import print_function
 
+import os
+import os.path as osp
+
 import chainer
 from chainer import cuda
 import chainercv
@@ -36,9 +39,13 @@ optimizer.add_hook(chainer.optimizer.WeightDecay(rate=0.0005))
 dataset_ins = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
 dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset_ins)
 
+out = 'logs/check_mask_rcnn_train_chain'
+if not osp.exists(out):
+    os.makedirs(out)
+
 # training
 for i in xrange(10000):
-    idx = np.random.randint(0, 3)
+    idx = np.random.randint(0, len(dataset))
     img, bbox, label, mask = dataset[idx]
     img = img.transpose(2, 0, 1)
     label -= 1
@@ -113,6 +120,7 @@ for i in xrange(10000):
             viz[mask_ins] = viz[mask_ins] * 0.5 + color * 0.5
             viz = viz.astype(np.uint8)
         cv2.imshow('viz', viz[:, :, ::-1])
+        cv2.imwrite(osp.join(out, '%08d.jpg' % i), viz[:, :, ::-1])
         cv2.waitKey(500)
 
     model.zerograds()
