@@ -119,7 +119,7 @@ for i in xrange(5000 * 20):
             mask_ins_bbox[y1:y2, x1:x2] = True
             mask_ins = mask_ins & mask_ins_bbox
             cv2.rectangle(viz, (x1, y1), (x2, y2), color=(0, 0, 0))
-            viz[mask_ins] = viz[mask_ins] * 0.5 + color * 0.5
+            viz[mask_ins] = viz[mask_ins] * 0.2 + color * 0.8
             viz = viz.astype(np.uint8)
         cv2.imwrite(osp.join(out, '%08d.jpg' % i), viz[:, :, ::-1])
         cv2.imwrite(osp.join(out, 'latest.jpg'), viz[:, :, ::-1])
