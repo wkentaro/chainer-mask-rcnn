@@ -14,6 +14,8 @@ import numpy as np
 import mask_rcnn
 
 
+overfit_test = False
+
 # gpu
 gpu = 0
 if gpu >= 0:
@@ -38,6 +40,8 @@ optimizer.add_hook(chainer.optimizer.WeightDecay(rate=0.0005))
 # dataset
 dataset_ins = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
 dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset_ins)
+dataset_val = mask_rcnn.datasets.MaskRcnnDataset(
+    mask_rcnn.datasets.VOC2012InstanceSeg(split='val'))
 
 out = 'logs/check_mask_rcnn_train_chain'
 if not osp.exists(out):
@@ -45,7 +49,10 @@ if not osp.exists(out):
 
 # training
 for i in xrange(5000 * 20):
-    idx = np.random.randint(0, len(dataset))
+    if overfit_test:
+        idx = np.random.randint(0, 1)
+    else:
+        idx = np.random.randint(0, len(dataset))
     img, bbox, label, mask = dataset[idx]
     img = img.transpose(2, 0, 1)
     label -= 1
@@ -83,7 +90,10 @@ for i in xrange(5000 * 20):
         print('Saving snapshot model: %s' % file_model)
         chainer.serializers.save_npz(file_model, model.mask_rcnn)
 
-    if i % 10 == 0:
+    if i % 50 == 0:
+        if overfit_test:
+            idx_val = np.random.randint(0, len(dataset_val))
+            img_org, _, _, _ = dataset_val[idx_val]
         bboxes_pred, labels_pred, scores_pred, masks_pred = \
             model.mask_rcnn.predict([img_org.copy()])
 
