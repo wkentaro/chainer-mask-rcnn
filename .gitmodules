@@ -2,7 +2,3 @@
 	path = chainer
 	url = https://github.com/wkentaro/chainer.git
 	version = mask_rcnn
-[submodule "chainercv"]
-	path = chainercv
-	url = https://github.com/wkentaro/chainercv.git
-	version = mask_rcnn
