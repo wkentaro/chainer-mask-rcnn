@@ -44,7 +44,7 @@ if not osp.exists(out):
     os.makedirs(out)
 
 # training
-for i in xrange(10000):
+for i in xrange(5000 * 20):
     idx = np.random.randint(0, len(dataset))
     img, bbox, label, mask = dataset[idx]
     img = img.transpose(2, 0, 1)
@@ -77,6 +77,11 @@ for i in xrange(10000):
         labels = cuda.to_gpu(labels)
         masks = cuda.to_gpu(masks)
         scale = cuda.to_gpu(scale)
+
+    if i % 5000 == 0:
+        file_model = osp.join(out, 'model_%08d.npz' % i)
+        print('Saving snapshot model: %s' % file_model)
+        chainer.serializers.save_npz(file_model, model.mask_rcnn)
 
     if i % 10 == 0:
         bboxes_pred, labels_pred, scores_pred, masks_pred, rois_pred = \
@@ -119,9 +124,8 @@ for i in xrange(10000):
             cv2.rectangle(viz, (x1, y1), (x2, y2), color=(0, 0, 0))
             viz[mask_ins] = viz[mask_ins] * 0.5 + color * 0.5
             viz = viz.astype(np.uint8)
-        cv2.imshow('viz', viz[:, :, ::-1])
         cv2.imwrite(osp.join(out, '%08d.jpg' % i), viz[:, :, ::-1])
-        cv2.waitKey(500)
+        cv2.imwrite(osp.join(out, 'latest.jpg'), viz[:, :, ::-1])
 
     model.zerograds()
     loss = model(imgs, bboxes, labels, masks, scale)
