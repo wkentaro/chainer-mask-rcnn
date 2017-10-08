@@ -138,7 +138,7 @@ class VGG16RoIHead(chainer.Chain):
         roi_indices = roi_indices.astype(np.float32)
         indices_and_rois = self.xp.concatenate(
             (roi_indices[:, None], rois), axis=1)
-        pool = _roi_pooling_2d_yx(
+        pool = _roi_align_2d_yx(
             x, indices_and_rois, self.roi_size, self.roi_size,
             self.spatial_scale)
 
@@ -157,8 +157,8 @@ class VGG16RoIHead(chainer.Chain):
         return roi_cls_locs, roi_scores, roi_masks
 
 
-def _roi_pooling_2d_yx(x, indices_and_rois, outh, outw, spatial_scale):
+def _roi_align_2d_yx(x, indices_and_rois, outh, outw, spatial_scale):
     xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
-    pool = F.roi_pooling_2d(
+    pool = F.roi_align_2d(
         x, xy_indices_and_rois, outh, outw, spatial_scale)
     return pool
