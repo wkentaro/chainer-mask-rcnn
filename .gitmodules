@@ -1,4 +1,4 @@
 [submodule "chainer"]
 	path = chainer
 	url = https://github.com/wkentaro/chainer.git
-	version = mask_rcnn
+	version = roi_align_2d
