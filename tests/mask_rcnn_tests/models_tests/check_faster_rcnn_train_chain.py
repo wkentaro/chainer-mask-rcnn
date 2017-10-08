@@ -68,7 +68,6 @@ for i in xrange(50):
         print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
         # bbox_pred = bboxes_pred[0]
-        # bbox_pred = bbox_pred[:, [1, 0, 3, 2]]
         # label_pred = labels_pred[0]
         # viz = img_org.transpose(1, 2, 0).astype(np.uint8)
         # viz = mask_rcnn.utils.draw_instance_boxes(

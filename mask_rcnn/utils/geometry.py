@@ -4,8 +4,8 @@ import numpy as np
 
 
 def get_bbox_overlap(bbox1, bbox2):
-    x11, y11, x12, y12 = bbox1
-    x21, y21, x22, y22 = bbox2
+    y11, x11, y12, x12 = bbox1
+    y21, x21, y22, x22 = bbox2
     w1, h1 = x12 - x11, y12 - y11
     w2, h2 = x22 - x21, y22 - y21
     intersect = (max(0, min(x12, x22) - max(x11, x21)) *
@@ -23,13 +23,13 @@ def get_mask_overlap(mask1, mask2):
 def validate_bboxes(bboxes, H, W):
     bboxes = np.asarray(bboxes)
     bboxes[:, 0][bboxes[:, 0] < 0] = 0
-    bboxes[:, 0][bboxes[:, 0] >= W] = W - 1
+    bboxes[:, 0][bboxes[:, 0] >= H] = H - 1
     bboxes[:, 1][bboxes[:, 1] < 0] = 0
-    bboxes[:, 1][bboxes[:, 1] >= H] = H - 1
+    bboxes[:, 1][bboxes[:, 1] >= W] = W - 1
     bboxes[:, 2][bboxes[:, 2] < 0] = 0
-    bboxes[:, 2][bboxes[:, 2] >= W] = W - 1
+    bboxes[:, 2][bboxes[:, 2] >= H] = H - 1
     bboxes[:, 3][bboxes[:, 3] < 0] = 0
-    bboxes[:, 3][bboxes[:, 3] >= H] = H - 1
+    bboxes[:, 3][bboxes[:, 3] >= W] = W - 1
     keep = bboxes[:, 0] < bboxes[:, 2]
     keep = keep & (bboxes[:, 1] < bboxes[:, 3])
     bboxes = bboxes[keep]
@@ -41,10 +41,10 @@ def augment_bboxes(bboxes, H, W):
     for _ in xrange(100):
         for box in bboxes:
             roi = []
-            for xy in box:
+            for yx in box:
                 scale = np.random.normal(1.0, scale=0.2)
-                xy = int(scale * xy)
-                roi.append(xy)
+                yx = int(scale * yx)
+                roi.append(yx)
             bboxes_aug.append(roi)
     bboxes_aug = validate_bboxes(bboxes_aug, H, W)
     return bboxes_aug
@@ -68,15 +68,12 @@ def create_proposal_targets(rois, boxes, labels, masks,
             loc_normalize_mean, loc_normalize_std)
 
     gt_roi_masks = []
-    # yx -> xy
-    boxes_xy = boxes[:, [1, 0, 3, 2]].astype(np.int32)
-    sample_rois_xy = sample_rois[:, [1, 0, 3, 2]].astype(np.int32)
-    for id_cls, roi in zip(gt_roi_labels, sample_rois_xy):
-        x1, y1, x2, y2 = roi
+    for id_cls, roi in zip(gt_roi_labels, sample_rois):
+        y1, x1, y2, x2 = map(int, roi)
         if id_cls == 0:
             gt_roi_masks.append(None)
             continue
-        idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes_xy])
+        idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes])
         mask_ins = masks[idx_ins]
         mask_roi = np.zeros_like(mask_ins)
         mask_roi[y1:y2, x1:x2] = 1
@@ -142,7 +139,7 @@ def label2instance_boxes(label_instance, label_class,
         (y1, x1), (y2, x2) = where.min(0), where.max(0) + 1
 
         instance_classes.append(instance_class)
-        boxes.append((x1, y1, x2, y2))
+        boxes.append((y1, x1, y2, x2))
         instance_masks.append(mask_inst)
     instance_classes = np.array(instance_classes)
     boxes = np.array(boxes)
@@ -163,12 +160,12 @@ def mask_to_bbox(mask):
 
     Returns
     -------
-    box: tuple (x1, y1, x2, y2)
+    box: tuple (y1, x1, y2, x2)
         Bounding box.
     """
     where = np.argwhere(mask)
     (y1, x1), (y2, x2) = where.min(0), where.max(0) + 1
-    bbox = x1, y1, x2, y2
+    bbox = y1, x1, y2, x2
     return bbox
 
 
@@ -213,7 +210,7 @@ def label_rois(rois, label_instance, label_class, overlap_thresh=0.5):
 
         if overlap > overlap_thresh:
             roi_cls = inst_clss[inst_ind]
-            x1, y1, x2, y2 = roi
+            y1, x1, y2, x2 = roi
             roi_inst_mask = inst_masks[inst_ind][y1:y2, x1:x2]
         else:
             roi_cls = 0

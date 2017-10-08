@@ -98,9 +98,7 @@ for i in xrange(5000 * 20):
         # visualize
         import fcn
         bbox_pred = bboxes_pred[0]
-        bbox_pred = bbox_pred[:, [1, 0, 3, 2]]
         roi_pred = rois_pred[0]
-        roi_pred = roi_pred[:, [1, 0, 3, 2]]
         label_pred = labels_pred[0]
         mask_pred = masks_pred[0]
         viz = img_org.transpose(1, 2, 0).astype(np.uint8)
@@ -108,7 +106,7 @@ for i in xrange(5000 * 20):
         cmap = fcn.utils.label_colormap(20)
         cmap = (cmap * 255).astype(np.uint8)
         for j in range(len(bbox_pred)):
-            x1, y1, x2, y2 = map(int, roi_pred[j])
+            y1, x1, y2, x2 = map(int, roi_pred[j])
             H_roi, W_roi = y2 - y1, x2 - x1
             m = mask_pred[j]
             m = cv2.resize(m, (W_roi, H_roi))
@@ -117,7 +115,7 @@ for i in xrange(5000 * 20):
             mask_ins[y1:y2, x1:x2] = m
 
             color = cmap[label_pred[j]]
-            x1, y1, x2, y2 = map(int, bbox_pred[j])
+            y1, x1, y2, x2 = map(int, bbox_pred[j])
             mask_ins_bbox = np.zeros(viz.shape[:2], dtype=bool)
             mask_ins_bbox[y1:y2, x1:x2] = True
             mask_ins = mask_ins & mask_ins_bbox

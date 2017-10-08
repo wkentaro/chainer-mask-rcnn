@@ -8,8 +8,7 @@ import mask_rcnn
 
 
 def visualize_func(dataset, index):
-    img, bboxes, labels, masks, scale = dataset[index]
-    bboxes = bboxes[:, [1, 0, 3, 2]]  # yx -> xy
+    img, bboxes, labels, masks = dataset[index]
     bboxes = bboxes.astype(np.int32)
     masks = masks.astype(bool)
 
@@ -22,12 +21,13 @@ def visualize_func(dataset, index):
     for label, bbox, mask in zip(labels, bboxes, masks):
         viz = img.copy()
         viz[~mask] = 255
-        x1, y1, x2, y2 = bbox
+        y1, x1, y2, x2 = bbox
         viz = viz[y1:y2, x1:x2]
         scale = math.sqrt((400. * 400.) / (viz.shape[0] * viz.shape[1]))
         viz = cv2.resize(viz, None, None, fx=scale, fy=scale)
+        H, W = viz.shape[:2]
         viz = mask_rcnn.utils.draw_instance_boxes(
-            viz, [(0, 0, viz.shape[1], viz.shape[0])], [label],
+            viz, [(0, 0, H, W)], [label],
             n_class=21, thickness=10)
         vizs.append(viz)
     viz2 = mvtk.image.tile(vizs)

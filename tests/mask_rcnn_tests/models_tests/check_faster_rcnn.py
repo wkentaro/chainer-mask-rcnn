@@ -11,7 +11,7 @@ import mask_rcnn
 gpu = 0
 cuda.get_device_from_id(gpu).use()
 
-label_names = chainercv.datasets.voc_detection_label_names
+label_names = chainercv.datasets.voc_bbox_label_names
 label_names = np.asarray(label_names)
 
 if False:
@@ -21,7 +21,7 @@ if False:
 else:
     dataset_ins = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
     dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset_ins)
-    img, bbox, label, _, _ = dataset.get_example(0)
+    img, bbox, label, _ = dataset.get_example(0)
     img = img.transpose(2, 0, 1)
     label -= 1
 
@@ -43,8 +43,6 @@ print(label_names[label_pred])
 print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
 img = img.transpose(1, 2, 0)  # C, H, W -> H, W, C
-bbox = bbox[:, [1, 0, 3, 2]]  # yx -> xy
-bbox_pred = np.asarray(bbox_pred)[:, [1, 0, 3, 2]]  # yx -> xy
 viz = mask_rcnn.utils.draw_instance_boxes(
     img, bbox, label, n_class=20, bg_class=-1)
 viz_pred = mask_rcnn.utils.draw_instance_boxes(

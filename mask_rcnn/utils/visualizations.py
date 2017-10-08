@@ -15,7 +15,7 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
     img: numpy.ndarray
         RGB image.
     boxes: list of tuple
-        Bounding boxes (x1, y1, x2, y2).
+        Bounding boxes (y1, x1, y2, x2).
 
     Returns
     -------
@@ -42,7 +42,7 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
         color = cmap[inst_class]
         color = (color * 255).tolist()
 
-        x1, y1, x2, y2 = box
+        y1, x1, y2, x2 = box
         cv2.rectangle(img_viz, (x1, y1), (x2, y2), color[::-1],
                       thickness=thickness, lineType=CV_AA)
 
