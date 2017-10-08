@@ -84,7 +84,7 @@ for i in xrange(5000 * 20):
         chainer.serializers.save_npz(file_model, model.mask_rcnn)
 
     if i % 10 == 0:
-        bboxes_pred, labels_pred, scores_pred, masks_pred, rois_pred = \
+        bboxes_pred, labels_pred, scores_pred, masks_pred = \
             model.mask_rcnn.predict([img_org.copy()])
 
         print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
@@ -98,7 +98,6 @@ for i in xrange(5000 * 20):
         # visualize
         import fcn
         bbox_pred = bboxes_pred[0]
-        roi_pred = rois_pred[0]
         label_pred = labels_pred[0]
         mask_pred = masks_pred[0]
         viz = img_org.transpose(1, 2, 0).astype(np.uint8)
@@ -106,7 +105,7 @@ for i in xrange(5000 * 20):
         cmap = fcn.utils.label_colormap(20)
         cmap = (cmap * 255).astype(np.uint8)
         for j in range(len(bbox_pred)):
-            y1, x1, y2, x2 = map(int, roi_pred[j])
+            y1, x1, y2, x2 = map(int, bbox_pred[j])
             H_roi, W_roi = y2 - y1, x2 - x1
             m = mask_pred[j]
             m = cv2.resize(m, (W_roi, H_roi))
