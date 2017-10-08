@@ -134,7 +134,7 @@ class VGG16RoIHead(chainer.Chain):
         self.roi_size = roi_size
         self.spatial_scale = spatial_scale
 
-    def __call__(self, x, rois, roi_indices):
+    def __call__(self, x, rois, roi_indices, pred_bbox=True, pred_mask=True):
         roi_indices = roi_indices.astype(np.float32)
         indices_and_rois = self.xp.concatenate(
             (roi_indices[:, None], rois), axis=1)
@@ -142,18 +142,25 @@ class VGG16RoIHead(chainer.Chain):
             x, indices_and_rois, self.roi_size, self.roi_size,
             self.spatial_scale)
 
-        fc6 = F.relu(self.fc6(pool))
-        fc7 = F.relu(self.fc7(fc6))
-        roi_cls_locs = self.cls_loc(fc7)
-        roi_scores = self.score(fc7)
+        roi_cls_locs = None
+        roi_scores = None
+        roi_masks = None
 
-        fc6 = F.relu(self.fc6(pool))
-        fc7 = F.relu(self.fc7(fc6))
-        roi_cls_locs = self.cls_loc(fc7)
-        roi_scores = self.score(fc7)
+        if pred_bbox:
+            fc6 = F.relu(self.fc6(pool))
+            fc7 = F.relu(self.fc7(fc6))
+            roi_cls_locs = self.cls_loc(fc7)
+            roi_scores = self.score(fc7)
 
-        deconv6 = F.relu(self.deconv6(pool))
-        roi_masks = self.mask(deconv6)
+            fc6 = F.relu(self.fc6(pool))
+            fc7 = F.relu(self.fc7(fc6))
+            roi_cls_locs = self.cls_loc(fc7)
+            roi_scores = self.score(fc7)
+
+        if pred_mask:
+            deconv6 = F.relu(self.deconv6(pool))
+            roi_masks = self.mask(deconv6)
+
         return roi_cls_locs, roi_scores, roi_masks
 
 
