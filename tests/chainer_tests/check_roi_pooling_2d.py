@@ -30,6 +30,9 @@ x = chainer.Variable(x)
 rois = np.array([[0, 0, 2, 6, 7]], dtype=np.float32)
 rois = chainer.Variable(rois)
 y = F.roi_pooling_2d(x, rois, outh=2, outw=2, spatial_scale=1)
+y.grad = np.ones((1, 1, 2, 2), dtype=np.float32)
+y.backward()
+print(x.grad)
 output = y.data[0, 0]
 print(output)
 
