@@ -339,20 +339,22 @@ class MaskRCNN(chainer.Chain):
             labels.append(label)
             scores.append(score)
 
-            bbox = bbox * scale
-            if self.xp != np:
-                bbox = cuda.to_gpu(bbox)
-                roi_index = cuda.to_gpu(roi_index)
-            _, _, roi_masks = self.head(
-                h, bbox, roi_index, pred_bbox=False, pred_mask=True)
-            # we are assuming that batch size is 1.
-            roi_mask = roi_masks.data
+            if len(bbox) == 0:
+                mask = None
+            else:
+                bbox = bbox * scale
+                if self.xp != np:
+                    bbox = cuda.to_gpu(bbox)
+                    roi_index = cuda.to_gpu(roi_index)
+                _, _, roi_masks = self.head(
+                    h, bbox, roi_index, pred_bbox=False, pred_mask=True)
+                # we are assuming that batch size is 1.
+                roi_mask = roi_masks.data
 
-            mask = [roi_mask[:, l - 1, :, :] for l in label]
-            mask = self.xp.concatenate(mask, axis=0).astype(np.float32)
-            mask = F.sigmoid(mask).data
-            mask = cuda.to_cpu(mask)
-
+                mask = [roi_mask[:, l - 1, :, :] for l in label]
+                mask = self.xp.concatenate(mask, axis=0).astype(np.float32)
+                mask = F.sigmoid(mask).data
+                mask = cuda.to_cpu(mask)
             masks.append(mask)
 
         return bboxes, labels, scores, masks
