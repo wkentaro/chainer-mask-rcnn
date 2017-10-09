@@ -42,7 +42,8 @@ def visualize_func(dataset, index):
     viz1 = mvtk.image.tile(vizs)
 
     vizs = []
-    for roi, id_cls, gt_roi_mask in zip(sample_rois, gt_roi_labels, gt_roi_masks):
+    for roi, id_cls, gt_roi_mask in \
+            zip(sample_rois, gt_roi_labels, gt_roi_masks):
         if id_cls == 0:
             continue
         viz = img.copy()
