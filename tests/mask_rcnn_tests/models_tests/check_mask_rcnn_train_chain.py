@@ -94,6 +94,7 @@ for i in xrange(5000 * 20):
         if overfit_test:
             idx_val = np.random.randint(0, len(dataset_val))
             img_org, _, _, _ = dataset_val[idx_val]
+            img_org = img_org.transpose(2, 0, 1)
         bboxes_pred, labels_pred, scores_pred, masks_pred = \
             model.mask_rcnn.predict([img_org.copy()])
 
