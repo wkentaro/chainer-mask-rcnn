@@ -19,6 +19,7 @@
 
 from __future__ import division
 
+import cv2
 import numpy as np
 
 import chainer
@@ -261,21 +262,7 @@ class MaskRCNN(chainer.Chain):
                 and the range of their value is :math:`[0, 255]`.
 
         Returns:
-           tuple of lists:
-           This method returns a tuple of three lists,
-           :obj:`(bboxes, labels, scores)`.
-
-           * **bboxes**: A list of float arrays of shape :math:`(R, 4)`, \
-               where :math:`R` is the number of bounding boxes in a image. \
-               Each bouding box is organized by \
-               :obj:`(y_min, x_min, y_max, x_max)` \
-               in the second axis.
-           * **labels** : A list of integer arrays of shape :math:`(R,)`. \
-               Each value indicates the class of the bounding box. \
-               Values are in range :math:`[0, L - 1]`, where :math:`L` is the \
-               number of the foreground classes.
-           * **scores** : A list of float arrays of shape :math:`(R,)`. \
-               Each value indicates how confident the prediction is.
+            TODO(wkentaro): write doc.
 
         """
         prepared_imgs = list()
@@ -286,10 +273,8 @@ class MaskRCNN(chainer.Chain):
             prepared_imgs.append(img)
             sizes.append(size)
 
-        bboxes = list()
-        labels = list()
-        scores = list()
-        masks = list()
+        lbl_inss = list()
+        lbl_clss = list()
         for img, size in zip(prepared_imgs, sizes):
             with chainer.using_config('train', False), \
                     chainer.function.no_backprop_mode():
@@ -335,26 +320,37 @@ class MaskRCNN(chainer.Chain):
 
             bbox, label, score, roi_index = self._suppress(
                 raw_cls_bbox, raw_prob, raw_roi_index)
-            bboxes.append(bbox)
-            labels.append(label)
-            scores.append(score)
 
             if len(bbox) == 0:
                 mask = None
             else:
-                bbox = bbox * scale
+                bbox_s = bbox * scale
                 if self.xp != np:
-                    bbox = cuda.to_gpu(bbox)
+                    bbox_s = cuda.to_gpu(bbox_s)
                     roi_index = cuda.to_gpu(roi_index)
                 _, _, roi_masks = self.head(
-                    h, bbox, roi_index, pred_bbox=False, pred_mask=True)
+                    h, bbox_s, roi_index, pred_bbox=False, pred_mask=True)
                 # we are assuming that batch size is 1.
                 roi_mask = roi_masks.data
 
-                mask = [roi_mask[:, l - 1, :, :] for l in label]
+                # label: [0, n_fg_class)
+                mask = [roi_mask[:, l, :, :] for l in label]
                 mask = self.xp.concatenate(mask, axis=0).astype(np.float32)
                 mask = F.sigmoid(mask).data
                 mask = cuda.to_cpu(mask)
-            masks.append(mask)
 
-        return bboxes, labels, scores, masks
+            lbl_ins = - np.ones(size[:2], dtype=np.int32)
+            lbl_cls = np.zeros(size[:2], dtype=np.int32)
+            for ins_id, (b, l, m) in enumerate(zip(bbox, label, mask)):
+                y1, x1, y2, x2 = map(int, b)
+                H_roi, W_roi = y2 - y1, x2 - x1
+                m = cv2.resize(m, (W_roi, H_roi))
+                m = m > 0.5  # float -> bool
+                # [0, n_fg_class) -> [0, n_class)
+                lbl_cls[y1:y2, x1:x2][m] = l + 1
+                lbl_ins[y1:y2, x1:x2][m] = ins_id
+
+            lbl_inss.append(lbl_ins)
+            lbl_clss.append(lbl_cls)
+
+        return lbl_inss, lbl_clss
