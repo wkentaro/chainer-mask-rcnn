@@ -322,7 +322,7 @@ class MaskRCNN(chainer.Chain):
                 raw_cls_bbox, raw_prob, raw_roi_index)
 
             if len(bbox) == 0:
-                mask = None
+                mask = []
             else:
                 bbox_s = bbox * scale
                 if self.xp != np:
