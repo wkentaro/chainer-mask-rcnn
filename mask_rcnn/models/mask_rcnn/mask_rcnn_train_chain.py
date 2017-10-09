@@ -149,7 +149,6 @@ class MaskRCNNTrainChain(chainer.Chain):
             k = int(gt_roi_label[i]) - 1  # class_label
             if k == -1:  # background
                 continue
-            y1, x1, y2, x2 = map(int, sample_roi[i])
             roi_mask_ik = roi_mask[i, k, :, :][None, None, :, :]
             roi_mask_ik = F.resize_images(roi_mask_ik, gt_roi_mask[i].shape)
             roi_mask_ik = roi_mask_ik[0, 0, :, :]
