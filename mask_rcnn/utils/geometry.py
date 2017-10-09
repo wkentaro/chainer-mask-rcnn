@@ -150,6 +150,16 @@ def label2instance_boxes(label_instance, label_class,
         return instance_classes, boxes
 
 
+def instance_boxes2label(labels, bboxes, masks):
+    _, H, W = masks.shape
+    lbl_ins = - np.ones((H, W), dtype=np.int32)
+    lbl_cls = np.zeros((H, W), dtype=np.int32)
+    for ins_id, (label, bbox, mask) in enumerate(zip(labels, bboxes, masks)):
+        lbl_cls[mask] = label
+        lbl_ins[mask] = ins_id
+    return lbl_ins, lbl_cls
+
+
 def mask_to_bbox(mask):
     """Convert mask image to bounding box.
 
