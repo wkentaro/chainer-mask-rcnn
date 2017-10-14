@@ -128,14 +128,16 @@ def main():
             prec, rec = mask_rcnn.utils.calc_instseg_voc_prec_rec(
                 [mask], [label], [score], [mask_true], [label_true])
             ap = chainercv.evaluations.calc_detection_voc_ap(prec, rec)
-            print('[%02d] map: %.2f' % (i, 100 * np.nanmean(ap)))
+            mean_ap = 100 * np.nanmean(ap)
+            print('[%02d] map: %.2f' % (i, mean_ap))
 
             viz_true = mask_rcnn.utils.visualize_instance_segmentation(
                 lbl_ins_true, lbl_cls_true, img, dataset_ins.class_names)
             viz_pred = mask_rcnn.utils.visualize_instance_segmentation(
                 lbl_ins, lbl_cls, img, dataset_ins.class_names)
             viz = mvtk.image.tile([viz_true, viz_pred], shape=(2, 1))
-            cv2.imwrite(osp.join(out, '%08d.jpg' % i), viz[:, :, ::-1])
+            cv2.imwrite(osp.join(out, '%08d.map=%.1f.jpg' % (i, mean_ap)),
+                        viz[:, :, ::-1])
             cv2.imwrite(osp.join(out, 'latest.jpg'), viz[:, :, ::-1])
 
         # train
