@@ -12,6 +12,7 @@ from .. import utils
 class VOCInstanceSegBase(chainer.dataset.DatasetMixin):
 
     class_names = fcn.datasets.voc.VOCClassSegBase.class_names
+    class_names.setflags(write=0)
 
 
 class VOC2012InstanceSeg(VOCInstanceSegBase):

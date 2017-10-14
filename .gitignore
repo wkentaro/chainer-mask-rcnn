@@ -1,2 +1,3 @@
 *.py[cdo]
 /*.egg-info/
+/.cache/
