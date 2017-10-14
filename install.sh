@@ -3,16 +3,16 @@
 set -e
 set -x
 
-if [ ! -e ~/.anaconda2/envs/mask_rcnn ]; then
+if [ ! -e ~/.anaconda2/envs/mask-rcnn ]; then
   set +x
   source ~/.anaconda2/bin/activate
   set -x
 
-  conda create -q -y --name=mask_rcnn python=2.7
+  conda create -q -y --name=mask-rcnn python=2.7
 fi
 
 set +x
-source ~/.anaconda2/bin/activate mask_rcnn
+source ~/.anaconda2/bin/activate mask-rcnn
 set -x
 
 conda info -e
