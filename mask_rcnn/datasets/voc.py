@@ -19,7 +19,11 @@ class VOC2012InstanceSeg(VOCInstanceSegBase):
 
     def __init__(self, split):
         assert split in ('train', 'val')
+
         dataset_dir = osp.expanduser('~/data/datasets/VOC/VOCdevkit/VOC2012')
+        if not osp.exists(dataset_dir):
+            self.download()
+
         imgsets_file = osp.join(
             dataset_dir, 'ImageSets/Segmentation/{}.txt'.format(split))
         self.files = []
@@ -36,6 +40,10 @@ class VOC2012InstanceSeg(VOCInstanceSegBase):
                 'seg_class': seg_class_file,
                 'seg_object': seg_object_file,
             })
+
+    @staticmethod
+    def download():
+        return fcn.datasets.voc.VOC2012ClassSeg.download()
 
     def __len__(self):
         return len(self.files)
