@@ -7,6 +7,36 @@ import numpy as np
 import mask_rcnn
 
 
+def _validate_bboxes(bboxes, H, W):
+    bboxes = np.asarray(bboxes)
+    bboxes[:, 0][bboxes[:, 0] < 0] = 0
+    bboxes[:, 0][bboxes[:, 0] >= H] = H - 1
+    bboxes[:, 1][bboxes[:, 1] < 0] = 0
+    bboxes[:, 1][bboxes[:, 1] >= W] = W - 1
+    bboxes[:, 2][bboxes[:, 2] < 0] = 0
+    bboxes[:, 2][bboxes[:, 2] >= H] = H - 1
+    bboxes[:, 3][bboxes[:, 3] < 0] = 0
+    bboxes[:, 3][bboxes[:, 3] >= W] = W - 1
+    keep = bboxes[:, 0] < bboxes[:, 2]
+    keep = keep & (bboxes[:, 1] < bboxes[:, 3])
+    bboxes = bboxes[keep]
+    return bboxes
+
+
+def _augment_bboxes(bboxes, H, W):
+    bboxes_aug = []
+    for _ in xrange(100):
+        for box in bboxes:
+            roi = []
+            for yx in box:
+                scale = np.random.normal(1.0, scale=0.2)
+                yx = int(scale * yx)
+                roi.append(yx)
+            bboxes_aug.append(roi)
+    bboxes_aug = _validate_bboxes(bboxes_aug, H, W)
+    return bboxes_aug
+
+
 def visualize_func(dataset, index):
     vizs = []
     img, lbl_cls, lbl_ins = dataset[index]
@@ -17,7 +47,7 @@ def visualize_func(dataset, index):
     labels, boxes, masks = mask_rcnn.utils.label2instance_boxes(
         lbl_ins, lbl_cls, return_masks=True)
     H, W = img.shape[:2]
-    rois = mask_rcnn.utils.augment_bboxes(boxes, H, W)
+    rois = _augment_bboxes(boxes, H, W)
     labels -= 1
 
     proposal_target_creator = ProposalTargetCreator()

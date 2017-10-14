@@ -20,36 +20,6 @@ def get_mask_overlap(mask1, mask2):
     return 1.0 * intersect / union
 
 
-def validate_bboxes(bboxes, H, W):
-    bboxes = np.asarray(bboxes)
-    bboxes[:, 0][bboxes[:, 0] < 0] = 0
-    bboxes[:, 0][bboxes[:, 0] >= H] = H - 1
-    bboxes[:, 1][bboxes[:, 1] < 0] = 0
-    bboxes[:, 1][bboxes[:, 1] >= W] = W - 1
-    bboxes[:, 2][bboxes[:, 2] < 0] = 0
-    bboxes[:, 2][bboxes[:, 2] >= H] = H - 1
-    bboxes[:, 3][bboxes[:, 3] < 0] = 0
-    bboxes[:, 3][bboxes[:, 3] >= W] = W - 1
-    keep = bboxes[:, 0] < bboxes[:, 2]
-    keep = keep & (bboxes[:, 1] < bboxes[:, 3])
-    bboxes = bboxes[keep]
-    return bboxes
-
-
-def augment_bboxes(bboxes, H, W):
-    bboxes_aug = []
-    for _ in xrange(100):
-        for box in bboxes:
-            roi = []
-            for yx in box:
-                scale = np.random.normal(1.0, scale=0.2)
-                yx = int(scale * yx)
-                roi.append(yx)
-            bboxes_aug.append(roi)
-    bboxes_aug = validate_bboxes(bboxes_aug, H, W)
-    return bboxes_aug
-
-
 def create_proposal_targets(rois, boxes, labels, masks,
                             loc_normalize_mean, loc_normalize_std):
     import chainer
