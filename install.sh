@@ -3,19 +3,24 @@
 set -e
 set -x
 
-if [ ! -e ~/.anaconda2/envs/mask-rcnn ]; then
-  set +x
-  source ~/.anaconda2/bin/activate
-  set -x
+# Setup Anaconda {{
 
+if [ ! -e $HOME/.anaconda2/bin/activate ]; then
+  echo 'Please install Anaconda to ~/.anaconda2'
+  exit 1
+fi
+unset PYTHONPATH
+set +x && source $HOME/.anaconda2/bin/activate && set -x
+conda --version
+
+if [ ! -e $CONDA_PREFIX/envs/mask-rcnn ]; then
   conda create -q -y --name=mask-rcnn python=2.7
 fi
-
-set +x
-source ~/.anaconda2/bin/activate mask-rcnn
-set -x
+set +x && source activate mask-rcnn && set -x
 
 conda info -e
+
+# }}
 
 conda install -q -y -c menpo opencv
 conda install -q -y pyqt
