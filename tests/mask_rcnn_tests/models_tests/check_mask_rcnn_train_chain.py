@@ -117,6 +117,18 @@ def main():
             lbl_ins = lbl_inss[0]
             lbl_cls = lbl_clss[0]
 
+            label_true, bbox_true, mask_true = \
+                mask_rcnn.utils.label2instance_boxes(
+                    lbl_ins_true, lbl_cls_true, return_masks=True)
+            label, bbox, mask = mask_rcnn.utils.label2instance_boxes(
+                lbl_ins, lbl_cls, return_masks=True)
+            score = np.ones((len(mask),), dtype=np.float64)
+
+            prec, rec = mask_rcnn.utils.calc_instseg_voc_prec_rec(
+                [mask], [label], [score], [mask_true], [label_true])
+            ap = chainercv.evaluations.calc_detection_voc_ap(prec, rec)
+            print('[%02d] map: %.2f' % (i, 100 * np.nanmean(ap)))
+
             viz_true = mask_rcnn.utils.visualize_instance_segmentation(
                 lbl_ins_true, lbl_cls_true, img, dataset_ins.class_names)
             viz_pred = mask_rcnn.utils.visualize_instance_segmentation(
