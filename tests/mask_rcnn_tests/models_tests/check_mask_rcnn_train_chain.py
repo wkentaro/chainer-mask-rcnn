@@ -70,7 +70,6 @@ def main():
             idx = np.random.randint(0, len(dataset))
         img, bbox, label, mask = dataset[idx]
         img = img.transpose(2, 0, 1)
-        label -= 1
 
         _, H, W = img.shape
         img = model.mask_rcnn.prepare(img)
@@ -120,8 +119,10 @@ def main():
             label_true, bbox_true, mask_true = \
                 mask_rcnn.utils.label2instance_boxes(
                     lbl_ins_true, lbl_cls_true, return_masks=True)
+            label_true -= 1
             label, bbox, mask = mask_rcnn.utils.label2instance_boxes(
                 lbl_ins, lbl_cls, return_masks=True)
+            label -= 1
             score = np.ones((len(mask),), dtype=np.float64)
 
             prec, rec = mask_rcnn.utils.calc_instseg_voc_prec_rec(

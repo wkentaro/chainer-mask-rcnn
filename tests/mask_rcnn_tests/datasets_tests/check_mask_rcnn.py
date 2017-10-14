@@ -12,8 +12,10 @@ def visualize_func(dataset, index):
     bboxes = bboxes.astype(np.int32)
     masks = masks.astype(bool)
 
+    n_fg_class = dataset.n_class - 1
+
     viz = mask_rcnn.utils.draw_instance_boxes(
-        img, bboxes, labels, n_class=dataset.n_class)
+        img, bboxes, labels, n_class=n_fg_class)
 
     viz1 = mvtk.image.tile([img, viz])
 
@@ -28,7 +30,7 @@ def visualize_func(dataset, index):
         H, W = viz.shape[:2]
         viz = mask_rcnn.utils.draw_instance_boxes(
             viz, [(0, 0, H, W)], [label],
-            n_class=21, thickness=10)
+            n_class=n_fg_class, thickness=10)
         vizs.append(viz)
     viz2 = mvtk.image.tile(vizs)
 

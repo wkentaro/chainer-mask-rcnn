@@ -20,7 +20,6 @@ dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset_ins)
 
 img, bbox, label, mask = dataset[0]
 img = img.transpose(2, 0, 1)
-label -= 1
 
 _, H, W = img.shape
 img = model.prepare(img)
