@@ -5,12 +5,14 @@ set -x
 
 # Setup Anaconda {{
 
-if [ ! -e $HOME/.anaconda2/bin/activate ]; then
+export CONDA_PREFIX=$HOME/.anaconda2
+
+if [ ! -e $CONDA_PREFIX/bin/activate ]; then
   echo 'Please install Anaconda to ~/.anaconda2'
   exit 1
 fi
 unset PYTHONPATH
-set +x && source $HOME/.anaconda2/bin/activate && set -x
+set +x && source $CONDA_PREFIX/bin/activate && set -x
 conda --version
 
 if [ ! -e $CONDA_PREFIX/envs/mask-rcnn ]; then
@@ -26,6 +28,7 @@ conda install -q -y -c menpo opencv
 conda install -q -y pyqt
 
 pip install Cython
+pip install -U numpy
 
 pip install git+https://github.com/wkentaro/mvtk.git
 
