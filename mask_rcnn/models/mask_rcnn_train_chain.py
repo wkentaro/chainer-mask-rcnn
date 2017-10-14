@@ -9,7 +9,7 @@ from chainercv.links.model.faster_rcnn.utils.anchor_target_creator import\
 from chainercv.links.model.faster_rcnn.utils.proposal_target_creator import\
     ProposalTargetCreator
 
-from ...utils import create_proposal_targets
+from ..utils import create_proposal_targets
 
 
 class MaskRCNNTrainChain(chainer.Chain):
