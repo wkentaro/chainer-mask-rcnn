@@ -1,14 +1,13 @@
 from __future__ import print_function
 
-import chainercv
 import cv2
 import numpy as np
 
 import mask_rcnn
-from mask_rcnn.utils.evaluations import calc_instseg_voc_prec_rec
+from mask_rcnn.utils.evaluations import eval_instseg_voc
 
 
-def check_calc_instseg_voc_prec_rec():
+def check_eval_instseg_voc():
     dataset = mask_rcnn.datasets.VOC2012InstanceSeg('train')
     img, lbl_cls_true, lbl_ins_true = dataset.get_example(0)
 
@@ -46,10 +45,10 @@ def check_calc_instseg_voc_prec_rec():
     pred_labels = [pred_label]
     pred_scores = [pred_score]
 
-    prec, rec = calc_instseg_voc_prec_rec(
-        pred_masks, pred_labels, pred_scores, gt_masks, gt_labels)
-
-    ap = chainercv.evaluations.calc_detection_voc_ap(prec, rec)
+    ap = eval_instseg_voc(
+        pred_masks, pred_labels, pred_scores, gt_masks, gt_labels,
+        use_07_metric=True)
+    ap = ap['ap']
     for cls_id, cls_name in enumerate(dataset.class_names[1:]):
         if cls_id >= len(ap):
             cls_ap = None
@@ -62,4 +61,4 @@ def check_calc_instseg_voc_prec_rec():
     cv2.waitKey(0)
 
 
-check_calc_instseg_voc_prec_rec()
+check_eval_instseg_voc()

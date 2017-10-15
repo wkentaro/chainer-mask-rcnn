@@ -3,6 +3,7 @@ from __future__ import division
 from collections import defaultdict
 import itertools
 
+from chainercv.evaluations import calc_detection_voc_ap
 import numpy as np
 import six
 
@@ -163,3 +164,18 @@ def calc_instseg_voc_prec_rec(
             rec[l] = tp / n_pos[l]
 
     return prec, rec
+
+
+def eval_instseg_voc(
+        pred_masks, pred_labels, pred_scores, gt_masks, gt_labels,
+        gt_difficults=None,
+        iou_thresh=0.5, use_07_metric=False):
+
+    prec, rec = calc_instseg_voc_prec_rec(
+        pred_masks, pred_labels, pred_scores,
+        gt_masks, gt_labels, gt_difficults,
+        iou_thresh=iou_thresh)
+
+    ap = calc_detection_voc_ap(prec, rec, use_07_metric=use_07_metric)
+
+    return {'ap': ap, 'map': np.nanmean(ap)}
