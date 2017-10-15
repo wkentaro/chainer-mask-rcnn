@@ -30,6 +30,8 @@ from chainercv.utils import non_maximum_suppression
 
 from chainercv.transforms.image.resize import resize
 
+from ..utils import instance_boxes2label
+
 
 class MaskRCNN(chainer.Chain):
 
@@ -251,7 +253,7 @@ class MaskRCNN(chainer.Chain):
         roi_index = np.concatenate(roi_index, axis=0).astype(np.int32)
         return bbox, label, score, roi_index
 
-    def predict(self, imgs):
+    def predict_masks(self, imgs):
         """Detect objects from images.
 
         This method predicts objects for each image.
@@ -273,8 +275,10 @@ class MaskRCNN(chainer.Chain):
             prepared_imgs.append(img)
             sizes.append(size)
 
-        lbl_inss = list()
-        lbl_clss = list()
+        bboxes = list()
+        masks = list()
+        labels = list()
+        scores = list()
         for img, size in zip(prepared_imgs, sizes):
             with chainer.using_config('train', False), \
                     chainer.function.no_backprop_mode():
@@ -321,8 +325,12 @@ class MaskRCNN(chainer.Chain):
             bbox, label, score, roi_index = self._suppress(
                 raw_cls_bbox, raw_prob, raw_roi_index)
 
+            bboxes.append(bbox)
+            labels.append(label)
+            scores.append(score)
+
             if len(bbox) == 0:
-                mask = []
+                roi_mask = []
             else:
                 bbox_s = bbox * scale
                 if self.xp != np:
@@ -334,23 +342,31 @@ class MaskRCNN(chainer.Chain):
                 roi_mask = roi_masks.data
 
                 # label: [0, n_fg_class)
-                mask = [roi_mask[:, l, :, :] for l in label]
-                mask = self.xp.concatenate(mask, axis=0).astype(np.float32)
-                mask = F.sigmoid(mask).data
-                mask = cuda.to_cpu(mask)
+                roi_mask = [roi_mask[:, l, :, :] for l in label]
+                roi_mask = self.xp.concatenate(
+                    roi_mask, axis=0).astype(np.float32)
+                roi_mask = F.sigmoid(roi_mask).data
+                roi_mask = cuda.to_cpu(roi_mask)
 
-            lbl_ins = - np.ones(size[:2], dtype=np.int32)
-            lbl_cls = np.zeros(size[:2], dtype=np.int32)
-            for ins_id, (b, l, m) in enumerate(zip(bbox, label, mask)):
+            mask = np.zeros((len(bbox), size[0], size[1]), dtype=bool)
+            for i, (b, l, m, s) in \
+                    enumerate(zip(bbox, label, roi_mask, score)):
                 y1, x1, y2, x2 = map(int, b)
                 H_roi, W_roi = y2 - y1, x2 - x1
                 m = cv2.resize(m, (W_roi, H_roi))
                 m = m > 0.5  # float -> bool
-                # [0, n_fg_class) -> [0, n_class)
-                lbl_cls[y1:y2, x1:x2][m] = l + 1
-                lbl_ins[y1:y2, x1:x2][m] = ins_id
+                mask[i, y1:y2, x1:x2][m] = True
+            masks.append(mask)
 
+        return bboxes, masks, labels, scores
+
+    def predict(self, imgs):
+        lbl_inss = list()
+        lbl_clss = list()
+        bboxes, masks, labels, scores = self.predict_masks(imgs)
+        for bbox, mask, label, score in zip(bboxes, masks, labels, scores):
+            label += 1  # background: -1 -> 0
+            lbl_ins, lbl_cls = instance_boxes2label(label, bbox, mask, score)
             lbl_inss.append(lbl_ins)
             lbl_clss.append(lbl_cls)
-
         return lbl_inss, lbl_clss

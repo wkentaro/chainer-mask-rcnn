@@ -120,13 +120,21 @@ def label2instance_boxes(label_instance, label_class,
         return instance_classes, boxes
 
 
-def instance_boxes2label(labels, bboxes, masks):
+def instance_boxes2label(labels, bboxes, masks, scores=None):
+    if scores is not None:
+        # sort ascending order of score
+        indices = np.argsort(scores)
+        labels = labels[indices]
+        bboxes = bboxes[indices]
+        masks = masks[indices]
+
     _, H, W = masks.shape
     lbl_ins = - np.ones((H, W), dtype=np.int32)
     lbl_cls = np.zeros((H, W), dtype=np.int32)
     for ins_id, (label, bbox, mask) in enumerate(zip(labels, bboxes, masks)):
         lbl_cls[mask] = label
         lbl_ins[mask] = ins_id
+
     return lbl_ins, lbl_cls
 
 
