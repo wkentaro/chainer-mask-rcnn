@@ -37,9 +37,15 @@ def create_proposal_targets(rois, boxes, labels, masks,
             rois, boxes, labels,
             loc_normalize_mean, loc_normalize_std)
 
+    N, H, W = masks.shape
+    assert boxes.shape == (N, 4)
+    assert labels.shape == (N,)
+
     gt_roi_masks = []
     for id_cls, roi in zip(gt_roi_labels, sample_rois):
         y1, x1, y2, x2 = map(int, roi)
+        assert 0 <= y1 and y2 <= H
+        assert 0 <= x1 and x2 <= W
         if id_cls == 0:
             gt_roi_masks.append(None)
             continue
