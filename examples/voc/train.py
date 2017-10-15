@@ -6,8 +6,11 @@ import argparse
 import copy
 import datetime
 import numpy as np
+import os
 import os.path as osp
 import pprint
+
+os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
 import chainer
 from chainer.datasets import TransformDataset
@@ -47,6 +50,23 @@ class Transform(object):
         return img, bbox, label, mask, scale
 
 
+class OverfitDataset(chainer.dataset.DatasetMixin):
+
+    def __init__(self, dataset, indices=0):
+        self._dataset = dataset
+
+        if isinstance(indices, int):
+            indices = [indices]
+        self._indices = indices
+
+    def __len__(self):
+        return len(self._indices)
+
+    def get_example(self, i):
+        index = self._indices[i]
+        return self._dataset.get_example(index)
+
+
 class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
 
     def __init__(
@@ -60,8 +80,7 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
 
     def __call__(self, trainer=None):
         self._trainer = trainer
-        return super(InstanceSegmentationVOCEvaluator, self).__call__(
-            self, trainer)
+        return super(InstanceSegmentationVOCEvaluator, self).__call__(trainer)
 
     def evaluate(self):
         iterator = self._iterators['main']
@@ -73,20 +92,23 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
         else:
             it = copy.copy(iterator)
 
+        # TODO(wkentaro): visualize prediction
+
         imgs, pred_values, gt_values = apply_prediction_to_iterator(
             target.predict_masks, it)
         # delete unused iterator explicitly
         del imgs
 
-        pred_masks, pred_labels, pred_scores = pred_values
+        pred_bboxes, pred_masks, pred_labels, pred_scores = pred_values
+        del pred_bboxes
 
-        if len(gt_values) == 3:
-            gt_masks, gt_labels, gt_difficults = gt_values
-        elif len(gt_values) == 2:
-            gt_masks, gt_labels = gt_values
+        if len(gt_values) == 4:
+            gt_bboxes, gt_labels, gt_masks, gt_difficults = gt_values
+        elif len(gt_values) == 3:
+            gt_bboxes, gt_labels, gt_masks = gt_values
             gt_difficults = None
 
-        result = mrcnn.utils.evaluations.calc_detection_voc_ap(
+        result = mrcnn.utils.evaluations.eval_instseg_voc(
             pred_masks, pred_labels, pred_scores,
             gt_masks, gt_labels, gt_difficults,
             use_07_metric=self.use_07_metric)
@@ -124,6 +146,8 @@ def main():
                         help='Iteration size.')
     parser.add_argument('--weight_decay', type=float, default=0.0005,
                         help='Weight decay.')
+    parser.add_argument('--overfit', action='store_true',
+                        help='Do overfit training (single image).')
     args = parser.parse_args()
 
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -135,6 +159,7 @@ def main():
             'step_size={step_size}',
             'iteration={iteration}',
             'weight_decay={weight_decay}',
+            'overfit={overfit}',
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
     )
@@ -147,9 +172,16 @@ def main():
         mrcnn.datasets.VOC2012InstanceSeg('train'))
     test_data = mrcnn.datasets.MaskRcnnDataset(
         mrcnn.datasets.VOC2012InstanceSeg('val'))
+    if args.overfit:
+        train_data = OverfitDataset(train_data, indices=0)
+        test_data = OverfitDataset(train_data, indices=0)
+
+    # mask_rcnn = mrcnn.models.MaskRCNNVGG16(
+    #     n_fg_class=len(voc_bbox_label_names),
+    #     pretrained_model='imagenet')
     mask_rcnn = mrcnn.models.MaskRCNNVGG16(
         n_fg_class=len(voc_bbox_label_names),
-        pretrained_model='imagenet')
+        pretrained_model='voc0712_faster_rcnn')
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
@@ -159,6 +191,15 @@ def main():
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
 
     train_data = TransformDataset(train_data, Transform(mask_rcnn))
+
+    def transform_test_data(in_data):
+        img = in_data[0]
+        img = img.transpose(2, 0, 1)
+        out_data = list(in_data)
+        out_data[0] = img
+        return tuple(out_data)
+
+    test_data = TransformDataset(test_data, transform_test_data)
 
     train_iter = chainer.iterators.MultiprocessIterator(
         train_data, batch_size=1, n_processes=None, shared_mem=100000000)
@@ -173,10 +214,16 @@ def main():
     trainer.extend(extensions.ExponentialShift('lr', 0.1),
                    trigger=(args.step_size, 'iteration'))
 
-    eval_interval = 3000, 'iteration'
-    log_interval = 20, 'iteration'
-    plot_interval = 3000, 'iteration'
-    print_interval = 20, 'iteration'
+    if args.overfit:
+        eval_interval = 100, 'iteration'
+        log_interval = 1, 'iteration'
+        plot_interval = 100, 'iteration'
+        print_interval = 1, 'iteration'
+    else:
+        eval_interval = 3000, 'iteration'
+        log_interval = 20, 'iteration'
+        plot_interval = 3000, 'iteration'
+        print_interval = 20, 'iteration'
 
     trainer.extend(
         InstanceSegmentationVOCEvaluator(
