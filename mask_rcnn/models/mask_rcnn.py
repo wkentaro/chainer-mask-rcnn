@@ -353,7 +353,12 @@ class MaskRCNN(chainer.Chain):
                     enumerate(zip(bbox, label, roi_mask, score)):
                 y1, x1, y2, x2 = map(int, b)
                 H_roi, W_roi = y2 - y1, x2 - x1
-                m = cv2.resize(m, (W_roi, H_roi))
+                # FIXME
+                try:
+                    m = cv2.resize(m, (W_roi, H_roi))
+                except Exception as e:
+                    print(m.shape, (H_roi, W_roi))
+                    raise e
                 m = m > 0.5  # float -> bool
                 mask[i, y1:y2, x1:x2][m] = True
             masks.append(mask)
