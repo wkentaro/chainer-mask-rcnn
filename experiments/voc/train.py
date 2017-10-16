@@ -228,8 +228,8 @@ def main():
     test_data = mrcnn.datasets.MaskRcnnDataset(
         mrcnn.datasets.VOC2012InstanceSeg('val'))
     if args.overfit:
-        train_data = OverfitDataset(train_data, indices=0)
-        test_data = OverfitDataset(train_data, indices=0)
+        train_data = OverfitDataset(train_data, indices=range(0, 9))
+        test_data = OverfitDataset(train_data, indices=range(0, 9))
 
     # mask_rcnn = mrcnn.models.MaskRCNNVGG16(
     #     n_fg_class=len(voc_bbox_label_names),
