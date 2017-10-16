@@ -13,6 +13,7 @@ from chainer import training
 from chainer.training import extensions
 from chainercv.datasets import voc_bbox_label_names
 from chainercv.extensions import DetectionVOCEvaluator
+from chainercv.links import FasterRCNNResNet101
 from chainercv.links import FasterRCNNResNet50
 from chainercv.links import FasterRCNNVGG16
 from chainercv.links.model.faster_rcnn import FasterRCNNTrainChain
@@ -87,7 +88,7 @@ here = osp.dirname(osp.abspath(__file__))
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--model', choices=('vgg16', 'resnet50'),
+    parser.add_argument('--model', choices=('vgg16', 'resnet50', 'resnet101'),
                         help='The model to use', default='vgg16')
     parser.add_argument('--gpu', '-g', type=int, default=-1)
     parser.add_argument('--lr', '-l', type=float, default=1e-3)
@@ -128,6 +129,10 @@ def main():
         faster_rcnn = FasterRCNNResNet50(n_fg_class=len(voc_bbox_label_names),
                                          pretrained_model='imagenet',
                                          roi_align=True)
+    elif args.model == 'resnet101':
+        faster_rcnn = FasterRCNNResNet101(n_fg_class=len(voc_bbox_label_names),
+                                          pretrained_model='imagenet',
+                                          roi_align=True)
     else:
         raise ValueError
     faster_rcnn.use_preset('evaluate')
@@ -140,7 +145,7 @@ def main():
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
 
     # This is only relevant to ResNet training.
-    if args.model == 'resnet50':
+    if args.model in ['resnet50', 'resnet101']:
         for p in model.params():
             # Do not update batch normalization layers.
             if p.name == 'gamma':
