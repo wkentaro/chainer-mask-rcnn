@@ -139,6 +139,7 @@ def instance_boxes2label(labels, bboxes, masks, scores=None):
     lbl_cls = np.zeros((H, W), dtype=np.int32)
     for ins_id, (label, bbox, mask) in enumerate(zip(labels, bboxes, masks)):
         assert label > 0  # instance must be foreground
+        assert mask.dtype == bool
         lbl_cls[mask] = label
         lbl_ins[mask] = ins_id
 
