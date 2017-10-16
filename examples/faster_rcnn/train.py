@@ -11,7 +11,6 @@ import chainer
 from chainer.datasets import TransformDataset
 from chainer import training
 from chainer.training import extensions
-from chainer.training.triggers import ManualScheduleTrigger
 from chainercv.datasets import voc_bbox_label_names
 from chainercv.extensions import DetectionVOCEvaluator
 from chainercv.links import FasterRCNNResNet50
@@ -166,16 +165,23 @@ def main():
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
-    trainer.extend(
-        extensions.snapshot_object(model.faster_rcnn, 'snapshot_model.npz'),
-        trigger=(args.iteration, 'iteration'))
     trainer.extend(extensions.ExponentialShift('lr', 0.1),
                    trigger=(args.step_size, 'iteration'))
 
+    eval_interval = 3000, 'iteration'
     log_interval = 20, 'iteration'
     plot_interval = 3000, 'iteration'
     print_interval = 20, 'iteration'
 
+    trainer.extend(
+        DetectionVOCEvaluator(
+            test_iter, model.faster_rcnn, use_07_metric=True,
+            label_names=voc_bbox_label_names),
+        trigger=eval_interval)
+    trainer.extend(
+        extensions.snapshot_object(model.faster_rcnn, 'snapshot_model.npz'),
+        trigger=training.triggers.MaxValueTrigger(
+            'validation/main/map', eval_interval))
     trainer.extend(chainer.training.extensions.observe_lr(),
                    trigger=log_interval)
     trainer.extend(extensions.LogReport(trigger=log_interval))
@@ -202,15 +208,13 @@ def main():
             ),
             trigger=plot_interval
         )
-
-    points = [i * args.iteration // 10 for i in xrange(10)]
-    points += [args.step_size, args.iteration]
-    points = sorted(list(set(points)))
-    trainer.extend(
-        DetectionVOCEvaluator(
-            test_iter, model.faster_rcnn, use_07_metric=True,
-            label_names=voc_bbox_label_names),
-        trigger=ManualScheduleTrigger(points, 'iteration'))
+        trainer.extend(
+            extensions.PlotReport(
+                ['validation/main/map'],
+                file_name='accuracy.png', trigger=plot_interval
+            ),
+            trigger=plot_interval
+        )
 
     trainer.extend(extensions.dump_graph('main/loss'))
 
