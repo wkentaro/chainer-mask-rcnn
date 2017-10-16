@@ -4,8 +4,11 @@ from __future__ import division
 
 import argparse
 import datetime
+import os
 import os.path as osp
 import pprint
+
+os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
 import chainer
 from chainer.datasets import TransformDataset
