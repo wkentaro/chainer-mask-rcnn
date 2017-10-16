@@ -237,13 +237,6 @@ def main():
     mask_rcnn = mrcnn.models.MaskRCNNVGG16(
         n_fg_class=len(voc_bbox_label_names),
         pretrained_model='voc0712_faster_rcnn')
-    if args.only_maskbranch:
-        mask_rcnn.extractor.disable_update()
-        mask_rcnn.rpn.disable_update()
-        mask_rcnn.head.fc6.disable_update()
-        mask_rcnn.head.fc7.disable_update()
-        mask_rcnn.head.cls_loc.disable_update()
-        mask_rcnn.head.score.disable_update()
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
@@ -251,6 +244,9 @@ def main():
     optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
+    if args.only_maskbranch:
+        mask_rcnn.extractor.disable_update()
+        mask_rcnn.rpn.disable_update()
 
     train_data = TransformDataset(train_data, Transform(mask_rcnn))
 
