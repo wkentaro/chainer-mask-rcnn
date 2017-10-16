@@ -33,6 +33,9 @@ conda install -q -y pyqt
 pip install Cython
 pip install -U numpy
 
+# install mvtk
+pip install scikit-image
+pip install imgaug
 pip install git+https://github.com/wkentaro/mvtk.git
 
 (cd chainer && pip install -e .)
