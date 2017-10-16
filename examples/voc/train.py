@@ -128,8 +128,8 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
             for img, gt_bbox, gt_label, gt_mask, \
                 pred_bbox, pred_label, pred_mask, pred_score \
                     in six.moves.zip(imgs, gt_bboxes2, gt_labels2, gt_masks2,
-                                    pred_bboxes2, pred_labels2, pred_masks2,
-                                    pred_scores2):
+                                     pred_bboxes2, pred_labels2, pred_masks2,
+                                     pred_scores2):
                 # organize input
                 img = img.transpose(1, 2, 0)  # CHW -> HWC
                 gt_mask = gt_mask.astype(bool)
@@ -151,7 +151,6 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
                 if len(vizs) >= n_viz:
                     break
             viz = mvtk.image.tile(vizs)
-            updater = trainer.updater
             file_name = osp.join(
                 trainer.out, self.file_name % trainer.updater.iteration)
             try:
