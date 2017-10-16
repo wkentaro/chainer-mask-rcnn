@@ -76,14 +76,7 @@ def main():
         _, o_H, o_W = img.shape
         scale = 1. * o_H / H
         bbox = chainercv.transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
-        mask_resized = [None] * len(mask)
-        for i_m in range(len(mask)):
-            if mask[i_m] is None:
-                continue
-            mask_resized[i_m] = cv2.resize(
-                mask[i_m], None, None, fx=scale, fy=scale,
-                interpolation=cv2.INTER_NEAREST)
-        mask = mask_resized
+        mask = chainercv.transforms.resize(mask, (o_H, o_W), interpolation=0)
 
         imgs = np.asarray([img])
         bboxes = np.asarray([bbox])
