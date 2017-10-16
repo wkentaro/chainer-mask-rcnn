@@ -52,6 +52,9 @@ def main():
     optimizer = chainer.optimizers.MomentumSGD(lr=1e-3, momentum=0.9)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=0.0005))
+    if True:
+        model.mask_rcnn.extractor.disable_update()
+        model.mask_rcnn.rpn.disable_update()
 
     # dataset
     dataset_ins = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
