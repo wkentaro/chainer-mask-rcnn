@@ -33,6 +33,7 @@ pip install -U numpy
 pip install git+https://github.com/wkentaro/mvtk.git
 
 (cd chainer && pip install -e .)
+(cd chainercv && pip install -e .)
 
 pip install -e .
 
