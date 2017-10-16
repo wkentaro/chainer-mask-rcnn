@@ -118,6 +118,10 @@ class MaskRCNNTrainChain(chainer.Chain):
         roi = rois
         mask = masks[0]
 
+        # FIXME
+        if len(bbox) == 0:
+            return chainer.Variable(0)
+
         # Sample RoIs and forward
         sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
             create_proposal_targets(
