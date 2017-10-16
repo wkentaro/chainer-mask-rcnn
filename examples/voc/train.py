@@ -201,7 +201,7 @@ def main():
                         help='Weight decay.')
     parser.add_argument('--overfit', action='store_true',
                         help='Do overfit training (single image).')
-    parser.add_argument('--only-maskbranch', action='store_true')
+    parser.add_argument('--head-only', action='store_true')
     args = parser.parse_args()
 
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -214,7 +214,7 @@ def main():
             'iteration={iteration}',
             'weight_decay={weight_decay}',
             'overfit={overfit}',
-            'only_maskbranch={only_maskbranch}',
+            'head_only={head_only}',
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
     )
@@ -244,7 +244,7 @@ def main():
     optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
-    if args.only_maskbranch:
+    if args.head_only:
         mask_rcnn.extractor.disable_update()
         mask_rcnn.rpn.disable_update()
 
