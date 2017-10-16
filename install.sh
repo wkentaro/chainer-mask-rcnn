@@ -3,6 +3,9 @@
 set -e
 set -x
 
+# Initialize
+git submodule update --init --recursive
+
 # Setup Anaconda {{
 
 export CONDA_PREFIX=$HOME/.anaconda2
