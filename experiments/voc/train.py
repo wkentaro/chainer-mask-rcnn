@@ -148,6 +148,7 @@ def main():
                         help='Weight decay.')
     parser.add_argument('--overfit', action='store_true',
                         help='Do overfit training (single image).')
+    parser.add_argument('--only-maskbranch', action='store_true')
     args = parser.parse_args()
 
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -160,6 +161,7 @@ def main():
             'iteration={iteration}',
             'weight_decay={weight_decay}',
             'overfit={overfit}',
+            'only_maskbranch={only_maskbranch}',
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
     )
@@ -182,6 +184,13 @@ def main():
     mask_rcnn = mrcnn.models.MaskRCNNVGG16(
         n_fg_class=len(voc_bbox_label_names),
         pretrained_model='voc0712_faster_rcnn')
+    if args.only_maskbranch:
+        mask_rcnn.extractor.disable_update()
+        mask_rcnn.rpn.disable_update()
+        mask_rcnn.head.fc6.disable_update()
+        mask_rcnn.head.fc7.disable_update()
+        mask_rcnn.head.cls_loc.disable_update()
+        mask_rcnn.head.score.disable_update()
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
