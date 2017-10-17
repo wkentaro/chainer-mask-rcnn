@@ -201,6 +201,7 @@ def main():
     parser.add_argument('--overfit', action='store_true',
                         help='Do overfit training (single image).')
     parser.add_argument('--head-only', action='store_true')
+    parser.add_argument('--mask-only', action='store_true')
     args = parser.parse_args()
 
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -214,6 +215,7 @@ def main():
             'weight_decay={weight_decay}',
             'overfit={overfit}',
             'head_only={head_only}',
+            'mask_only={mask_only}',
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
     )
@@ -233,9 +235,12 @@ def main():
     # mask_rcnn = mrcnn.models.MaskRCNNVGG16(
     #     n_fg_class=len(voc_bbox_label_names),
     #     pretrained_model='imagenet')
+    # mask_rcnn = mrcnn.models.MaskRCNNVGG16(
+    #     n_fg_class=len(voc_bbox_label_names),
+    #     pretrained_model='voc0712_faster_rcnn')
     mask_rcnn = mrcnn.models.MaskRCNNVGG16(
         n_fg_class=len(voc_bbox_label_names),
-        pretrained_model='voc0712_faster_rcnn')
+        pretrained_model='voc12_train_faster_rcnn')
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
@@ -243,9 +248,14 @@ def main():
     optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
-    if args.head_only:
+    if args.head_only or args.mask_only:
         mask_rcnn.extractor.disable_update()
         mask_rcnn.rpn.disable_update()
+        if args.mask_only:
+            mask_rcnn.head.fc6.disable_update()
+            mask_rcnn.head.fc7.disable_update()
+            mask_rcnn.head.cls_loc.disable_update()
+            mask_rcnn.head.score.disable_update()
 
     train_data = TransformDataset(train_data, Transform(mask_rcnn))
 
