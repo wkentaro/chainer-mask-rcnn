@@ -161,11 +161,6 @@ class VGG16RoIHead(chainer.Chain):
             roi_cls_locs = self.cls_loc(fc7)
             roi_scores = self.score(fc7)
 
-            fc6 = F.relu(self.fc6(pool))
-            fc7 = F.relu(self.fc7(fc6))
-            roi_cls_locs = self.cls_loc(fc7)
-            roi_scores = self.score(fc7)
-
         if pred_mask:
             deconv6 = F.relu(self.deconv6(pool))
             roi_masks = self.mask(deconv6)
