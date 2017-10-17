@@ -187,6 +187,8 @@ here = osp.dirname(osp.abspath(__file__))
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--model', choices=['vgg16', 'resnet50'],
+                        default='vgg16', help='Base model of Mask R-CNN.')
     parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
     parser.add_argument('--lr', '-l', type=float, default=1e-3,
                         help='Learning rate.')
@@ -208,6 +210,7 @@ def main():
     args.out = osp.join(
         here, 'logs',
         '.'.join([
+            'model={model}',
             'lr={lr}',
             'seed={seed}',
             'step_size={step_size}',
@@ -232,15 +235,23 @@ def main():
         train_data = OverfitDataset(train_data, indices=range(0, 9))
         test_data = OverfitDataset(train_data, indices=range(0, 9))
 
-    # mask_rcnn = mrcnn.models.MaskRCNNVGG16(
-    #     n_fg_class=len(voc_bbox_label_names),
-    #     pretrained_model='imagenet')
-    # mask_rcnn = mrcnn.models.MaskRCNNVGG16(
-    #     n_fg_class=len(voc_bbox_label_names),
-    #     pretrained_model='voc0712_faster_rcnn')
-    mask_rcnn = mrcnn.models.MaskRCNNVGG16(
-        n_fg_class=len(voc_bbox_label_names),
-        pretrained_model='voc12_train_faster_rcnn')
+    if args.model == 'vgg16':
+        # mask_rcnn = mrcnn.models.MaskRCNNVGG16(
+        #     n_fg_class=len(voc_bbox_label_names),
+        #     pretrained_model='imagenet')
+        # mask_rcnn = mrcnn.models.MaskRCNNVGG16(
+        #     n_fg_class=len(voc_bbox_label_names),
+        #     pretrained_model='voc0712_faster_rcnn')
+        mask_rcnn = mrcnn.models.MaskRCNNVGG16(
+            n_fg_class=len(voc_bbox_label_names),
+            pretrained_model='voc12_train_faster_rcnn')
+    elif args.model == 'resnet50':
+        mask_rcnn = mrcnn.models.MaskRCNNResNet(
+            resnet_name='resnet50',
+            n_fg_class=len(voc_bbox_label_names),
+            pretrained_model='voc12_train_faster_rcnn')
+    else:
+        raise ValueError
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
@@ -252,10 +263,15 @@ def main():
         mask_rcnn.extractor.disable_update()
         mask_rcnn.rpn.disable_update()
         if args.mask_only:
-            mask_rcnn.head.fc6.disable_update()
-            mask_rcnn.head.fc7.disable_update()
-            mask_rcnn.head.cls_loc.disable_update()
-            mask_rcnn.head.score.disable_update()
+            if args.model == 'vgg16':
+                mask_rcnn.head.fc6.disable_update()
+                mask_rcnn.head.fc7.disable_update()
+                mask_rcnn.head.cls_loc.disable_update()
+                mask_rcnn.head.score.disable_update()
+            elif args.model == 'resnet50':
+                mask_rcnn.head.res5.disable_update()
+                mask_rcnn.head.cls_loc.disable_update()
+                mask_rcnn.head.score.disable_update()
 
     train_data = TransformDataset(train_data, Transform(mask_rcnn))
 
