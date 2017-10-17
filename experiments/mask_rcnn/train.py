@@ -187,7 +187,7 @@ here = osp.dirname(osp.abspath(__file__))
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--model', choices=['vgg16', 'resnet50'],
+    parser.add_argument('--model', choices=['vgg16', 'resnet50', 'resnet101'],
                         default='vgg16', help='Base model of Mask R-CNN.')
     parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
     parser.add_argument('--lr', '-l', type=float, default=1e-3,
@@ -245,9 +245,9 @@ def main():
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(voc_bbox_label_names),
             pretrained_model='voc12_train_faster_rcnn')
-    elif args.model == 'resnet50':
+    elif args.model in ['resnet50', 'resnet101']:
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
-            resnet_name='resnet50',
+            resnet_name=args.model,
             n_fg_class=len(voc_bbox_label_names),
             pretrained_model='voc12_train_faster_rcnn')
     else:
@@ -268,7 +268,7 @@ def main():
                 mask_rcnn.head.fc7.disable_update()
                 mask_rcnn.head.cls_loc.disable_update()
                 mask_rcnn.head.score.disable_update()
-            elif args.model == 'resnet50':
+            elif args.model in ['resnet50', 'resnet101']:
                 mask_rcnn.head.res5.disable_update()
                 mask_rcnn.head.cls_loc.disable_update()
                 mask_rcnn.head.score.disable_update()

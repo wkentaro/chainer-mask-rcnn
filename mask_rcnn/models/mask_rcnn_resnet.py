@@ -52,6 +52,7 @@ class MaskRCNNResNet(MaskRCNN):
             self._faster_rcnn = FasterRCNNResNet101
         else:
             raise ValueError
+        self._resnet_name = resnet_name
 
         class ResNet(self._resnet_layers):
 
@@ -61,7 +62,6 @@ class MaskRCNNResNet(MaskRCNN):
                 return out['res4']
 
         extractor = ResNet(pretrained_model=None)
-        # extractor = ResNet50(initialW=res_initialW)
         # extractor.pick = 'res5'
         # # Delete all layers after conv5_3.
         # extractor.remove_unused()
@@ -74,7 +74,6 @@ class MaskRCNNResNet(MaskRCNN):
             proposal_creator_params=proposal_creator_params,
         )
         head = ResNetRoIHead(
-            resnet_name,
             n_fg_class + 1,
             roi_size=7, spatial_scale=1. / self.feat_stride,
             res_initialW=res_initialW,
@@ -132,7 +131,10 @@ class MaskRCNNResNet(MaskRCNN):
         from chainercv.links.model.faster_rcnn.faster_rcnn_resnet import \
             copy_persistent_chain
         if pretrained_model == 'voc12_train_faster_rcnn':
-            pretrained_model = '/home/wkentaro/mask-rcnn/experiments/faster_rcnn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064651/snapshot_model.npz'  # NOQA
+            if self._resnet_name == 'resnet50':
+                pretrained_model = '/home/wkentaro/mask-rcnn/experiments/faster_rcnn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064651/snapshot_model.npz'  # NOQA
+            elif self._resnet_name == 'resnet101':
+                pretrained_model = '/home/wkentaro/mask-rcnn/experiments/faster_rcnn/logs/model=resnet101.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064654/snapshot_model.npz'  # NOQA
             n_fg_class = 20
         else:
             raise ValueError
@@ -157,7 +159,7 @@ class MaskRCNNResNet(MaskRCNN):
 
 class ResNetRoIHead(chainer.Chain):
 
-    def __init__(self, resnet_name, n_class, roi_size, spatial_scale,
+    def __init__(self, n_class, roi_size, spatial_scale,
                  res_initialW=None, loc_initialW=None, score_initialW=None):
         # n_class includes the background
         super(ResNetRoIHead, self).__init__()
