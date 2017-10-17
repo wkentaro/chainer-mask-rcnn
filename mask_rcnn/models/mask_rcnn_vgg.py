@@ -102,7 +102,7 @@ class MaskRCNNVGG16(MaskRCNN):
     def _copy_voc_pretrained_faster_rcnn(self, pretrained_model):
         from chainercv.links.model.faster_rcnn import FasterRCNNVGG16
         if pretrained_model == 'voc12_train_faster_rcnn':
-            pretrained_model = '/home/wkentaro/mask-rcnn/experiments/faster_rcnn/logs/model=vgg16.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064645/snapshot_model.npz'
+            pretrained_model = '/home/wkentaro/mask-rcnn/experiments/faster_rcnn/logs/model=vgg16.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064645/snapshot_model.npz'  # NOQA
             n_fg_class = 20
         elif pretrained_model == 'voc0712_faster_rcnn':
             n_fg_class = None
