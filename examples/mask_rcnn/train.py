@@ -206,6 +206,8 @@ def main():
     parser.add_argument('--mask-only', action='store_true')
     parser.add_argument('--no-copy-cls-and-loc', dest='copy_cls_and_loc',
                         action='store_false')
+    parser.add_argument('--no-roi-align', dest='roi_align',
+                        action='store_false')
     args = parser.parse_args()
 
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -222,6 +224,7 @@ def main():
             'head_only={head_only}',
             'mask_only={mask_only}',
             'copy_cls_and_loc={copy_cls_and_loc}',
+            'roi_align={roi_align}',
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
     )
@@ -244,12 +247,14 @@ def main():
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(voc_bbox_label_names),
             pretrained_model=pretrained_model,
+            roi_align=args.roi_align,
             copy_cls_and_loc=args.copy_cls_and_loc)
     elif args.model in ['resnet50', 'resnet101']:
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             resnet_name=args.model,
             n_fg_class=len(voc_bbox_label_names),
             pretrained_model=pretrained_model,
+            roi_align=args.roi_align,
             copy_cls_and_loc=args.copy_cls_and_loc)
     else:
         raise ValueError
