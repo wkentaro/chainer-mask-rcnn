@@ -252,6 +252,7 @@ def main():
             pretrained_model='voc12_train_faster_rcnn')
     else:
         raise ValueError
+    mask_rcnn.use_preset('evaluate')
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
