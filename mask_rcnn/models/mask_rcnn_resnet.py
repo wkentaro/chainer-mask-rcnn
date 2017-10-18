@@ -179,7 +179,7 @@ class ResNetRoIHead(chainer.Chain):
             self.cls_loc = L.Linear(2048, n_class * 4, initialW=loc_initialW)
             self.score = L.Linear(2048, n_class, initialW=score_initialW)
 
-            # 7 x 7 x 512 -> 14 x 14 x 256
+            # 7 x 7 x 2048 -> 14 x 14 x 256
             self.deconv6 = L.Deconvolution2D(
                 2048, 256, 2, stride=2,
                 initialW=chainer.initializers.Normal(0.01))
