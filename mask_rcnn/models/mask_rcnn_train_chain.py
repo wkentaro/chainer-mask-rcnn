@@ -161,6 +161,8 @@ class MaskRCNNTrainChain(chainer.Chain):
                 roi_mask_ik, gt_roi_mask_ik)
             n_sample_pos += 1
         if n_sample_pos > 0:
+            # XXX: Maybe below as _fast_rcnn_loc_loss.
+            # roi_mask_loss /= n_sample
             roi_mask_loss /= n_sample_pos  # mean
 
         loss = rpn_loc_loss + rpn_cls_loss + roi_loc_loss + roi_cls_loss + \
