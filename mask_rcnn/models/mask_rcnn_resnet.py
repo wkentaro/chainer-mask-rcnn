@@ -25,7 +25,8 @@ class MaskRCNNResNet(MaskRCNN):
                  ratios=[0.5, 1, 2], anchor_scales=[8, 16, 32],
                  res_initialW=None, rpn_initialW=None,
                  loc_initialW=None, score_initialW=None,
-                 proposal_creator_params=dict()
+                 proposal_creator_params=dict(),
+                 copy_cls_and_loc=True,
                  ):
         if n_fg_class is None:
             if pretrained_model not in self._models:
@@ -93,6 +94,8 @@ class MaskRCNNResNet(MaskRCNN):
             max_size=max_size
         )
 
+        self._copy_cls_and_loc = copy_cls_and_loc
+
         if pretrained_model in self._models:
             path = download_model(self._models[pretrained_model]['url'])
             chainer.serializers.load_npz(path, self)
@@ -152,11 +155,12 @@ class MaskRCNNResNet(MaskRCNN):
         self.head.res5.copyparams(pretrained_model.head.res5)
         copy_persistent_chain(self.head.res5, pretrained_model.head.res5)
 
-        self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
-        copy_persistent_chain(self.head.cls_loc, pretrained_model.head.cls_loc)
+        if self._copy_cls_and_loc:
+            self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
+            copy_persistent_chain(self.head.cls_loc, pretrained_model.head.cls_loc)
 
-        self.head.score.copyparams(pretrained_model.head.score)
-        copy_persistent_chain(self.head.score, pretrained_model.head.score)
+            self.head.score.copyparams(pretrained_model.head.score)
+            copy_persistent_chain(self.head.score, pretrained_model.head.score)
 
 
 class ResNetRoIHead(chainer.Chain):

@@ -25,7 +25,8 @@ class MaskRCNNVGG16(MaskRCNN):
                  ratios=[0.5, 1, 2], anchor_scales=[8, 16, 32],
                  vgg_initialW=None, rpn_initialW=None,
                  loc_initialW=None, score_initialW=None,
-                 proposal_creator_params=dict()
+                 proposal_creator_params=dict(),
+                 copy_cls_and_loc=True,
                  ):
         if n_fg_class is None:
             if pretrained_model not in self._models:
@@ -72,6 +73,8 @@ class MaskRCNNVGG16(MaskRCNN):
             max_size=max_size
         )
 
+        self._copy_cls_and_loc = copy_cls_and_loc
+
         if pretrained_model in self._models:
             path = download_model(self._models[pretrained_model]['url'])
             chainer.serializers.load_npz(path, self)
@@ -116,8 +119,9 @@ class MaskRCNNVGG16(MaskRCNN):
         self.rpn.copyparams(pretrained_model.rpn)
         self.head.fc6.copyparams(pretrained_model.head.fc6)
         self.head.fc7.copyparams(pretrained_model.head.fc7)
-        self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
-        self.head.score.copyparams(pretrained_model.head.score)
+        if self._copy_cls_and_loc:
+            self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
+            self.head.score.copyparams(pretrained_model.head.score)
 
 
 class VGG16RoIHead(chainer.Chain):
