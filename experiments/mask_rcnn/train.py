@@ -204,6 +204,8 @@ def main():
                         help='Do overfit training (single image).')
     parser.add_argument('--head-only', action='store_true')
     parser.add_argument('--mask-only', action='store_true')
+    parser.add_argument('--no-copy-cls-and-loc', dest='copy_cls_and_loc',
+                        action='store_false')
     args = parser.parse_args()
 
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -219,6 +221,7 @@ def main():
             'overfit={overfit}',
             'head_only={head_only}',
             'mask_only={mask_only}',
+            'copy_cls_and_loc={copy_cls_and_loc}',
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
     )
@@ -240,12 +243,14 @@ def main():
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(voc_bbox_label_names),
-            pretrained_model=pretrained_model)
+            pretrained_model=pretrained_model,
+            copy_cls_and_loc=args.copy_cls_and_loc)
     elif args.model in ['resnet50', 'resnet101']:
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             resnet_name=args.model,
             n_fg_class=len(voc_bbox_label_names),
-            pretrained_model=pretrained_model)
+            pretrained_model=pretrained_model,
+            copy_cls_and_loc=args.copy_cls_and_loc)
     else:
         raise ValueError
     mask_rcnn.use_preset('evaluate')
