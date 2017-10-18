@@ -26,6 +26,7 @@ class MaskRCNNResNet(MaskRCNN):
                  res_initialW=None, rpn_initialW=None,
                  loc_initialW=None, score_initialW=None,
                  proposal_creator_params=dict(),
+                 roi_align=True,
                  copy_cls_and_loc=True,
                  ):
         if n_fg_class is None:
@@ -81,7 +82,8 @@ class MaskRCNNResNet(MaskRCNN):
             roi_size=7, spatial_scale=1. / self.feat_stride,
             res_initialW=res_initialW,
             loc_initialW=loc_initialW,
-            score_initialW=score_initialW
+            score_initialW=score_initialW,
+            roi_align=roi_align,
         )
 
         super(MaskRCNNResNet, self).__init__(
@@ -166,7 +168,8 @@ class MaskRCNNResNet(MaskRCNN):
 class ResNetRoIHead(chainer.Chain):
 
     def __init__(self, n_class, roi_size, spatial_scale,
-                 res_initialW=None, loc_initialW=None, score_initialW=None):
+                 res_initialW=None, loc_initialW=None, score_initialW=None,
+                 roi_align=True):
         # n_class includes the background
         super(ResNetRoIHead, self).__init__()
         with self.init_scope():
@@ -185,6 +188,8 @@ class ResNetRoIHead(chainer.Chain):
             self.mask = L.Convolution2D(
                 256, n_fg_class, 1, initialW=chainer.initializers.Normal(0.01))
 
+        self._roi_align = roi_align
+
         self.n_class = n_class
         self.roi_size = roi_size
         self.spatial_scale = spatial_scale
@@ -195,7 +200,7 @@ class ResNetRoIHead(chainer.Chain):
             (roi_indices[:, None], rois), axis=1)
         pool = _roi_align_2d_yx(
             x, indices_and_rois, self.roi_size, self.roi_size,
-            self.spatial_scale)
+            self.spatial_scale, self._roi_align)
 
         roi_cls_locs = None
         roi_scores = None
@@ -218,8 +223,13 @@ class ResNetRoIHead(chainer.Chain):
         return roi_cls_locs, roi_scores, roi_masks
 
 
-def _roi_align_2d_yx(x, indices_and_rois, outh, outw, spatial_scale):
+def _roi_align_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,
+                     roi_align=True):
     xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
-    pool = F.roi_align_2d(
-        x, xy_indices_and_rois, outh, outw, spatial_scale)
+    if roi_align:
+        pool = F.roi_align_2d(
+            x, xy_indices_and_rois, outh, outw, spatial_scale)
+    else:
+        pool = F.roi_pooling_2d(
+            x, xy_indices_and_rois, outh, outw, spatial_scale)
     return pool
