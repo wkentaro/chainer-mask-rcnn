@@ -166,7 +166,7 @@ class ResNetRoIHead(chainer.Chain):
         with self.init_scope():
             from chainer.links.model.vision.resnet import BuildingBlock
             self.res5 = BuildingBlock(
-                3, 1024, 512, 2048, 2, initialW=res_initialW)
+                3, 1024, 512, 2048, stride=1, initialW=res_initialW)
             self.cls_loc = L.Linear(2048, n_class * 4, initialW=loc_initialW)
             self.score = L.Linear(2048, n_class, initialW=score_initialW)
 
