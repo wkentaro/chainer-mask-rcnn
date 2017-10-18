@@ -1,3 +1,5 @@
+import os.path as osp
+
 import numpy as np
 
 import chainer
@@ -132,9 +134,9 @@ class MaskRCNNResNet(MaskRCNN):
             copy_persistent_chain
         if pretrained_model == 'voc12_train_faster_rcnn':
             if self._resnet_name == 'resnet50':
-                pretrained_model = '/home/wkentaro/mask-rcnn/experiments/faster_rcnn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064651/snapshot_model.npz'  # NOQA
+                pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064651/snapshot_model.npz')  # NOQA
             elif self._resnet_name == 'resnet101':
-                pretrained_model = '/home/wkentaro/mask-rcnn/experiments/faster_rcnn/logs/model=resnet101.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064654/snapshot_model.npz'  # NOQA
+                pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=resnet101.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064654/snapshot_model.npz')  # NOQA
             n_fg_class = 20
         else:
             raise ValueError
