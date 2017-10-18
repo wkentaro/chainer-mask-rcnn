@@ -235,21 +235,17 @@ def main():
         train_data = OverfitDataset(train_data, indices=range(0, 9))
         test_data = OverfitDataset(train_data, indices=range(0, 9))
 
+    # pretrained_model = 'imagenet'
+    pretrained_model = 'voc12_train_faster_rcnn'
     if args.model == 'vgg16':
-        # mask_rcnn = mrcnn.models.MaskRCNNVGG16(
-        #     n_fg_class=len(voc_bbox_label_names),
-        #     pretrained_model='imagenet')
-        # mask_rcnn = mrcnn.models.MaskRCNNVGG16(
-        #     n_fg_class=len(voc_bbox_label_names),
-        #     pretrained_model='voc0712_faster_rcnn')
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(voc_bbox_label_names),
-            pretrained_model='voc12_train_faster_rcnn')
+            pretrained_model=pretrained_model)
     elif args.model in ['resnet50', 'resnet101']:
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             resnet_name=args.model,
             n_fg_class=len(voc_bbox_label_names),
-            pretrained_model='voc12_train_faster_rcnn')
+            pretrained_model=pretrained_model)
     else:
         raise ValueError
     mask_rcnn.use_preset('evaluate')
@@ -305,9 +301,9 @@ def main():
         print_interval = 1, 'iteration'
     else:
         eval_interval = 3000, 'iteration'
-        log_interval = 20, 'iteration'
-        plot_interval = 3000, 'iteration'
-        print_interval = 20, 'iteration'
+        log_interval = 1, 'iteration'
+        plot_interval = 1000, 'iteration'
+        print_interval = 1, 'iteration'
 
     trainer.extend(
         InstanceSegmentationVOCEvaluator(
