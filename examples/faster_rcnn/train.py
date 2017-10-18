@@ -127,11 +127,11 @@ def main():
     if args.model == 'vgg16':
         faster_rcnn = FasterRCNNVGG16(n_fg_class=len(voc_bbox_label_names),
                                       pretrained_model='imagenet',
-                                      roi_align=True)
+                                      roi_align=True, res5_stride=1)
     elif args.model == 'resnet50':
         faster_rcnn = FasterRCNNResNet50(n_fg_class=len(voc_bbox_label_names),
                                          pretrained_model='imagenet',
-                                         roi_align=True)
+                                         roi_align=True, res5_stride=1)
     elif args.model == 'resnet101':
         faster_rcnn = FasterRCNNResNet101(n_fg_class=len(voc_bbox_label_names),
                                           pretrained_model='imagenet',
