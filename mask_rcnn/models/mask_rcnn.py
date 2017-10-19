@@ -91,8 +91,8 @@ class MaskRCNN(chainer.Chain):
     def __init__(
             self, extractor, rpn, head,
             mean,
-            min_size=600,
-            max_size=1000,
+            min_size=800,
+            max_size=None,
             loc_normalize_mean=(0., 0., 0., 0.),
             loc_normalize_std=(0.1, 0.1, 0.2, 0.2),
     ):
@@ -212,9 +212,10 @@ class MaskRCNN(chainer.Chain):
 
         scale = 1.
 
-        scale = self.min_size / min(H, W)
+        if self.min_size:
+            scale = self.min_size / min(H, W)
 
-        if scale * max(H, W) > self.max_size:
+        if self.max_size and scale * max(H, W) > self.max_size:
             scale = self.max_size / max(H, W)
 
         img = resize(img, (int(H * scale), int(W * scale)))
