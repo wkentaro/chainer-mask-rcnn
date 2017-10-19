@@ -49,6 +49,7 @@ def visualize_func(dataset, index):
     H, W = img.shape[:2]
     rois = _augment_bboxes(boxes, H, W)
     labels -= 1
+    masks = masks.astype(np.int32)
 
     proposal_target_creator = ProposalTargetCreator()
 
@@ -63,7 +64,8 @@ def visualize_func(dataset, index):
             mask_rcnn.utils.create_proposal_targets(
                 rois, boxes, labels, masks,
                 loc_normalize_mean=(0., 0., 0., 0.),
-                loc_normalize_std=(0.1, 0.1, 0.2, 0.2))
+                loc_normalize_std=(0.1, 0.1, 0.2, 0.2),
+                mask_size=14)
 
     viz = mask_rcnn.utils.draw_instance_boxes(
         img, sample_rois, gt_roi_labels, n_class=21, bg_class=0)
@@ -80,6 +82,9 @@ def visualize_func(dataset, index):
         if gt_roi_mask is not None:
             mask_ins = np.zeros(img.shape[:2], dtype=bool)
             y1, x1, y2, x2 = roi
+            gt_roi_mask = gt_roi_mask.astype(np.float32)
+            gt_roi_mask = cv2.resize(gt_roi_mask, (int(x2 - x1), int(y2 - y1)))
+            gt_roi_mask = np.round(gt_roi_mask).astype(bool)
             mask_ins[y1:y2, x1:x2] = gt_roi_mask
             viz[~mask_ins] = 255
         viz = mask_rcnn.utils.draw_instance_boxes(

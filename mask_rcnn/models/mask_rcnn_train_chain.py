@@ -126,7 +126,7 @@ class MaskRCNNTrainChain(chainer.Chain):
         sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
             create_proposal_targets(
                 roi, bbox, label, mask,
-                self.loc_normalize_mean, self.loc_normalize_std)
+                self.loc_normalize_mean, self.loc_normalize_std, mask_size=14)
         sample_roi_index = self.xp.zeros((len(sample_roi),), dtype=np.int32)
         roi_cls_loc, roi_score, roi_mask = self.mask_rcnn.head(
             features, sample_roi, sample_roi_index)
@@ -147,25 +147,9 @@ class MaskRCNNTrainChain(chainer.Chain):
         roi_cls_loss = F.softmax_cross_entropy(roi_score, gt_roi_label)
 
         # Losses for outputs of mask branch
-        # n_sample_pos = 0
-        roi_mask_loss = 0
-        for i in range(n_sample):
-            k = int(gt_roi_label[i]) - 1  # class_label
-            if k == -1:  # background
-                continue
-            roi_mask_ik = roi_mask[i, k, :, :][None, None, :, :]
-            roi_mask_ik = F.resize_images(roi_mask_ik, gt_roi_mask[i].shape)
-            roi_mask_ik = roi_mask_ik[:, 0, :, :]
-            gt_roi_mask_ik = gt_roi_mask[i][None, :, :]
-            roi_mask_loss += F.sigmoid_cross_entropy(
-                roi_mask_ik, gt_roi_mask_ik)
-            # n_sample_pos += 1
-        if n_sample > 0:
-            roi_mask_loss /= n_sample
-        # if n_sample_pos > 0:
-        #     # XXX: Maybe below as _fast_rcnn_loc_loss.
-        #     # roi_mask_loss /= n_sample
-        #     roi_mask_loss /= n_sample_pos  # mean
+        roi_mask_loss = F.sigmoid_cross_entropy(
+            roi_mask[np.arange(n_sample), gt_roi_label - 1, :, :],
+            gt_roi_mask)
 
         loss = rpn_loc_loss + rpn_cls_loss + roi_loc_loss + roi_cls_loss + \
             roi_mask_loss

@@ -163,7 +163,8 @@ class MaskRCNNResNet(MaskRCNN):
 
         if self._copy_cls_and_loc:
             self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
-            copy_persistent_chain(self.head.cls_loc, pretrained_model.head.cls_loc)
+            copy_persistent_chain(self.head.cls_loc,
+                                  pretrained_model.head.cls_loc)
 
             self.head.score.copyparams(pretrained_model.head.score)
             copy_persistent_chain(self.head.score, pretrained_model.head.score)
