@@ -166,7 +166,7 @@ def main():
     plot_interval = 3000, 'iteration'
     print_interval = 20, 'iteration'
 
-    trainer.extend(extensions.Evaluator(test_iter, model),
+    trainer.extend(extensions.Evaluator(test_iter, model, device=args.gpu),
                    trigger=eval_interval)
     trainer.extend(
         extensions.snapshot_object(model.faster_rcnn, 'snapshot_model.npz'),
