@@ -1,5 +1,6 @@
 import collections
 
+import cv2
 import numpy as np
 
 
@@ -21,7 +22,8 @@ def get_mask_overlap(mask1, mask2):
 
 
 def create_proposal_targets(rois, boxes, labels, masks,
-                            loc_normalize_mean, loc_normalize_std):
+                            loc_normalize_mean, loc_normalize_std,
+                            mask_size):
     import chainer
     from chainercv.links.model.faster_rcnn.utils.proposal_target_creator\
         import ProposalTargetCreator
@@ -41,26 +43,31 @@ def create_proposal_targets(rois, boxes, labels, masks,
     assert boxes.shape == (N, 4)
     assert labels.shape == (N,)
 
-    gt_roi_masks = []
-    for id_cls, roi in zip(gt_roi_labels, sample_rois):
+    n_sample = len(sample_rois)
+    gt_roi_masks = - np.ones((n_sample, mask_size, mask_size), dtype=np.int32)
+    for i, (id_cls, roi) in enumerate(zip(gt_roi_labels, sample_rois)):
         y1, x1, y2, x2 = map(int, roi)
         assert 0 <= y1 and y2 <= H
         assert 0 <= x1 and x2 <= W
         if id_cls == 0:
-            gt_roi_masks.append(None)
             continue
         idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes])
         mask_ins = masks[idx_ins]
+        assert mask_ins.dtype == np.int32
         mask_roi = np.zeros_like(mask_ins)
         mask_roi[y1:y2, x1:x2] = 1
         mask_ins = mask_ins & mask_roi
-        if xp != np:
-            mask_ins = chainer.cuda.to_gpu(mask_ins)
-        gt_roi_masks.append(mask_ins[y1:y2, x1:x2])
+
+        mask_ins = mask_ins[y1:y2, x1:x2]
+        mask_ins = mask_ins.astype(np.float32)
+        mask_ins = cv2.resize(mask_ins, (mask_size, mask_size))
+        mask_ins = np.round(mask_ins).astype(np.int32)
+        gt_roi_masks[i] = mask_ins
     if xp != np:
         sample_rois = chainer.cuda.to_gpu(sample_rois)
         gt_roi_locs = chainer.cuda.to_gpu(gt_roi_locs)
         gt_roi_labels = chainer.cuda.to_gpu(gt_roi_labels)
+        gt_roi_masks = chainer.cuda.to_gpu(gt_roi_masks)
     return sample_rois, gt_roi_locs, gt_roi_labels, gt_roi_masks
 
 
