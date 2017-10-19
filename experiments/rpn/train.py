@@ -15,7 +15,6 @@ from chainer.datasets import TransformDataset
 from chainer import training
 from chainer.training import extensions
 from chainercv.datasets import voc_bbox_label_names
-from chainercv.extensions import DetectionVOCEvaluator
 from chainercv.links import FasterRCNNResNet101
 from chainercv.links import FasterRCNNResNet50
 from chainercv import transforms
@@ -158,11 +157,8 @@ def main():
     plot_interval = 3000, 'iteration'
     print_interval = 20, 'iteration'
 
-    trainer.extend(
-        DetectionVOCEvaluator(
-            test_iter, model.faster_rcnn, use_07_metric=True,
-            label_names=voc_bbox_label_names),
-        trigger=eval_interval)
+    trainer.extend(extensions.Evaluator(test_iter, model),
+                   trigger=eval_interval)
     trainer.extend(
         extensions.snapshot_object(model.faster_rcnn, 'snapshot_model.npz'),
         trigger=training.triggers.MinValueTrigger(
