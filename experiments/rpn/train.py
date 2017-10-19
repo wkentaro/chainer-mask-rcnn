@@ -17,6 +17,7 @@ from chainer.training import extensions
 from chainercv.datasets import voc_bbox_label_names
 from chainercv.links import FasterRCNNResNet101
 from chainercv.links import FasterRCNNResNet50
+from chainercv.links import FasterRCNNVGG16
 from chainercv import transforms
 import numpy as np
 
@@ -70,7 +71,7 @@ here = osp.dirname(osp.abspath(__file__))
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--model', choices=('resnet50', 'resnet101'),
+    parser.add_argument('--model', choices=('vgg16', 'resnet50', 'resnet101'),
                         help='The model to use', default='resnet50')
     parser.add_argument('--gpu', '-g', type=int, default=-1)
     parser.add_argument('--lr', '-l', type=float, default=1e-3)
@@ -103,7 +104,11 @@ def main():
     test_data = FasterRcnnDataset(
         mrcnn.datasets.VOC2012InstanceSeg(split='val'))
 
-    if args.model == 'resnet50':
+    if args.model == 'vgg16':
+        faster_rcnn = FasterRCNNVGG16(n_fg_class=len(voc_bbox_label_names),
+                                      pretrained_model='imagenet',
+                                      min_size=800, max_size=9999)
+    elif args.model == 'resnet50':
         faster_rcnn = FasterRCNNResNet50(n_fg_class=len(voc_bbox_label_names),
                                          pretrained_model='imagenet',
                                          min_size=800, max_size=9999)
