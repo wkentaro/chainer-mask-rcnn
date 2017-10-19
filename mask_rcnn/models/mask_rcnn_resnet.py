@@ -175,7 +175,11 @@ class MaskRCNNResNet(MaskRCNN):
                 pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171019_013912/snapshot_model.npz')  # NOQA
             elif self._resnet_name == 'resnet101':
                 # FasterRCNNResNet101 (res5 stride=2) + RoiAlign
-                pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=resnet101.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064654/snapshot_model.npz')  # NOQA
+                # pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=resnet101.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064654/snapshot_model.npz')  # NOQA
+                # FasterRCNNResNet101 (res5 stride=1) + RoiAlign
+                pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=resnet101.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171019_013931/snapshot_model.npz')  # NOQA
+            else:
+                raise ValueError
             n_fg_class = 20
         else:
             raise ValueError
