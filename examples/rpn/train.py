@@ -171,6 +171,7 @@ def main():
          'main/loss',
          'main/rpn_loc_loss',
          'main/rpn_cls_loss',
+         'validation/main/loss',
          ]), trigger=print_interval)
     trainer.extend(extensions.ProgressBar(update_interval=10))
 
