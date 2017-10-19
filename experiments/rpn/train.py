@@ -26,8 +26,9 @@ import mask_rcnn as mrcnn
 
 class Transform(object):
 
-    def __init__(self, faster_rcnn):
+    def __init__(self, faster_rcnn, augmentation=True):
         self.faster_rcnn = faster_rcnn
+        self._augmentation = augmentation
 
     def __call__(self, in_data):
         img, bbox, label = in_data
@@ -37,11 +38,12 @@ class Transform(object):
         scale = o_H / H
         bbox = transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
 
-        # horizontally flip
-        img, params = transforms.random_flip(
-            img, x_random=True, return_param=True)
-        bbox = transforms.flip_bbox(
-            bbox, (o_H, o_W), x_flip=params['x_flip'])
+        if self._augmentation:
+            # horizontally flip
+            img, params = transforms.random_flip(
+                img, x_random=True, return_param=True)
+            bbox = transforms.flip_bbox(
+                bbox, (o_H, o_W), x_flip=params['x_flip'])
 
         return img, bbox, label, scale
 
@@ -143,6 +145,8 @@ def main():
         faster_rcnn.extractor.res2.disable_update()
 
     train_data = TransformDataset(train_data, Transform(faster_rcnn))
+    test_data = TransformDataset(test_data,
+                                 Transform(faster_rcnn, augmentation=False))
 
     train_iter = chainer.iterators.MultiprocessIterator(
         train_data, batch_size=1, n_processes=None, shared_mem=100000000)
