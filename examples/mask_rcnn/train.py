@@ -134,18 +134,28 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
                 # organize input
                 img = img.transpose(1, 2, 0)  # CHW -> HWC
                 gt_mask = gt_mask.astype(bool)
-                gt_label += 1  # background: -1 -> 0
-                pred_label += 1
+                # gt_label += 1  # background: -1 -> 0
+                # pred_label += 1
 
-                gt_lbl_ins, gt_lbl_cls = mrcnn.utils.instance_boxes2label(
-                    gt_label, gt_bbox, gt_mask)
-                gt_viz = mrcnn.utils.visualize_instance_segmentation(
-                    gt_lbl_ins, gt_lbl_cls, img, label_names_all)
+                n_fg_class = len(self.label_names)
 
-                pred_lbl_ins, pred_lbl_cls = mrcnn.utils.instance_boxes2label(
-                    pred_label, pred_bbox, pred_mask, pred_score)
-                pred_viz = mrcnn.utils.visualize_instance_segmentation(
-                    pred_lbl_ins, pred_lbl_cls, img, label_names_all)
+                gt_viz = mrcnn.utils.draw_instance_boxes(
+                    img, gt_bbox, gt_label, n_class=n_fg_class,
+                    masks=gt_mask, captions=self.label_names[gt_label],
+                    bg_class=-1)
+                # gt_lbl_ins, gt_lbl_cls = mrcnn.utils.instance_boxes2label(
+                #     gt_label, gt_bbox, gt_mask)
+                # gt_viz = mrcnn.utils.visualize_instance_segmentation(
+                #     gt_lbl_ins, gt_lbl_cls, img, label_names_all)
+
+                pred_viz = mrcnn.utils.draw_instance_boxes(
+                    img, pred_bbox, pred_label, n_class=n_fg_class,
+                    masks=pred_mask, captions=self.label_names[pred_label],
+                    bg_class=-1)
+                # pred_lbl_ins, pred_lbl_cls = mrcnn.utils.instance_boxes2label(  # NOQA
+                #     pred_label, pred_bbox, pred_mask, pred_score)
+                # pred_viz = mrcnn.utils.visualize_instance_segmentation(
+                #     pred_lbl_ins, pred_lbl_cls, img, label_names_all)
 
                 viz = np.vstack([gt_viz, pred_viz])
                 vizs.append(viz)
