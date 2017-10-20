@@ -4,8 +4,7 @@ import six
 from chainer import functions
 
 
-def roi_align_2d(inputs, outh, outw):
-    bottom_data, bottom_rois = inputs
+def roi_align_2d(bottom_data, bottom_rois, outh, outw):
     B, C, H, W = bottom_data.shape
     N = bottom_rois.shape[0]
 
