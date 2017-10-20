@@ -28,7 +28,7 @@ rois = np.array([[0, 0, 2, 6, 7]], dtype=np.float32)
 rois = chainer.cuda.to_gpu(rois)
 rois = chainer.Variable(rois)
 # y = F.roi_align_2d(x, rois, outh=2, outw=2, spatial_scale=1)
-y = mrcnn.functions.roi_align_2d((x, rois), outh=2, outw=2)
+y = mrcnn.functions.roi_align_2d(x, rois, outh=2, outw=2)
 import cupy as cp
 y.grad = cp.ones((1, 1, 2, 2), dtype=cp.float32)
 y.backward()
