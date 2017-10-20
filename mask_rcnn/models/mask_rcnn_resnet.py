@@ -103,6 +103,8 @@ class MaskRCNNResNet(MaskRCNN):
             chainer.serializers.load_npz(path, self)
         elif pretrained_model == 'imagenet':
             self._copy_imagenet_pretrained_resnet()
+        elif pretrained_model == 'voc12_train_rpn':
+            self._copy_voc_pretrained_rpn(pretrained_model)
         elif pretrained_model == 'voc12_train_faster_rcnn':
             self._copy_voc_pretrained_faster_rcnn(pretrained_model)
         elif pretrained_model:
@@ -130,6 +132,34 @@ class MaskRCNNResNet(MaskRCNN):
 
         self.extractor.res4.copyparams(pretrained_model.res4)
         copy_persistent_chain(self.extractor.res4, pretrained_model.res4)
+
+        self.head.res5.copyparams(pretrained_model.res5)
+        copy_persistent_chain(self.head.res5, pretrained_model.res5)
+
+    def _copy_voc_pretrained_rpn(self, pretrained_model):
+        from chainercv.links.model.faster_rcnn.faster_rcnn_resnet import \
+            copy_persistent_chain
+        if pretrained_model == 'voc12_train_rpn':
+            if self._resnet_name == 'resnet50':
+                pretrained_model = osp.expanduser('~/mask-rcnn/experiments/rpn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171019_173633/snapshot_model.npz')  # NOQA
+                n_fg_class = 20
+            else:
+                raise ValueError
+        else:
+            raise ValueError
+
+        pretrained_model = self._faster_rcnn(
+            n_fg_class=n_fg_class, pretrained_model=pretrained_model)
+
+        self.extractor.copyparams(pretrained_model.extractor)
+        copy_persistent_chain(self.extractor, pretrained_model.extractor)
+
+        self.rpn.copyparams(pretrained_model.rpn)
+        copy_persistent_chain(self.rpn, pretrained_model.rpn)
+
+        from chainercv.links.model.faster_rcnn.faster_rcnn_resnet import \
+            copy_persistent_chain
+        pretrained_model = self._resnet_layers(pretrained_model='auto')
 
         self.head.res5.copyparams(pretrained_model.res5)
         copy_persistent_chain(self.head.res5, pretrained_model.res5)

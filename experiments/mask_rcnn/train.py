@@ -242,7 +242,8 @@ def main():
         test_data = OverfitDataset(train_data, indices=range(0, 9))
 
     # pretrained_model = 'imagenet'
-    pretrained_model = 'voc12_train_faster_rcnn'
+    # pretrained_model = 'voc12_train_faster_rcnn'
+    pretrained_model = 'voc12_train_rpn'
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(voc_bbox_label_names),
