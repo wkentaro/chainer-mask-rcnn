@@ -272,7 +272,7 @@ def main():
             copy_cls_and_loc=args.copy_cls_and_loc)
     else:
         raise ValueError
-    mask_rcnn.use_preset('evaluate')
+    # mask_rcnn.use_preset('evaluate')
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
