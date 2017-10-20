@@ -220,6 +220,7 @@ def main():
         here, 'logs',
         '.'.join([
             'model={model}',
+            'pretrained_model={pretrained_model}',
             'lr={lr}',
             'seed={seed}',
             'step_size={step_size}',
