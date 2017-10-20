@@ -195,7 +195,7 @@ def main():
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
         default='voc12_train_rpn', help='Pretrained model.')
     parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
-    parser.add_argument('--lr', '-l', type=float, default=0.02,
+    parser.add_argument('--lr', '-l', type=float, default=0.001,
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
                         help='Random seed.')
@@ -267,8 +267,8 @@ def main():
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
         model.to_gpu()
-    optimizer = chainer.optimizers.Adam(alpha=args.lr)
-    # optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
+    # optimizer = chainer.optimizers.Adam(alpha=args.lr)
+    optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
     if args.update_policy == 'almost_all':
