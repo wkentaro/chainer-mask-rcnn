@@ -28,9 +28,10 @@ def visualize_func(dataset, index):
         scale = math.sqrt((400. * 400.) / (viz.shape[0] * viz.shape[1]))
         viz = cv2.resize(viz, None, None, fx=scale, fy=scale)
         H, W = viz.shape[:2]
+        caption = dataset._instance_dataset.class_names[1:][label]
         viz = mask_rcnn.utils.draw_instance_boxes(
             viz, [(0, 0, H, W)], [label],
-            n_class=n_fg_class, thickness=10)
+            captions=[caption], n_class=n_fg_class, thickness=10)
         vizs.append(viz)
     viz2 = mvtk.image.tile(vizs)
 
