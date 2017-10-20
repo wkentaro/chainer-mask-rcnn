@@ -6,6 +6,7 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 
+from .. import functions
 from .mask_rcnn import MaskRCNN
 from chainercv.links.model.faster_rcnn.region_proposal_network \
     import RegionProposalNetwork
@@ -268,8 +269,10 @@ def _roi_align_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,
                      roi_align=True):
     xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
     if roi_align:
-        pool = F.roi_align_2d(
-            x, xy_indices_and_rois, outh, outw, spatial_scale)
+        # FIXME
+        # pool = F.roi_align_2d(
+        #     x, xy_indices_and_rois, outh, outw, spatial_scale)
+        pool = functions.roi_align_2d(x, xy_indices_and_rois, outh, outw)
     else:
         pool = F.roi_pooling_2d(
             x, xy_indices_and_rois, outh, outw, spatial_scale)
