@@ -195,7 +195,7 @@ def main():
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
         default='voc12_train_rpn', help='Pretrained model.')
     parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
-    parser.add_argument('--lr', '-l', type=float, default=0.002,
+    parser.add_argument('--lr', '-l', type=float, default=0.02,
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
                         help='Random seed.')
@@ -267,7 +267,8 @@ def main():
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
         model.to_gpu()
-    optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
+    optimizer = chainer.optimizers.Adam(alpha=args.lr)
+    # optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
     if args.head_only or args.mask_only:
@@ -305,14 +306,14 @@ def main():
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
-    # 0-4000: lr = 0.002      # warmup lr
-    # 4000 - step_size: 0.02  # base lr
-    # step_size - : 0.002     # stepping lr
-    trainer.extend(extensions.ExponentialShift('lr', 10),
-                   trigger=triggers.ManualScheduleTrigger(
-                        points=[4000], unit='iteration'))  # only once
-    trainer.extend(extensions.ExponentialShift('lr', 0.1),
-                   trigger=(args.step_size, 'iteration'))
+    # # 0-4000: lr = 0.002      # warmup lr
+    # # 4000 - step_size: 0.02  # base lr
+    # # step_size - : 0.002     # stepping lr
+    # trainer.extend(extensions.ExponentialShift('lr', 10),
+    #                trigger=triggers.ManualScheduleTrigger(
+    #                     points=[4000], unit='iteration'))  # only once
+    # trainer.extend(extensions.ExponentialShift('lr', 0.1),
+    #                trigger=(args.step_size, 'iteration'))
 
     if args.overfit:
         eval_interval = 100, 'iteration'
