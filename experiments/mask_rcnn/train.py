@@ -17,6 +17,7 @@ from chainer.datasets import TransformDataset
 from chainer import reporter
 from chainer import training
 from chainer.training import extensions
+from chainer.training import triggers
 from chainercv.datasets import voc_bbox_label_names
 from chainercv import transforms
 from chainercv.utils import apply_prediction_to_iterator
@@ -190,7 +191,7 @@ def main():
     parser.add_argument('--model', choices=['vgg16', 'resnet50', 'resnet101'],
                         default='vgg16', help='Base model of Mask R-CNN.')
     parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
-    parser.add_argument('--lr', '-l', type=float, default=1e-3,
+    parser.add_argument('--lr', '-l', type=float, default=0.002,
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
                         help='Random seed.')
@@ -302,6 +303,12 @@ def main():
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
+    # 0-4000: lr = 0.002      # warmup lr
+    # 4000 - step_size: 0.02  # base lr
+    # step_size - : 0.002     # stepping lr
+    trainer.extend(extensions.ExponentialShift('lr', 10),
+                   trigger=triggers.ManualScheduleTrigger(
+                        points=[4000], unit='iteration'))  # only once
     trainer.extend(extensions.ExponentialShift('lr', 0.1),
                    trigger=(args.step_size, 'iteration'))
 
