@@ -67,34 +67,46 @@ def visualize_func(dataset, index):
                 loc_normalize_std=(0.1, 0.1, 0.2, 0.2),
                 mask_size=14)
 
+    masks = []
+    for roi, mask in zip(sample_rois, gt_roi_masks):
+        y1, x1, y2, x2 = roi
+        mask = mask.astype(float)
+        mask = cv2.resize(mask, (int(x2 - x1), int(y2 - y1)))
+        mask = np.round(mask).astype(bool)
+        masks.append(mask)
+
+    captions = dataset.class_names[gt_roi_labels]
     viz = mask_rcnn.utils.draw_instance_boxes(
-        img, sample_rois, gt_roi_labels, n_class=21, bg_class=0)
+        img, sample_rois, gt_roi_labels, n_class=21,
+        captions=captions, masks=masks, bg_class=0)
     vizs.append(viz)
 
-    viz1 = mvtk.image.tile(vizs)
+    return mvtk.image.tile(vizs)
 
-    vizs = []
-    for roi, id_cls, gt_roi_mask in \
-            zip(sample_rois, gt_roi_labels, gt_roi_masks):
-        if id_cls == 0:
-            continue
-        viz = img.copy()
-        if gt_roi_mask is not None:
-            mask_ins = np.zeros(img.shape[:2], dtype=bool)
-            y1, x1, y2, x2 = roi
-            gt_roi_mask = gt_roi_mask.astype(np.float32)
-            gt_roi_mask = cv2.resize(gt_roi_mask, (int(x2 - x1), int(y2 - y1)))
-            gt_roi_mask = np.round(gt_roi_mask).astype(bool)
-            mask_ins[y1:y2, x1:x2] = gt_roi_mask
-            viz[~mask_ins] = 255
-        viz = mask_rcnn.utils.draw_instance_boxes(
-            viz, [roi], [id_cls], n_class=21, bg_class=0, thickness=2)
-        vizs.append(viz)
-    viz2 = mvtk.image.tile(vizs)
-    scale = 1. * viz1.shape[1] / viz2.shape[1]
-    viz2 = cv2.resize(viz2, None, None, fx=scale, fy=scale)
-
-    return np.vstack([viz1, viz2])
+    #
+    # vizs = []
+    # for roi, id_cls, gt_roi_mask in \
+    #         zip(sample_rois, gt_roi_labels, gt_roi_masks):
+    #     if id_cls == 0:
+    #         continue
+    #     viz = img.copy()
+    #     if gt_roi_mask is not None:
+    #         mask_ins = np.zeros(img.shape[:2], dtype=bool)
+    #         y1, x1, y2, x2 = roi
+    #         gt_roi_mask = gt_roi_mask.astype(np.float32)
+    #         gt_roi_mask = cv2.resize(gt_roi_mask,
+    #                                  (int(x2 - x1), int(y2 - y1)))
+    #         gt_roi_mask = np.round(gt_roi_mask).astype(bool)
+    #         mask_ins[y1:y2, x1:x2] = gt_roi_mask
+    #         viz[~mask_ins] = 255
+    #     viz = mask_rcnn.utils.draw_instance_boxes(
+    #         viz, [roi], [id_cls], n_class=21, bg_class=0, thickness=2)
+    #     vizs.append(viz)
+    # viz2 = mvtk.image.tile(vizs)
+    # scale = 1. * viz1.shape[1] / viz2.shape[1]
+    # viz2 = cv2.resize(viz2, None, None, fx=scale, fy=scale)
+    #
+    # return np.vstack([viz1, viz2])
 
 
 def main():
