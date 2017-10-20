@@ -189,7 +189,7 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--model', choices=['vgg16', 'resnet50', 'resnet101'],
-                        default='vgg16', help='Base model of Mask R-CNN.')
+                        default='resnet50', help='Base model of Mask R-CNN.')
     parser.add_argument(
         '--pretrained-model',
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
