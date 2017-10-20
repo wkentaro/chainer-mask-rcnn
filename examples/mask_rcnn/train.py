@@ -319,9 +319,9 @@ def main():
         print_interval = 1, 'iteration'
     else:
         eval_interval = 3000, 'iteration'
-        log_interval = 1, 'iteration'
+        log_interval = 20, 'iteration'
         plot_interval = 1000, 'iteration'
-        print_interval = 1, 'iteration'
+        print_interval = 20, 'iteration'
 
     trainer.extend(
         InstanceSegmentationVOCEvaluator(
