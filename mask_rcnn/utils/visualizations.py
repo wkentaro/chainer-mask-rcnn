@@ -7,31 +7,34 @@ from .geometry import label2instance_boxes
 
 
 def draw_instance_boxes(img, boxes, instance_classes, n_class,
-                        captions=None, bg_class=0, thickness=0):
-    """Draw labeled rectangles on image.
+                        masks=None, captions=None, bg_class=0, thickness=0):
+    # validation
+    assert isinstance(img, np.ndarray)
+    assert img.shape == (img.shape[0], img.shape[1], 3)
+    assert img.dtype == np.uint8
+    boxes = np.asarray(boxes)
+    assert isinstance(boxes, np.ndarray)
+    assert boxes.shape == (boxes.shape[0], 4)
+    instance_classes = np.asarray(instance_classes)
+    assert isinstance(instance_classes, np.ndarray)
+    assert instance_classes.shape == (instance_classes.shape[0],)
 
-    Parameters
-    ----------
-    img: numpy.ndarray
-        RGB image.
-    boxes: list of tuple
-        Bounding boxes (y1, x1, y2, x2).
+    if masks is not None:
+        masks = np.asarray(masks)
+        assert isinstance(masks, np.ndarray)
+        assert masks.shape[0] == boxes.shape[0]
 
-    Returns
-    -------
-    img_viz: numpy.ndarray
-        RGB image.
-    """
-    n_boxes = len(boxes)
-    assert n_boxes == len(instance_classes)
     if captions is not None:
-        assert n_boxes == len(captions)
+        captions = np.asarray(captions)
+        assert isinstance(captions, np.ndarray)
+        assert captions.shape[0] == boxes.shape[0]
 
     img_viz = img.copy()
     cmap = fcn.utils.labelcolormap(n_class)
+    cmap_inst = fcn.utils.labelcolormap(len(boxes) + 1)[1:]  # skip black
 
     CV_AA = 16
-    for i_box in xrange(n_boxes):
+    for i_box in range(boxes.shape[0]):
         box = boxes[i_box]
         inst_class = instance_classes[i_box]
 
@@ -45,6 +48,16 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
         y1, x1, y2, x2 = box
         cv2.rectangle(img_viz, (x1, y1), (x2, y2), color[::-1],
                       thickness=thickness, lineType=CV_AA)
+
+        if masks is not None:
+            mask_inst = masks[i_box]
+            color_inst = cmap_inst[i_box]
+            color_inst = (color_inst * 255)
+            img_viz[y1:y2, x1:x2][mask_inst] = (
+                img_viz[y1:y2, x1:x2][mask_inst] * 0.3 +
+                color_inst * 0.7
+            )
+            assert img_viz.dtype == np.uint8
 
         if captions is not None:
             caption = captions[i_box]
