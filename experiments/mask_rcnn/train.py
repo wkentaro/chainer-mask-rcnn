@@ -190,6 +190,10 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--model', choices=['vgg16', 'resnet50', 'resnet101'],
                         default='vgg16', help='Base model of Mask R-CNN.')
+    parser.add_argument(
+        '--pretrained-model',
+        choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
+        default='voc12_train_rpn', help='Pretrained model.')
     parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
     parser.add_argument('--lr', '-l', type=float, default=0.002,
                         help='Learning rate.')
@@ -242,20 +246,17 @@ def main():
         train_data = OverfitDataset(train_data, indices=range(0, 9))
         test_data = OverfitDataset(train_data, indices=range(0, 9))
 
-    # pretrained_model = 'imagenet'
-    # pretrained_model = 'voc12_train_faster_rcnn'
-    pretrained_model = 'voc12_train_rpn'
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(voc_bbox_label_names),
-            pretrained_model=pretrained_model,
+            pretrained_model=args.pretrained_model,
             roi_align=args.roi_align,
             copy_cls_and_loc=args.copy_cls_and_loc)
     elif args.model in ['resnet50', 'resnet101']:
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             resnet_name=args.model,
             n_fg_class=len(voc_bbox_label_names),
-            pretrained_model=pretrained_model,
+            pretrained_model=args.pretrained_model,
             roi_align=args.roi_align,
             copy_cls_and_loc=args.copy_cls_and_loc)
     else:
