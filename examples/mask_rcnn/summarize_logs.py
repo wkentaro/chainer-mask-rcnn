@@ -15,7 +15,7 @@ for name in os.listdir('logs'):
     try:
         df = pd.read_json(log_file)
         idx = df['validation/main/map'].idxmax()
-    except:
+    except Exception:
         continue
     dfi = df.ix[idx]
     if dfi['validation/main/map'] == 0:
@@ -24,4 +24,4 @@ for name in os.listdir('logs'):
     row += [dfi[c] for c in columns[1:]]
     rows.append(row)
 rows = sorted(rows, key=lambda x: x[4])
-print tabulate.tabulate(rows, columns, tablefmt='grid')
+print(tabulate.tabulate(rows, columns, tablefmt='grid'))
