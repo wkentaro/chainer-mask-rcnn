@@ -272,7 +272,8 @@ def _roi_align_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,
         # FIXME
         # pool = F.roi_align_2d(
         #     x, xy_indices_and_rois, outh, outw, spatial_scale)
-        pool = functions.roi_align_2d(x, xy_indices_and_rois, outh, outw)
+        pool = functions.roi_align_2d(
+            x, xy_indices_and_rois, outh, outw, spatial_scale)
     else:
         pool = F.roi_pooling_2d(
             x, xy_indices_and_rois, outh, outw, spatial_scale)
