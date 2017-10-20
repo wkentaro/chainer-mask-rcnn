@@ -17,7 +17,7 @@ from chainer.datasets import TransformDataset
 from chainer import reporter
 from chainer import training
 from chainer.training import extensions
-from chainer.training import triggers
+# from chainer.training import triggers
 from chainercv.datasets import voc_bbox_label_names
 from chainercv import transforms
 from chainercv.utils import apply_prediction_to_iterator
@@ -207,8 +207,9 @@ def main():
                         help='Weight decay.')
     parser.add_argument('--overfit', action='store_true',
                         help='Do overfit training (single image).')
-    parser.add_argument('--head-only', action='store_true')
-    parser.add_argument('--mask-only', action='store_true')
+    parser.add_argument('--update-policy',
+                        choices=['almost_all', 'head_only', 'mask_only'],
+                        default='almost_all')
     parser.add_argument('--no-copy-cls-and-loc', dest='copy_cls_and_loc',
                         action='store_false')
     parser.add_argument('--no-roi-align', dest='roi_align',
@@ -227,8 +228,7 @@ def main():
             'iteration={iteration}',
             'weight_decay={weight_decay}',
             'overfit={overfit}',
-            'head_only={head_only}',
-            'mask_only={mask_only}',
+            'update_policy={update_policy}',
             'copy_cls_and_loc={copy_cls_and_loc}',
             'roi_align={roi_align}',
             'timestamp={timestamp}',
@@ -271,19 +271,36 @@ def main():
     # optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
-    if args.head_only or args.mask_only:
+    if args.update_policy == 'almost_all':
+        # This is only relevant to ResNet training.
+        if args.model in ['resnet50', 'resnet101']:
+            for p in model.params():
+                # Do not update batch normalization layers.
+                if p.name == 'gamma':
+                    p.update_rule.enabled = False
+                elif p.name == 'beta':
+                    p.update_rule.enabled = False
+        # Do not update for the first two blocks.
+        mask_rcnn.extractor.conv1.disable_update()
+        mask_rcnn.extractor.bn1.disable_update()
+        mask_rcnn.extractor.res2.disable_update()
+    elif args.update_policy == 'head_only':
         mask_rcnn.extractor.disable_update()
         mask_rcnn.rpn.disable_update()
-        if args.mask_only:
-            if args.model == 'vgg16':
-                mask_rcnn.head.fc6.disable_update()
-                mask_rcnn.head.fc7.disable_update()
-                mask_rcnn.head.cls_loc.disable_update()
-                mask_rcnn.head.score.disable_update()
-            elif args.model in ['resnet50', 'resnet101']:
-                mask_rcnn.head.res5.disable_update()
-                mask_rcnn.head.cls_loc.disable_update()
-                mask_rcnn.head.score.disable_update()
+    elif args.update_policy == 'mask_only':
+        mask_rcnn.extractor.disable_update()
+        mask_rcnn.rpn.disable_update()
+        if args.model == 'vgg16':
+            mask_rcnn.head.fc6.disable_update()
+            mask_rcnn.head.fc7.disable_update()
+            mask_rcnn.head.cls_loc.disable_update()
+            mask_rcnn.head.score.disable_update()
+        elif args.model in ['resnet50', 'resnet101']:
+            mask_rcnn.head.res5.disable_update()
+            mask_rcnn.head.cls_loc.disable_update()
+            mask_rcnn.head.score.disable_update()
+    else:
+        raise ValueError
 
     train_data = TransformDataset(train_data, Transform(mask_rcnn))
 
