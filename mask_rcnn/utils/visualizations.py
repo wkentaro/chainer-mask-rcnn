@@ -45,12 +45,14 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
         color = cmap[inst_class]
         color = (color * 255).tolist()
 
-        y1, x1, y2, x2 = box
+        y1, x1, y2, x2 = box.astype(int).tolist()
         cv2.rectangle(img_viz, (x1, y1), (x2, y2), color[::-1],
                       thickness=thickness, lineType=CV_AA)
 
         if masks is not None:
             mask_inst = masks[i_box]
+            if mask_inst.shape != (y2 - y1, x2 - x1):
+                mask_inst = mask_inst[y1:y2, x1:x2]
             color_inst = cmap_inst[i_box]
             color_inst = (color_inst * 255)
             img_viz[y1:y2, x1:x2][mask_inst] = (
