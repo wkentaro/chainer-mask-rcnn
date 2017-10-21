@@ -79,7 +79,7 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
         super(InstanceSegmentationVOCEvaluator, self).__init__(
             iterator, target)
         self.use_07_metric = use_07_metric
-        self.label_names = label_names
+        self.label_names = np.asarray(label_names)
         self.file_name = file_name
 
         self._trainer = None
