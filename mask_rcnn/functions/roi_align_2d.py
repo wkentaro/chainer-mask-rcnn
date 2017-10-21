@@ -8,7 +8,8 @@ from chainer import functions
 
 def roi_align_2d(bottom_data, bottom_rois, outh, outw, spatial_scale):
     if isinstance(bottom_rois, chainer.Variable):
-        bottom_rois = cuda.to_cpu(bottom_rois.data)
+        bottom_rois = bottom_rois.data
+    bottom_rois = cuda.to_cpu(bottom_rois)
 
     B, C, H, W = bottom_data.shape
     N = bottom_rois.shape[0]
