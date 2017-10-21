@@ -108,29 +108,33 @@ def main():
                 img, lbl_cls_true, lbl_ins_true = dataset_ins_val[idx_val]
 
             img_chw = img.copy().transpose(2, 0, 1)
-            lbl_inss, lbl_clss = model.mask_rcnn.predict([img_chw])
-            lbl_ins = lbl_inss[0]
-            lbl_cls = lbl_clss[0]
+            bboxes_pred, masks_pred, labels_pred, scores_pred = \
+                model.mask_rcnn.predict_masks([img_chw])
+            bbox_pred = bboxes_pred[0]
+            mask_pred = masks_pred[0]
+            label_pred = labels_pred[0]
+            score_pred = scores_pred[0]
 
             label_true, bbox_true, mask_true = \
                 mask_rcnn.utils.label2instance_boxes(
                     lbl_ins_true, lbl_cls_true, return_masks=True)
             label_true -= 1
-            label, bbox, mask = mask_rcnn.utils.label2instance_boxes(
-                lbl_ins, lbl_cls, return_masks=True)
-            label -= 1
             score = np.ones((len(mask),), dtype=np.float64)
 
             prec, rec = mask_rcnn.utils.calc_instseg_voc_prec_rec(
-                [mask], [label], [score], [mask_true], [label_true])
+                [mask_pred], [label_pred], [score_pred],
+                [mask_true], [label_true])
             ap = chainercv.evaluations.calc_detection_voc_ap(prec, rec)
             mean_ap = 100 * np.nanmean(ap)
             print('[%02d] map: %.2f' % (i, mean_ap))
 
             viz_true = mask_rcnn.utils.visualize_instance_segmentation(
                 lbl_ins_true, lbl_cls_true, img, dataset_ins.class_names)
-            viz_pred = mask_rcnn.utils.visualize_instance_segmentation(
-                lbl_ins, lbl_cls, img, dataset_ins.class_names)
+            label_pred += 1
+            captions = dataset_ins.class_names[label_pred]
+            viz_pred = mask_rcnn.utils.draw_instance_boxes(
+                img, bbox_pred, label_pred, n_class=21,
+                masks=mask_pred, captions=captions, bg_class=0)
             viz = mvtk.image.tile([viz_true, viz_pred], shape=(2, 1))
             cv2.imwrite(osp.join(out, '%08d.map=%.1f.jpg' % (i, mean_ap)),
                         viz[:, :, ::-1])
