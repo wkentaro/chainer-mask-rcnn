@@ -19,9 +19,9 @@ def roi_align_2d(bottom_data, bottom_rois, outh, outw, spatial_scale):
         i_batch, x1, y1, x2, y2 = bottom_rois[i_roi].tolist()
         i_batch = int(i_batch)
         x1 = int(spatial_scale * x1)
-        x2 = int(spatial_scale * x2)
+        x2 = max(int(spatial_scale * x2), x1 + 1)
         y1 = int(spatial_scale * y1)
-        y2 = int(spatial_scale * y2)
+        y2 = max(int(spatial_scale * y2), y1 + 1)
         x_roi = bottom_data[i_batch][:, y1:y2, x1:x2]
         x_roi = x_roi[None, :, :, :]  # N, C, H, W
         y = functions.resize_images(x_roi, (outh, outw))
