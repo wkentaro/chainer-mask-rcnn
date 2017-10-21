@@ -20,8 +20,19 @@ for name in os.listdir('logs'):
     dfi = df.ix[idx]
     if dfi['validation/main/map'] == 0:
         continue
-    row = [name]
-    row += [dfi[c] for c in columns[1:]]
+    row = []
+    for col in columns:
+        if col == 'name':
+            row.append(name)
+        elif col in ['epoch', 'iteration']:
+            max_value = df[col].max()
+            row.append('%d / %d' % (dfi[col], max_value))
+        elif col == 'main/loss':
+            min_value = df[col].min()
+            max_value = df[col].max()
+            row.append('%f < %f < %f' % (min_value, dfi[col], max_value))
+        else:
+            row.append(dfi[col])
     rows.append(row)
 rows = sorted(rows, key=lambda x: x[4])
 print(tabulate.tabulate(rows, columns, tablefmt='grid'))
