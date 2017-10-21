@@ -49,9 +49,9 @@ def main():
         model.to_gpu()
 
     # optimizer
-    optimizer = chainer.optimizers.MomentumSGD(lr=1e-3, momentum=0.9)
+    optimizer = chainer.optimizers.MomentumSGD(lr=0.02, momentum=0.9)
     optimizer.setup(model)
-    optimizer.add_hook(chainer.optimizer.WeightDecay(rate=0.0005))
+    optimizer.add_hook(chainer.optimizer.WeightDecay(rate=0.0001))
     if True:
         model.mask_rcnn.extractor.disable_update()
         model.mask_rcnn.rpn.disable_update()
