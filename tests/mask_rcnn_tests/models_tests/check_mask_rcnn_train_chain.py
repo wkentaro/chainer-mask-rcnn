@@ -42,7 +42,7 @@ def main():
             n_fg_class=20, pretrained_model='imagenet')
     else:
         frcnn = mask_rcnn.models.MaskRCNNVGG16(
-            n_fg_class=20, pretrained_model='voc0712_faster_rcnn')
+            n_fg_class=20, pretrained_model='voc12_train_faster_rcnn')
 
     model = mask_rcnn.models.MaskRCNNTrainChain(frcnn)
     if gpu >= 0:
