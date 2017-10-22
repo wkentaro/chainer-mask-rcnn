@@ -1,12 +1,19 @@
+import argparse
+
 import chainer
-# import chainer.functions as F
 import matplotlib.pyplot as plt
 import numpy as np
 
 import mask_rcnn as mrcnn
 
 
-gpu = -1
+parser = argparse.ArgumentParser()
+parser.add_argument('-g', '--gpu', default=-1)
+parser.add_argument('-f', '--func', choices=['align', 'pool', 'resize'],
+                    default='align')
+args = parser.parse_args()
+
+gpu = args.gpu
 if gpu >= 0:
     chainer.cuda.get_device_from_id(gpu).use()
 
@@ -22,28 +29,48 @@ input = np.array([
     [0.19, 0.69, 0.09, 0.86, 0.88, 0.07, 0.01, 0.48],
     [0.83, 0.24, 0.97, 0.04, 0.24, 0.35, 0.50, 0.91],
 ], dtype=np.float32)
+print('input:')
 print(input)
+print('-' * 79)
 
 x = input[np.newaxis, np.newaxis, :, :]
 if gpu >= 0:
     x = chainer.cuda.to_gpu(x)
 x = chainer.Variable(x)
 # batch_index, x1, y1, x2, y2
-rois = np.array([[0, 0, 2, 6, 7]], dtype=np.float32)
+# rois = np.array([[0, 0, 2, 6, 7]], dtype=np.float32)
 # rois = np.array([[0, 0, 0, 2, 2]], dtype=np.float32)
-# rois = np.array([[0, 0, 0, 3, 2]], dtype=np.float32)
+rois = np.array([[0, 0, 0, 3, 2]], dtype=np.float32)
+print('rois:')
+print(rois)
+print('-' * 79)
 if gpu >= 0:
     rois = chainer.cuda.to_gpu(rois)
 rois = chainer.Variable(rois)
-y = mrcnn.functions.roi_align_2d(x, rois, outh=2, outw=2, spatial_scale=1)
-# y.grad = np.ones((1, 1, 2, 2), dtype=np.float32)
-# if gpu >= 0:
-#     y.grad = chainer.cuda.to_gpu(y.grad)
-# y.backward()
-# print(x.grad)
+
+if args.func == 'align':
+    y = mrcnn.functions.roi_align_2d(
+        x, rois, outh=2, outw=2, spatial_scale=1)
+elif args.func == 'pool':
+    y = chainer.functions.roi_pooling_2d(
+        x, rois, outh=2, outw=2, spatial_scale=1)
+elif args.func == 'resize':
+    y = mrcnn.functions.crop_and_resize(
+        x, rois, outh=2, outw=2, spatial_scale=1)
+
+grad = np.ones((1, 1, 2, 2), dtype=np.float32)
+if gpu >= 0:
+    grad = chainer.cuda.to_gpu(grad)
+y.grad = grad
+y.backward()
+print('x.grad:')
+print(x.grad)
+print('-' * 79)
 output = y.data[0, 0]
 output = chainer.cuda.to_cpu(output)
+print('output:')
 print(output)
+print('-' * 79)
 
 input_viz = plt.cm.jet(input)
 input_viz = (input_viz * 255).astype(np.uint8)
