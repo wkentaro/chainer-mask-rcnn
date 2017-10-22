@@ -33,13 +33,21 @@ conda install -q -y pyqt
 pip install Cython
 pip install -U numpy
 
-# install mvtk
+# install mvtk {
 pip install scikit-image
 pip install imgaug
 pip install 'chainer>=2,<3'
 pip install git+https://github.com/wkentaro/mvtk.git
+# }
 
-(cd chainercv && pip install -e .)
+# install chainercv {
+if [ -d chainercv ]; then
+  (cd chainercv && test "$(git_branch)" = master)
+else
+  (git clone https://github.com/chainer/chainercv.git)
+fi
+(cd chainercv && pip install .)
+# }
 
 pip install -e .
 
