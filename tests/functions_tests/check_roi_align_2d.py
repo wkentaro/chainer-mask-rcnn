@@ -84,6 +84,9 @@ for rois in roiss:
     print('Passed!')
     print('-' * 79)
 
+    if True:
+        continue
+
     input_viz = plt.cm.jet(input)
     input_viz = (input_viz * 255).astype(np.uint8)
     plt.subplot(121)
