@@ -209,9 +209,9 @@ class ROIAlign2D(function.Function):
               for (float w = wstart; w < wend; w += 1.) {
                 // Selecting four regular locations for bilinear interpolation
                 int x_left = floor(w);
-                int x_right = x_left + 1;
+                int x_right = ceil(w);
                 int y_bottom = floor(h);
-                int y_top = y_bottom + 1;
+                int y_top = ceil(h);
 
                 int top_left_index = offset + y_top * width + x_left;
                 int top_right_index = offset + y_top * width + x_right;
