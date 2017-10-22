@@ -45,6 +45,6 @@ def summarize_logs(logs_dir, keys, target_key, objective):
 
 
 if __name__ == '__main__':
-    keys = ['name', 'epoch', 'iteration', 'main/loss', 'validation/main/map']
-    objective = 'max'
+    keys = ['name', 'epoch', 'iteration', 'main/loss', 'validation/main/loss']
+    objective = 'min'
     summarize_logs('logs', keys, target_key=keys[-1], objective=objective)
