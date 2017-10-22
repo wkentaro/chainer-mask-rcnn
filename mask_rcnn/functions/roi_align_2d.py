@@ -56,8 +56,8 @@ class ROIAlign2D(function.Function):
             roi_batch_ind = bottom_rois[n, 0]
             if roi_batch_ind < 0:
                 top_data[n, c, ph, pw] = 0
-                argmax_data_x[n, c, ph, pw] = 0
-                argmax_data_y[n, c, ph, pw] = 0
+                argmax_data_x[n, c, ph, pw] = -1
+                argmax_data_y[n, c, ph, pw] = -1
                 continue
 
             roi_start_w = bottom_rois[n, 1] * spatial_scale
@@ -98,10 +98,14 @@ class ROIAlign2D(function.Function):
             margin_w = grids_w - bin_size_w
             for i_grid_h in six.moves.range(grids_h):
                 h = hstart + margin_h / 2. + i_grid_h
-                assert h < hend
+                if h > hend:
+                    continue
+                # assert h < hend, (h, hend)
                 for i_grid_w in six.moves.range(grids_w):
                     w = wstart + margin_w / 2. + i_grid_w
-                    assert w < wend
+                    # assert w < wend, (w, wend)
+                    if w > wend:
+                        continue
 
                     # Selecting four regular locations for bilinear interp
                     x_left = int(numpy.floor(w))
@@ -131,6 +135,10 @@ class ROIAlign2D(function.Function):
                             + w_ratio * bottom_data[top_right_index]
                         # bilinear interpolation in y direction
                         val = (1. - h_ratio) * val_bottom + h_ratio * val_top
+                    else:
+                        val = 0
+                        w = -1
+                        h = -1
 
                     if val > maxval:
                         maxval = val
@@ -271,7 +279,7 @@ class ROIAlign2D(function.Function):
     def backward_cpu(self, inputs, gy):
         bottom_rois = inputs[1]
         channels, height, width = self._bottom_data_shape[1:]
-        bottom_diff = cuda.cupy.zeros(self._bottom_data_shape, numpy.float32)
+        bottom_diff = numpy.zeros(self._bottom_data_shape, numpy.float32)
 
         num_rois = bottom_rois.shape[0]
         spatial_scale = self.spatial_scale
@@ -313,6 +321,9 @@ class ROIAlign2D(function.Function):
                 roi_width = roi_end_w - roi_start_w
                 roi_height = roi_end_h - roi_start_h
 
+                if roi_height == 0 or roi_width == 0:
+                    continue
+
                 bin_size_h = roi_height / pooled_height
                 bin_size_w = roi_width / pooled_width
 
@@ -333,6 +344,9 @@ class ROIAlign2D(function.Function):
                         maxidx_x = argmax_data_x[index]
                         maxidx_y = argmax_data_y[index]
 
+                        if maxidx_x == -1 or maxidx_y == -1:
+                            continue
+
                         x_left = int(numpy.floor(maxidx_x))
                         x_right = int(numpy.ceil(maxidx_x))
                         y_bottom = int(numpy.floor(maxidx_y))
@@ -342,29 +356,30 @@ class ROIAlign2D(function.Function):
                                      0 <= x_right <= (width - 1) and
                                      0 <= y_bottom <= (height - 1) and
                                      0 <= y_top <= (height - 1))
+                        if not is_all_in:
+                            continue
 
-                        if is_all_in:
-                            w_ratio = maxidx_x - x_left    # ratio for right
-                            h_ratio = maxidx_y - y_bottom  # ratio for top
-                            # bilinear interpolation in x direction
-                            diff_bottom = (1. - h_ratio) * top_diff[index]
-                            diff_top = h_ratio * top_diff[index]
-                            diff_bottom_left = (1. - w_ratio) * diff_bottom
-                            diff_bottom_right = w_ratio * diff_bottom
-                            diff_top_left = (1. - w_ratio) * diff_top
-                            diff_top_right = w_ratio * diff_top
+                        w_ratio = maxidx_x - x_left    # ratio for right
+                        h_ratio = maxidx_y - y_bottom  # ratio for top
+                        # bilinear interpolation in x direction
+                        diff_bottom = (1. - h_ratio) * top_diff[index]
+                        diff_top = h_ratio * top_diff[index]
+                        diff_bottom_left = (1. - w_ratio) * diff_bottom
+                        diff_bottom_right = w_ratio * diff_bottom
+                        diff_top_left = (1. - w_ratio) * diff_top
+                        diff_top_right = w_ratio * diff_top
 
-                            # if (w, h) is 1 location of the 4 bilinear
-                            # locations, it can get gradient
-                            if w == x_left and h == y_bottom:
-                                gradient += diff_bottom_left
-                            elif w == x_right and h == y_bottom:
-                                gradient += diff_bottom_right
-                            elif w == x_left and h == y_top:
-                                gradient += diff_top_left
-                            elif w == x_right and h == y_top:
-                                gradient += diff_top_right
-                bottom_diff[n, c, h, w] = gradient
+                        # if (w, h) is 1 location of the 4 bilinear
+                        # locations, it can get gradient
+                        if w == x_left and h == y_bottom:
+                            gradient += diff_bottom_left
+                        elif w == x_right and h == y_bottom:
+                            gradient += diff_bottom_right
+                        elif w == x_left and h == y_top:
+                            gradient += diff_top_left
+                        elif w == x_right and h == y_top:
+                            gradient += diff_top_right
+            bottom_diff[n, c, h, w] = gradient
 
         return bottom_diff, None
 
