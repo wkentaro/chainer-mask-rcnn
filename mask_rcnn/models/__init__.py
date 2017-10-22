@@ -1,4 +1,5 @@
 # flake8: noqa
+from .faster_rcnn_resnet import FasterRCNNResNet
 from .mask_rcnn import MaskRCNN
 from .mask_rcnn_resnet import MaskRCNNResNet
 from .mask_rcnn_train_chain import MaskRCNNTrainChain
