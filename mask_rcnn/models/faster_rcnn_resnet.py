@@ -134,6 +134,20 @@ class FasterRCNNResNet(FasterRCNN):
         _copy_persistent_chain(self.head.res5, pretrained_model.res5)
 
 
+class FasterRCNNResNet50(FasterRCNNResNet):
+
+    def __init__(self, *args, **kwargs):
+        return super(FasterRCNNResNet50, self).__init__(
+            n_layers=50, *args, **kwargs)
+
+
+class FasterRCNNResNet101(FasterRCNNResNet):
+
+    def __init__(self, *args, **kwargs):
+        return super(FasterRCNNResNet101, self).__init__(
+            n_layers=101, *args, **kwargs)
+
+
 class ResNetRoIHead(chainer.Chain):
 
     def __init__(self, n_class, roi_size, spatial_scale,

@@ -6,11 +6,19 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 
-from .. import functions
-from .mask_rcnn import MaskRCNN
+from chainer.links.model.vision.resnet import BuildingBlock
+from chainer.links.model.vision.resnet import ResNet50Layers
+from chainer.links.model.vision.resnet import ResNet101Layers
 from chainercv.links.model.faster_rcnn.region_proposal_network \
     import RegionProposalNetwork
 from chainercv.utils import download_model
+
+from .. import functions
+from .faster_rcnn_resnet import _copy_persistent_chain
+from .faster_rcnn_resnet import _global_average_pooling_2d
+from .faster_rcnn_resnet import FasterRCNNResNet50
+from .faster_rcnn_resnet import FasterRCNNResNet101
+from .mask_rcnn import MaskRCNN
 
 
 class MaskRCNNResNet(MaskRCNN):
@@ -19,7 +27,7 @@ class MaskRCNNResNet(MaskRCNN):
     _models = {}
 
     def __init__(self,
-                 resnet_name,
+                 n_layers,
                  n_fg_class=None,
                  pretrained_model=None,
                  min_size=800, max_size=None,
@@ -27,8 +35,7 @@ class MaskRCNNResNet(MaskRCNN):
                  res_initialW=None, rpn_initialW=None,
                  loc_initialW=None, score_initialW=None,
                  proposal_creator_params=dict(),
-                 roi_align=True,
-                 copy_cls_and_loc=True,
+                 pooling_func=functions.roi_align_2d,
                  ):
         if n_fg_class is None:
             if pretrained_model not in self._models:
@@ -45,33 +52,33 @@ class MaskRCNNResNet(MaskRCNN):
         if res_initialW is None and pretrained_model:
             res_initialW = chainer.initializers.constant.Zero()
 
-        if resnet_name == 'resnet50':
-            from chainer.links.model.vision.resnet import ResNet50Layers
-            from chainercv.links.model.faster_rcnn import FasterRCNNResNet50
-            self._resnet_layers = ResNet50Layers
-            self._faster_rcnn = FasterRCNNResNet50
-        elif resnet_name == 'resnet101':
-            from chainer.links.model.vision.resnet import ResNet101Layers
-            from chainercv.links.model.faster_rcnn import FasterRCNNResNet101
-            self._resnet_layers = ResNet101Layers
-            self._faster_rcnn = FasterRCNNResNet101
+        if n_layers == 50:
+            self._ResNetLayers = ResNet50Layers
+            self._FasterRCNN = FasterRCNNResNet50
+        elif n_layers == 101:
+            self._ResNetLayers = ResNet101Layers
+            self._FasterRCNN = FasterRCNNResNet101
         else:
             raise ValueError
-        self._resnet_name = resnet_name
+        self.n_layers = n_layers
 
-        class ResNet(self._resnet_layers):
+        class Extractor(self._ResNetLayers):
+
+            def __init__(self, *args, **kwargs):
+                super(Extractor, self).__init__(*args, **kwargs)
+                # Remove no need layers to save memory
+                self.res5 = chainer.Link()
+                self.fc6 = chainer.Link()
 
             def __call__(self, x):
+                pick = 'res4'
                 with chainer.using_config('train', False):
-                    out = super(ResNet, self).__call__(x, layers=['res4'])
-                return out['res4']
+                    feat = super(Extractor, self).__call__(x, layers=[pick])
+                return feat[pick]
 
-        extractor = ResNet(pretrained_model=None)
-        # extractor.pick = 'res5'
-        # # Delete all layers after conv5_3.
-        # extractor.remove_unused()
+        extractor = Extractor(pretrained_model=None)
         rpn = RegionProposalNetwork(
-            1024, 256,
+            1024, 512,
             ratios=ratios,
             anchor_scales=anchor_scales,
             feat_stride=self.feat_stride,
@@ -84,7 +91,7 @@ class MaskRCNNResNet(MaskRCNN):
             res_initialW=res_initialW,
             loc_initialW=loc_initialW,
             score_initialW=score_initialW,
-            roi_align=roi_align,
+            pooling_func=pooling_func,
         )
 
         super(MaskRCNNResNet, self).__init__(
@@ -96,8 +103,6 @@ class MaskRCNNResNet(MaskRCNN):
             min_size=min_size,
             max_size=max_size
         )
-
-        self._copy_cls_and_loc = copy_cls_and_loc
 
         if pretrained_model in self._models:
             path = download_model(self._models[pretrained_model]['url'])
@@ -112,9 +117,7 @@ class MaskRCNNResNet(MaskRCNN):
             chainer.serializers.load_npz(pretrained_model, self)
 
     def _copy_imagenet_pretrained_resnet(self):
-        from chainercv.links.model.faster_rcnn.faster_rcnn_resnet import \
-            copy_persistent_chain
-        pretrained_model = self._resnet_layers(pretrained_model='auto')
+        pretrained_model = self._ResNetLayers(pretrained_model='auto')
 
         self.extractor.conv1.copyparams(pretrained_model.conv1)
         # The pretrained weights are trained to accept BGR images.
@@ -123,23 +126,21 @@ class MaskRCNNResNet(MaskRCNN):
             self.extractor.conv1.W.data[:, ::-1]
 
         self.extractor.bn1.copyparams(pretrained_model.bn1)
-        copy_persistent_chain(self.extractor.bn1, pretrained_model.bn1)
+        _copy_persistent_chain(self.extractor.bn1, pretrained_model.bn1)
 
         self.extractor.res2.copyparams(pretrained_model.res2)
-        copy_persistent_chain(self.extractor.res2, pretrained_model.res2)
+        _copy_persistent_chain(self.extractor.res2, pretrained_model.res2)
 
         self.extractor.res3.copyparams(pretrained_model.res3)
-        copy_persistent_chain(self.extractor.res3, pretrained_model.res3)
+        _copy_persistent_chain(self.extractor.res3, pretrained_model.res3)
 
         self.extractor.res4.copyparams(pretrained_model.res4)
-        copy_persistent_chain(self.extractor.res4, pretrained_model.res4)
+        _copy_persistent_chain(self.extractor.res4, pretrained_model.res4)
 
         self.head.res5.copyparams(pretrained_model.res5)
-        copy_persistent_chain(self.head.res5, pretrained_model.res5)
+        _copy_persistent_chain(self.head.res5, pretrained_model.res5)
 
     def _copy_voc_pretrained_rpn(self, pretrained_model):
-        from chainercv.links.model.faster_rcnn.faster_rcnn_resnet import \
-            copy_persistent_chain
         if pretrained_model == 'voc12_train_rpn':
             n_fg_class = 20
             if self._resnet_name == 'resnet50':
@@ -155,21 +156,17 @@ class MaskRCNNResNet(MaskRCNN):
             n_fg_class=n_fg_class, pretrained_model=pretrained_model)
 
         self.extractor.copyparams(pretrained_model.extractor)
-        copy_persistent_chain(self.extractor, pretrained_model.extractor)
+        _copy_persistent_chain(self.extractor, pretrained_model.extractor)
 
         self.rpn.copyparams(pretrained_model.rpn)
-        copy_persistent_chain(self.rpn, pretrained_model.rpn)
+        _copy_persistent_chain(self.rpn, pretrained_model.rpn)
 
-        from chainercv.links.model.faster_rcnn.faster_rcnn_resnet import \
-            copy_persistent_chain
-        pretrained_model = self._resnet_layers(pretrained_model='auto')
+        pretrained_model = self._ResNetLayers(pretrained_model='auto')
 
         self.head.res5.copyparams(pretrained_model.res5)
-        copy_persistent_chain(self.head.res5, pretrained_model.res5)
+        _copy_persistent_chain(self.head.res5, pretrained_model.res5)
 
     def _copy_voc_pretrained_faster_rcnn(self, pretrained_model):
-        from chainercv.links.model.faster_rcnn.faster_rcnn_resnet import \
-            copy_persistent_chain
         if pretrained_model == 'voc12_train_faster_rcnn':
             if self._resnet_name == 'resnet50':
                 # FasterRCNNResNet50 (res5 stride=2) + RoiAlign
@@ -190,21 +187,20 @@ class MaskRCNNResNet(MaskRCNN):
             n_fg_class=n_fg_class, pretrained_model=pretrained_model)
 
         self.extractor.copyparams(pretrained_model.extractor)
-        copy_persistent_chain(self.extractor, pretrained_model.extractor)
+        _copy_persistent_chain(self.extractor, pretrained_model.extractor)
 
         self.rpn.copyparams(pretrained_model.rpn)
-        copy_persistent_chain(self.rpn, pretrained_model.rpn)
+        _copy_persistent_chain(self.rpn, pretrained_model.rpn)
 
         self.head.res5.copyparams(pretrained_model.head.res5)
-        copy_persistent_chain(self.head.res5, pretrained_model.head.res5)
+        _copy_persistent_chain(self.head.res5, pretrained_model.head.res5)
 
-        if self._copy_cls_and_loc:
-            self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
-            copy_persistent_chain(self.head.cls_loc,
-                                  pretrained_model.head.cls_loc)
+        self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
+        _copy_persistent_chain(self.head.cls_loc,
+                               pretrained_model.head.cls_loc)
 
-            self.head.score.copyparams(pretrained_model.head.score)
-            copy_persistent_chain(self.head.score, pretrained_model.head.score)
+        self.head.score.copyparams(pretrained_model.head.score)
+        _copy_persistent_chain(self.head.score, pretrained_model.head.score)
 
 
 class ResNetRoIHead(chainer.Chain):
@@ -215,7 +211,6 @@ class ResNetRoIHead(chainer.Chain):
         # n_class includes the background
         super(ResNetRoIHead, self).__init__()
         with self.init_scope():
-            from chainer.links.model.vision.resnet import BuildingBlock
             self.res5 = BuildingBlock(
                 3, 1024, 512, 2048, stride=1, initialW=res_initialW)
             self.cls_loc = L.Linear(2048, n_class * 4, initialW=loc_initialW)
@@ -240,7 +235,7 @@ class ResNetRoIHead(chainer.Chain):
         roi_indices = roi_indices.astype(np.float32)
         indices_and_rois = self.xp.concatenate(
             (roi_indices[:, None], rois), axis=1)
-        pool = _roi_align_2d_yx(
+        pool = _roi_pooling_2d_yx(
             x, indices_and_rois, self.roi_size, self.roi_size,
             self.spatial_scale, self._roi_align)
 
@@ -252,8 +247,6 @@ class ResNetRoIHead(chainer.Chain):
             res5 = self.res5(pool)
 
         if pred_bbox:
-            from chainer.links.model.vision.resnet import \
-                _global_average_pooling_2d
             pool5 = _global_average_pooling_2d(res5)
             roi_cls_locs = self.cls_loc(pool5)
             roi_scores = self.score(pool5)
@@ -265,13 +258,8 @@ class ResNetRoIHead(chainer.Chain):
         return roi_cls_locs, roi_scores, roi_masks
 
 
-def _roi_align_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,
-                     roi_align=True):
+def _roi_pooling_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,
+                       pooling_func):
     xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
-    if roi_align:
-        pool = functions.roi_align_2d(
-            x, xy_indices_and_rois, outh, outw, spatial_scale)
-    else:
-        pool = F.roi_pooling_2d(
-            x, xy_indices_and_rois, outh, outw, spatial_scale)
+    pool = pooling_func(x, xy_indices_and_rois, outh, outw, spatial_scale)
     return pool
