@@ -123,9 +123,11 @@ class ROIAlign2D(function.Function):
                         w_ratio = w - x_left    # ratio for right
                         h_ratio = h - y_bottom  # ratio for top
                         # bilinear interpolation in x direction
-                        val_bottom = (1. - w_ratio) * bottom_data[bottom_left_index] \
+                        val_bottom = \
+                            (1. - w_ratio) * bottom_data[bottom_left_index] \
                             + w_ratio * bottom_data[bottom_right_index]
-                        val_top = (1. - w_ratio) * bottom_data[top_left_index] \
+                        val_top = \
+                            (1. - w_ratio) * bottom_data[top_left_index] \
                             + w_ratio * bottom_data[top_right_index]
                         # bilinear interpolation in y direction
                         val = (1. - h_ratio) * val_bottom + h_ratio * val_top
@@ -193,15 +195,19 @@ class ROIAlign2D(function.Function):
             float wend = static_cast<float>(pw + 1) * bin_size_w;
 
             // Add roi offsets and clip to input boundaries
-            hstart = min(max(hstart + roi_start_h, 0.), static_cast<float>(height));
-            hend = min(max(hend + roi_start_h, 0.), static_cast<float>(height));
-            wstart = min(max(wstart + roi_start_w, 0.), static_cast<float>(width));
-            wend = min(max(wend + roi_start_w, 0.), static_cast<float>(width));
+            hstart = min(max(hstart + roi_start_h, 0.),
+                         static_cast<float>(height));
+            hend = min(max(hend + roi_start_h, 0.),
+                       static_cast<float>(height));
+            wstart = min(max(wstart + roi_start_w, 0.),
+                         static_cast<float>(width));
+            wend = min(max(wend + roi_start_w, 0.),
+                       static_cast<float>(width));
             bool is_empty = (hend <= hstart) || (wend <= wstart);
 
             // Define an empty pooling region to be zero
             float maxval = is_empty ? 0 : -1E+37;
-            // If nothing is pooled, argmax = -1 causes nothing to be backprop'd
+            // If nothing is pooled, argmax=-1 causes nothing to be backprop'd
             float maxidx_x = -1;
             float maxidx_y = -1;
             int offset = (roi_batch_ind * channels + c) * height * width;
@@ -235,7 +241,8 @@ class ROIAlign2D(function.Function):
                 {
                     float w_ratio = w - x_left;  // ratio for right
                     // bilinear interpolation in x direction
-                    float val_bottom = (1 - w_ratio) * bottom_data[bottom_left_index]
+                    float val_bottom =
+                        (1 - w_ratio) * bottom_data[bottom_left_index]
                         + w_ratio * bottom_data[bottom_right_index];
                     float val_top = (1 - w_ratio) * bottom_data[top_left_index]
                         + w_ratio * bottom_data[top_right_index];
@@ -289,7 +296,7 @@ class ROIAlign2D(function.Function):
                 if n != roi_batch_ind:
                     continue
 
-                # And it assumes that we don't have any negative offset of course
+                # And it assumes that we don't have any negative offset
                 roi_start_w = bottom_rois[roi_n, 1] * spatial_scale
                 roi_start_h = bottom_rois[roi_n, 2] * spatial_scale
                 roi_end_w = bottom_rois[roi_n, 3] * spatial_scale
@@ -347,7 +354,8 @@ class ROIAlign2D(function.Function):
                             diff_top_left = (1. - w_ratio) * diff_top
                             diff_top_right = w_ratio * diff_top
 
-                            # if (w, h) is 1 location of the 4 bilinear locations, it can get gradient
+                            # if (w, h) is 1 location of the 4 bilinear
+                            # locations, it can get gradient
                             if w == x_left and h == y_bottom:
                                 gradient += diff_bottom_left
                             elif w == x_right and h == y_bottom:
@@ -389,9 +397,12 @@ class ROIAlign2D(function.Function):
                 continue;
               }
 
-              // And it assumes that we don't have any negative offset of course
-              int roi_start_w = floor(bottom_rois[roi_n * 5 + 1] * spatial_scale);
-              int roi_start_h = floor(bottom_rois[roi_n * 5 + 2] * spatial_scale);
+              // And it assumes that we don't have
+              // any negative offset of course
+              int roi_start_w = floor(bottom_rois[roi_n * 5 + 1] *
+                                      spatial_scale);
+              int roi_start_h = floor(bottom_rois[roi_n * 5 + 2] *
+                                      spatial_scale);
               int roi_end_w = ceil(bottom_rois[roi_n * 5 + 3] * spatial_scale);
               int roi_end_h = ceil(bottom_rois[roi_n * 5 + 4] * spatial_scale);
 
@@ -412,17 +423,22 @@ class ROIAlign2D(function.Function):
               float bin_size_w = static_cast<float>(roi_width)
                                  / static_cast<float>(pooled_width);
 
-              int phstart = floor(static_cast<float>(h - roi_start_h) / bin_size_h);
-              int phend = ceil(static_cast<float>(h - roi_start_h + 1) / bin_size_h);
-              int pwstart = floor(static_cast<float>(w - roi_start_w) / bin_size_w);
-              int pwend = ceil(static_cast<float>(w - roi_start_w + 1) / bin_size_w);
+              int phstart = floor(static_cast<float>(h - roi_start_h) /
+                                  bin_size_h);
+              int phend = ceil(static_cast<float>(h - roi_start_h + 1) /
+                               bin_size_h);
+              int pwstart = floor(static_cast<float>(w - roi_start_w) /
+                                  bin_size_w);
+              int pwend = ceil(static_cast<float>(w - roi_start_w + 1) /
+                               bin_size_w);
 
               phstart = min(max(phstart, 0), pooled_height);
               phend = min(max(phend, 0), pooled_height);
               pwstart = min(max(pwstart, 0), pooled_width);
               pwend = min(max(pwend, 0), pooled_width);
 
-              int offset = (roi_n * channels + c) * pooled_height * pooled_width;
+              int offset = (roi_n * channels + c) * pooled_height *
+                    pooled_width;
               for (int ph = phstart; ph < phend; ++ph) {
                 for (int pw = pwstart; pw < pwend; ++pw) {
                   int index = offset + ph * pooled_width + pw;
@@ -443,7 +459,8 @@ class ROIAlign2D(function.Function):
                       && y_top >= 0 && y_top <= height - 1;
                   bool is_bottom_left_in = x_left >= 0 && x_left <= width - 1
                       && y_bottom >= 0 && y_bottom <= height - 1;
-                  bool is_bottom_right_in = x_right >= 0 && x_right <= width - 1
+                  bool is_bottom_right_in = x_right >= 0
+                      && x_right <= width - 1
                       && y_bottom >= 0 && y_bottom <= height - 1;
 
                   if (!(is_bottom_left_in && is_bottom_right_in &&
@@ -460,7 +477,8 @@ class ROIAlign2D(function.Function):
                   float diff_top_left = (1. - w_ratio) * diff_top;
                   float diff_top_right = w_ratio * diff_top;
 
-                  // if (w,h) is 1 location of the 4 bilinear locations, it can get gradient
+                  // if (w,h) is 1 location of the 4 bilinear locations,
+                  // it can get gradient
                   if (w == x_left && h == y_bottom)
                       gradient += diff_bottom_left;
                   else if (w == x_right && h == y_bottom)
