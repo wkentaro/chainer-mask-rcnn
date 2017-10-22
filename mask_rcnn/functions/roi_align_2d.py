@@ -55,6 +55,7 @@ class ROIAlign2D(function.Function):
             n = i / pooled_width / pooled_height / channels
 
             roi_batch_ind = bottom_rois[n, 0]
+
             if roi_batch_ind < 0:
                 top_data[n, c, ph, pw] = 0
                 argmax_data_x[n, c, ph, pw] = 0
@@ -281,7 +282,6 @@ class ROIAlign2D(function.Function):
             n = i / width / height / channels
 
             gradient = 0.
-
             # Accumulate gradient over all ROIs that pooled this element
             for roi_n in six.moves.range(num_rois):
                 roi_batch_ind = bottom_rois[roi_n, 0]
@@ -290,10 +290,14 @@ class ROIAlign2D(function.Function):
                     continue
 
                 # And it assumes that we don't have any negative offset
-                roi_start_w = bottom_rois[roi_n, 1] * spatial_scale
-                roi_start_h = bottom_rois[roi_n, 2] * spatial_scale
-                roi_end_w = bottom_rois[roi_n, 3] * spatial_scale
-                roi_end_h = bottom_rois[roi_n, 4] * spatial_scale
+                roi_start_w = int(numpy.floor(bottom_rois[roi_n, 1] *
+                                  spatial_scale))
+                roi_start_h = int(numpy.floor(bottom_rois[roi_n, 2] *
+                                  spatial_scale))
+                roi_end_w = int(numpy.ceil(bottom_rois[roi_n, 3] *
+                                spatial_scale))
+                roi_end_h = int(numpy.ceil(bottom_rois[roi_n, 4] *
+                                spatial_scale))
 
                 # Skip if ROI doesn't include (h, w)
                 in_roi = (roi_start_w <= w <= roi_end_w and
@@ -306,16 +310,15 @@ class ROIAlign2D(function.Function):
                 roi_width = roi_end_w - roi_start_w
                 roi_height = roi_end_h - roi_start_h
 
-                if roi_height == 0 or roi_width == 0:
-                    continue
+                bin_size_h = 1. * roi_height / pooled_height
+                bin_size_w = 1. * roi_width / pooled_width
 
-                bin_size_h = roi_height / pooled_height
-                bin_size_w = roi_width / pooled_width
-
-                phstart = int(numpy.floor((h - roi_start_h) / bin_size_h))
-                phend = int(numpy.ceil((h - roi_start_h + 1) / bin_size_h))
-                pwstart = int(numpy.floor((w - roi_start_w) / bin_size_w))
-                pwend = int(numpy.ceil((w - roi_start_w + 1) / bin_size_w))
+                # Set large margin (2) to avoid skipping setting gradient
+                # in the below for loop
+                phstart = int(numpy.floor((h - roi_start_h - 2) / bin_size_h))
+                phend = int(numpy.ceil((h - roi_start_h + 2) / bin_size_h))
+                pwstart = int(numpy.floor((w - roi_start_w - 2) / bin_size_w))
+                pwend = int(numpy.ceil((w - roi_start_w + 2) / bin_size_w))
 
                 phstart = min(max(phstart, 0), pooled_height)
                 phend = min(max(phend, 0), pooled_height)
@@ -328,9 +331,6 @@ class ROIAlign2D(function.Function):
                         index = offset + ph * pooled_width + pw
                         maxidx_x = argmax_data_x[index]
                         maxidx_y = argmax_data_y[index]
-
-                        if maxidx_x == -1 or maxidx_y == -1:
-                            continue
 
                         x_left = int(numpy.floor(maxidx_x))
                         x_right = int(numpy.ceil(maxidx_x))
@@ -423,13 +423,15 @@ class ROIAlign2D(function.Function):
               float bin_size_w = static_cast<float>(roi_width)
                                  / static_cast<float>(pooled_width);
 
-              int phstart = floor(static_cast<float>(h - roi_start_h) /
+              // Set large margin (2) to avoid skipping setting gradient
+              // in the below for loop
+              int phstart = floor(static_cast<float>(h - roi_start_h - 2) /
                                   bin_size_h);
-              int phend = ceil(static_cast<float>(h - roi_start_h + 1) /
+              int phend = ceil(static_cast<float>(h - roi_start_h + 2) /
                                bin_size_h);
-              int pwstart = floor(static_cast<float>(w - roi_start_w) /
+              int pwstart = floor(static_cast<float>(w - roi_start_w - 2) /
                                   bin_size_w);
-              int pwend = ceil(static_cast<float>(w - roi_start_w + 1) /
+              int pwend = ceil(static_cast<float>(w - roi_start_w + 2) /
                                bin_size_w);
 
               phstart = min(max(phstart, 0), pooled_height);
@@ -446,11 +448,9 @@ class ROIAlign2D(function.Function):
                   float max_y = argmax_data_y[index];
 
                   int x_left = floor(max_x);
-                  // int x_right = ceil(max_x);
-                  int x_right = x_left + 1;
+                  int x_right = ceil(max_x);
                   int y_bottom = floor(max_y);
-                  // int y_top = ceil(max_y);
-                  int y_top = y_bottom + 1;
+                  int y_top = ceil(max_y);
 
                   //Check whether 4 locations are in bounds
                   bool is_top_left_in = x_left >= 0 && x_left <= width - 1
