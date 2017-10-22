@@ -1,6 +1,7 @@
 import argparse
 
 import chainer
+from chainer import gradient_check
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -8,7 +9,7 @@ import mask_rcnn as mrcnn
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-g', '--gpu', default=-1)
+parser.add_argument('-g', '--gpu', type=int, default=-1)
 parser.add_argument('-f', '--func', choices=['align', 'pool', 'resize'],
                     default='align')
 args = parser.parse_args()
@@ -38,58 +39,69 @@ if gpu >= 0:
     x = chainer.cuda.to_gpu(x)
 x = chainer.Variable(x)
 # batch_index, x1, y1, x2, y2
-# rois = np.array([[0, 0, 2, 6, 7]], dtype=np.float32)
-# rois = np.array([[0, 0, 0, 2, 2]], dtype=np.float32)
-rois = np.array([[0, 0, 0, 3, 2]], dtype=np.float32)
-print('rois:')
-print(rois)
-print('-' * 79)
-if gpu >= 0:
-    rois = chainer.cuda.to_gpu(rois)
-rois = chainer.Variable(rois)
+roiss = [
+    np.array([[0, 0, 0, 2, 2]], dtype=np.float32),
+    np.array([[0, 0, 0, 3, 2]], dtype=np.float32),
+    np.array([[0, 0, 2, 6, 7]], dtype=np.float32),
+]
+for rois in roiss:
+    print('rois:')
+    print(rois)
+    print('-' * 79)
+    if gpu >= 0:
+        rois = chainer.cuda.to_gpu(rois)
+    rois = chainer.Variable(rois)
 
-if args.func == 'align':
-    y = mrcnn.functions.roi_align_2d(
-        x, rois, outh=2, outw=2, spatial_scale=1)
-elif args.func == 'pool':
-    y = chainer.functions.roi_pooling_2d(
-        x, rois, outh=2, outw=2, spatial_scale=1)
-elif args.func == 'resize':
-    y = mrcnn.functions.crop_and_resize(
-        x, rois, outh=2, outw=2, spatial_scale=1)
+    if args.func == 'align':
+        y = mrcnn.functions.roi_align_2d(
+            x, rois, outh=2, outw=2, spatial_scale=1)
+    elif args.func == 'pool':
+        y = chainer.functions.roi_pooling_2d(
+            x, rois, outh=2, outw=2, spatial_scale=1)
+    elif args.func == 'resize':
+        y = mrcnn.functions.crop_and_resize(
+            x, rois, outh=2, outw=2, spatial_scale=1)
 
-grad = np.ones((1, 1, 2, 2), dtype=np.float32)
-if gpu >= 0:
-    grad = chainer.cuda.to_gpu(grad)
-y.grad = grad
-y.backward()
-print('x.grad:')
-print(x.grad)
-print('-' * 79)
-output = y.data[0, 0]
-output = chainer.cuda.to_cpu(output)
-print('output:')
-print(output)
-print('-' * 79)
+    grad = np.ones((1, 1, 2, 2), dtype=np.float32)
+    if gpu >= 0:
+        grad = chainer.cuda.to_gpu(grad)
+    y.grad = grad
+    y.backward()
+    print('x.grad:')
+    print(x.grad)
+    print('-' * 79)
+    output = y.data[0, 0]
+    output = chainer.cuda.to_cpu(output)
+    print('output:')
+    print(output)
+    print('-' * 79)
 
-input_viz = plt.cm.jet(input)
-input_viz = (input_viz * 255).astype(np.uint8)
-plt.subplot(121)
-plt.imshow(input_viz)
-plt.title('input')
-for j in xrange(input.shape[0]):
-    for i in xrange(input.shape[1]):
-        plt.text(i, j, str(input[j][i]), fontsize=8,
-                 horizontalalignment='center', verticalalignment='center')
+    print('check_backward:')
+    gradient_check.check_backward(
+        mrcnn.functions.ROIAlign2D(2, 2, 1),
+        (x.data, rois.data), y.grad, no_grads=[False, True],
+    )
+    print('Passed!')
+    print('-' * 79)
 
-output_viz = plt.cm.jet(output)
-output_viz = (output_viz * 255).astype(np.uint8)
-plt.subplot(122)
-plt.imshow(output_viz)
-plt.title('output')
-for j in xrange(output.shape[0]):
-    for i in xrange(output.shape[1]):
-        plt.text(i, j, str(output[j][i]), fontsize=8,
-                 horizontalalignment='center', verticalalignment='center')
+    input_viz = plt.cm.jet(input)
+    input_viz = (input_viz * 255).astype(np.uint8)
+    plt.subplot(121)
+    plt.imshow(input_viz)
+    plt.title('input')
+    for j in xrange(input.shape[0]):
+        for i in xrange(input.shape[1]):
+            plt.text(i, j, str(input[j][i]), fontsize=8,
+                    horizontalalignment='center', verticalalignment='center')
 
-plt.show()
+    output_viz = plt.cm.jet(output)
+    output_viz = (output_viz * 255).astype(np.uint8)
+    plt.subplot(122)
+    plt.imshow(output_viz)
+    plt.title('output')
+    for j in xrange(output.shape[0]):
+        for i in xrange(output.shape[1]):
+            plt.text(i, j, str(output[j][i]), fontsize=8,
+                    horizontalalignment='center', verticalalignment='center')
+
+    plt.show()
