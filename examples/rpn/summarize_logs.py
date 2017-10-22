@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-import pandas as pd
-import tabulate
-
+import math
 import os
 import os.path as osp
+
+import pandas as pd
+import tabulate
 
 
 def summarize_logs(logs_dir, keys, target_key, objective):
@@ -14,7 +15,8 @@ def summarize_logs(logs_dir, keys, target_key, objective):
     rows = []
     for name in os.listdir(logs_dir):
         log_file = osp.join(logs_dir, name, 'log')
-        name = name[:len(name) // 2] + '\n' + name[len(name) // 2:]
+        name_n_rows = int(math.ceil(len(name) / 79.))
+        name = '\n'.join(name[i * 79:(i + 1) * 79] for i in range(name_n_rows))
         try:
             df = pd.read_json(log_file)
             if objective == 'min':
@@ -32,16 +34,18 @@ def summarize_logs(logs_dir, keys, target_key, objective):
                 row.append(name)
             elif key in ['epoch', 'iteration']:
                 max_value = df[key].max()
-                row.append('%d / %d' % (dfi[key], max_value))
+                row.append('%d/%d' % (dfi[key], max_value))
             elif key.endswith('/loss'):
                 min_value = df[key].min()
                 max_value = df[key].max()
-                row.append('%f < %f < %f' % (min_value, dfi[key], max_value))
+                row.append('%.2f<%.2f<%.2f' %
+                           (min_value, dfi[key], max_value))
             else:
                 row.append(dfi[key])
         rows.append(row)
     rows = sorted(rows, key=lambda x: x[4], reverse=objective == 'min')
-    print(tabulate.tabulate(rows, headers=keys, tablefmt='grid'))
+    print(tabulate.tabulate(rows, headers=keys,
+                            floatfmt='.2f', tablefmt='grid'))
 
 
 if __name__ == '__main__':
