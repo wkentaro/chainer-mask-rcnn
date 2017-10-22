@@ -1,10 +1,14 @@
 import chainer
-import chainer.functions as F
+# import chainer.functions as F
 import matplotlib.pyplot as plt
 import numpy as np
 
 import mask_rcnn as mrcnn
 
+
+gpu = -1
+if gpu >= 0:
+    chainer.cuda.get_device_from_id(gpu).use()
 
 np.set_printoptions(precision=2)
 
@@ -21,17 +25,22 @@ input = np.array([
 print(input)
 
 x = input[np.newaxis, np.newaxis, :, :]
-x = chainer.cuda.to_gpu(x)
+if gpu >= 0:
+    x = chainer.cuda.to_gpu(x)
 x = chainer.Variable(x)
 # batch_index, x1, y1, x2, y2
 rois = np.array([[0, 0, 2, 6, 7]], dtype=np.float32)
-rois = chainer.cuda.to_gpu(rois)
+# rois = np.array([[0, 0, 0, 2, 2]], dtype=np.float32)
+# rois = np.array([[0, 0, 0, 3, 2]], dtype=np.float32)
+if gpu >= 0:
+    rois = chainer.cuda.to_gpu(rois)
 rois = chainer.Variable(rois)
 y = mrcnn.functions.roi_align_2d(x, rois, outh=2, outw=2, spatial_scale=1)
-import cupy as cp
-y.grad = cp.ones((1, 1, 2, 2), dtype=cp.float32)
-y.backward()
-print(x.grad)
+# y.grad = np.ones((1, 1, 2, 2), dtype=np.float32)
+# if gpu >= 0:
+#     y.grad = chainer.cuda.to_gpu(y.grad)
+# y.backward()
+# print(x.grad)
 output = y.data[0, 0]
 output = chainer.cuda.to_cpu(output)
 print(output)
