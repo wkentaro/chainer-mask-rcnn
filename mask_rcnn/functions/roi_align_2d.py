@@ -46,6 +46,7 @@ class ROIAlign2D(function.Function):
         spatial_scale = self.spatial_scale
         argmax_data_x = self.argmax_data_x
         argmax_data_y = self.argmax_data_y
+        bottom_data = bottom_data.flatten()
 
         for i in six.moves.range(top_data.size):
             pw = i % pooled_width
@@ -56,8 +57,8 @@ class ROIAlign2D(function.Function):
             roi_batch_ind = bottom_rois[n, 0]
             if roi_batch_ind < 0:
                 top_data[n, c, ph, pw] = 0
-                argmax_data_x[n, c, ph, pw] = -1
-                argmax_data_y[n, c, ph, pw] = -1
+                argmax_data_x[n, c, ph, pw] = 0
+                argmax_data_y[n, c, ph, pw] = 0
                 continue
 
             roi_start_w = bottom_rois[n, 1] * spatial_scale
@@ -72,41 +73,25 @@ class ROIAlign2D(function.Function):
 
             hstart = ph * bin_size_h
             wstart = pw * bin_size_w
-            hend = hstart + bin_size_h
-            wend = wstart + bin_size_w
+            hend = (ph + 1) * bin_size_h
+            wend = (pw + 1) * bin_size_w
 
             # Add roi offsets and clip to input boundaries
             hstart = min(max(hstart + roi_start_h, 0.), float(height))
             hend = min(max(hend + roi_start_h, 0.), float(height))
             wstart = min(max(wstart + roi_start_w, 0.), float(width))
             wend = min(max(wend + roi_start_w, 0.), float(width))
-            is_empty = hend <= hstart or wend <= wstart
+            is_empty = (hend <= hstart) or (wend <= wstart)
 
-            # number of grids for bilinear interp
-            grids_h = int(numpy.ceil(bin_size_h))
-            grids_w = int(numpy.ceil(bin_size_w))
-
-            # Define an empty pooling region to be zero
             maxval = 0 if is_empty else - numpy.inf
-            # If nothing is pooled, argmax = -1 causes nothing to be backprop'd
             maxidx_x = -1
-            maxidx_y = -1
+            minidx_y = -1
             offset = int((roi_batch_ind * channels + c) * height * width)
-            bottom_data = bottom_data.flatten()
 
-            margin_h = grids_h - bin_size_h
-            margin_w = grids_w - bin_size_w
-            for i_grid_h in six.moves.range(grids_h):
-                h = hstart + margin_h / 2. + i_grid_h
-                if h > hend:
-                    continue
-                # assert h < hend, (h, hend)
-                for i_grid_w in six.moves.range(grids_w):
-                    w = wstart + margin_w / 2. + i_grid_w
-                    # assert w < wend, (w, wend)
-                    if w > wend:
-                        continue
-
+            h = hstart
+            while h < hend:
+                w = wstart
+                while w < wend:
                     # Selecting four regular locations for bilinear interp
                     x_left = int(numpy.floor(w))
                     x_right = int(numpy.ceil(w))
@@ -123,6 +108,7 @@ class ROIAlign2D(function.Function):
                                  0 <= y_bottom <= (height - 1) and
                                  0 <= y_top <= (height - 1))
 
+                    val = 0
                     if is_all_in:
                         w_ratio = w - x_left    # ratio for right
                         h_ratio = h - y_bottom  # ratio for top
@@ -135,15 +121,14 @@ class ROIAlign2D(function.Function):
                             + w_ratio * bottom_data[top_right_index]
                         # bilinear interpolation in y direction
                         val = (1. - h_ratio) * val_bottom + h_ratio * val_top
-                    else:
-                        val = 0
-                        w = -1
-                        h = -1
 
                     if val > maxval:
                         maxval = val
                         maxidx_x = w
                         maxidx_y = h
+
+                    w += 1.
+                h += 1.
 
             top_data[n, c, ph, pw] = maxval
             argmax_data_x[n, c, ph, pw] = maxidx_x
@@ -482,6 +467,7 @@ class ROIAlign2D(function.Function):
                         is_top_left_in && is_top_right_in)) {
                     continue;
                   }
+
                   float w_ratio = max_x - x_left;    // ratio for right
                   float h_ratio = max_y - y_bottom;  // ratio for top
 
