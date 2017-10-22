@@ -36,9 +36,9 @@ pip install -U numpy
 # install mvtk
 pip install scikit-image
 pip install imgaug
+pip install 'chainer>=2,<3'
 pip install git+https://github.com/wkentaro/mvtk.git
 
-(cd chainer && pip install -e .)
 (cd chainercv && pip install -e .)
 
 pip install -e .
