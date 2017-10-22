@@ -16,32 +16,12 @@ from chainer import training
 from chainer.training import extensions
 from chainercv.datasets import voc_bbox_label_names
 from chainercv.extensions import DetectionVOCEvaluator
-from chainercv.links import FasterRCNNResNet101
-from chainercv.links import FasterRCNNResNet50
 from chainercv.links import FasterRCNNVGG16
 from chainercv.links.model.faster_rcnn import FasterRCNNTrainChain
 from chainercv import transforms
 import numpy as np
 
 import mask_rcnn as mrcnn
-
-
-class ConcatenatedDataset(chainer.dataset.DatasetMixin):
-
-    def __init__(self, *datasets):
-        self._datasets = datasets
-
-    def __len__(self):
-        return sum(len(dataset) for dataset in self._datasets)
-
-    def get_example(self, i):
-        if i < 0:
-            raise IndexError
-        for dataset in self._datasets:
-            if i < len(dataset):
-                return dataset[i]
-            i -= len(dataset)
-        raise IndexError
 
 
 class Transform(object):
@@ -66,7 +46,7 @@ class Transform(object):
         return img, bbox, label, scale
 
 
-class FasterRcnnDataset(chainer.dataset.DatasetMixin):
+class FasterRCNNDataset(chainer.dataset.DatasetMixin):
 
     def __init__(self, instance_dataset):
         self._instance_dataset = instance_dataset
@@ -91,14 +71,21 @@ here = osp.dirname(osp.abspath(__file__))
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    # training parameters
     parser.add_argument('--model', choices=('vgg16', 'resnet50', 'resnet101'),
-                        help='The model to use', default='vgg16')
-    parser.add_argument('--gpu', '-g', type=int, default=-1)
-    parser.add_argument('--lr', '-l', type=float, default=1e-3)
-    parser.add_argument('--seed', '-s', type=int, default=0)
-    parser.add_argument('--step_size', '-ss', type=int, default=50000)
-    parser.add_argument('--iteration', '-i', type=int, default=70000)
-    parser.add_argument('--weight_decay', type=float, default=0.0005)
+                        help='The model to train.', default='resnet50')
+    parser.add_argument('--lr', '-l', type=float, default=1e-3,
+                        help='Learning rate.')
+    parser.add_argument('--seed', '-s', type=int, default=0,
+                        help='Random seed.')
+    parser.add_argument('--step_size', '-ss', type=int, default=50000,
+                        help='Step size of iterations.')
+    parser.add_argument('--iteration', '-i', type=int, default=70000,
+                        help='Iteration size.')
+    parser.add_argument('--weight_decay', type=float, default=0.0005,
+                        help='Weight decay.')
+    # other parameters
+    parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU id.')
     args = parser.parse_args()
 
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -114,30 +101,29 @@ def main():
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
     )
-
     pprint.pprint(args.__dict__)
 
     np.random.seed(args.seed)
 
-    train_data = FasterRcnnDataset(
-        mrcnn.datasets.VOC2012InstanceSeg(split='train'))
-    test_data = FasterRcnnDataset(
-        mrcnn.datasets.VOC2012InstanceSeg(split='val'))
-
+    # Model / Optimizer
+    # -------------------------------------------------------------------------
     if args.model == 'vgg16':
-        faster_rcnn = FasterRCNNVGG16(n_fg_class=len(voc_bbox_label_names),
-                                      pretrained_model='imagenet',
-                                      roi_align=True)
+        faster_rcnn = FasterRCNNVGG16(
+            n_fg_class=len(voc_bbox_label_names),
+            pretrained_model='imagenet')
     elif args.model == 'resnet50':
-        faster_rcnn = FasterRCNNResNet50(n_fg_class=len(voc_bbox_label_names),
-                                         pretrained_model='imagenet',
-                                         roi_align=True, res5_stride=1)
+        faster_rcnn = mrcnn.models.FasterRCNNResNet(
+            n_layers=50, n_fg_class=len(voc_bbox_label_names),
+            pretrained_model='imagenet',
+            pooling_func=mrcnn.functions.roi_align_2d)
     elif args.model == 'resnet101':
-        faster_rcnn = FasterRCNNResNet101(n_fg_class=len(voc_bbox_label_names),
-                                          pretrained_model='imagenet',
-                                          roi_align=True)
+        faster_rcnn = mrcnn.models.FasterRCNNResNet(
+            n_layers=101, n_fg_class=len(voc_bbox_label_names),
+            pretrained_model='imagenet',
+            pooling_func=mrcnn.functions.roi_align_2d)
     else:
         raise ValueError
+
     faster_rcnn.use_preset('evaluate')
     model = FasterRCNNTrainChain(faster_rcnn)
     if args.gpu >= 0:
@@ -161,6 +147,13 @@ def main():
         faster_rcnn.extractor.bn1.disable_update()
         faster_rcnn.extractor.res2.disable_update()
 
+    # Dataset
+    # -------------------------------------------------------------------------
+
+    train_data = FasterRCNNDataset(
+        mrcnn.datasets.VOC2012InstanceSeg(split='train'))
+    test_data = FasterRCNNDataset(
+        mrcnn.datasets.VOC2012InstanceSeg(split='val'))
     train_data = TransformDataset(train_data, Transform(faster_rcnn))
 
     train_iter = chainer.iterators.MultiprocessIterator(
@@ -170,6 +163,8 @@ def main():
     updater = chainer.training.updater.StandardUpdater(
         train_iter, optimizer, device=args.gpu)
 
+    # Trainer
+    # -------------------------------------------------------------------------
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
