@@ -1,4 +1,0 @@
-[submodule "chainercv"]
-	path = chainercv
-	url = https://github.com/wkentaro/chainercv.git
-	branch = faster_rcnn_resnet
