@@ -38,7 +38,7 @@ def summarize_logs(logs_dir, keys, target_key, objective):
             elif key.endswith('/loss'):
                 min_value = df[key].min()
                 max_value = df[key].max()
-                row.append('%.2f<%.2f<%.2f' %
+                row.append('%.3f<%.3f<%.3f' %
                            (min_value, dfi[key], max_value))
             else:
                 row.append(dfi[key])
