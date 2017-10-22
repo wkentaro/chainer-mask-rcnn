@@ -1,3 +1,18 @@
+# Original work by:
+# -----------------------------------------------------------------------------
+# Copyright (c) 2015 by Contributors
+# \file roi_pooling.cu
+# \brief roi pooling operator
+# \author Ross Girshick, Kye-Hyeon Kim, Jian Guo
+# \changed to roi_align by Elaine Bao
+# \file roi_align.cu
+# \roi align operator described in Mask RCNN
+# -----------------------------------------------------------------------------
+
+# Modified work by:
+# -----------------------------------------------------------------------------
+# Copyright (c) 2017 Kentaro Wada <www.kentaro.wada@gmail.com>
+# -----------------------------------------------------------------------------
 import collections
 
 import numpy
