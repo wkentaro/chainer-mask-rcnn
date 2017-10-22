@@ -119,7 +119,6 @@ def main():
                 mask_rcnn.utils.label2instance_boxes(
                     lbl_ins_true, lbl_cls_true, return_masks=True)
             label_true -= 1
-            score = np.ones((len(mask),), dtype=np.float64)
 
             prec, rec = mask_rcnn.utils.calc_instseg_voc_prec_rec(
                 [mask_pred], [label_pred], [score_pred],

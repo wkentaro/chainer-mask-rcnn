@@ -269,7 +269,7 @@ def _roi_align_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,
                      roi_align=True):
     xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
     if roi_align:
-        pool = F.roi_align_2d(
+        pool = functions.roi_align_2d(
             x, xy_indices_and_rois, outh, outw, spatial_scale)
     else:
         pool = F.roi_pooling_2d(
