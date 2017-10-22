@@ -205,10 +205,8 @@ class ROIAlign2D(function.Function):
               for (float w = wstart; w < wend; w += 1.) {
                 // Selecting four regular locations for bilinear interpolation
                 int x_left = floor(w);
-                // int x_right = ceil(w);
                 int x_right = x_left + 1;
                 int y_bottom = floor(h);
-                // int y_top = ceil(h);
                 int y_top = y_bottom + 1;
 
                 int top_left_index = offset + y_top * width + x_left;
@@ -260,7 +258,103 @@ class ROIAlign2D(function.Function):
         return top_data,
 
     def backward_cpu(self, inputs, gy):
-        raise NotImplementedError
+        bottom_rois = inputs[1]
+        channels, height, width = self._bottom_data_shape[1:]
+        bottom_diff = cuda.cupy.zeros(self._bottom_data_shape, numpy.float32)
+
+        num_rois = bottom_rois.shape[0]
+        spatial_scale = self.spatial_scale
+        pooled_height = self.outh
+        pooled_width = self.outw
+        argmax_data_x = self.argmax_data_x.flatten()
+        argmax_data_y = self.argmax_data_y.flatten()
+        top_diff = gy[0].flatten()
+
+        for i in six.moves.range(bottom_diff.size):
+            w = i % width              # x coords of input feature
+            h = (i / width) % height   # y coords of input feature
+            c = (i / width / height) % channels
+            n = i / width / height / channels
+
+            gradient = 0.
+
+            # Accumulate gradient over all ROIs that pooled this element
+            for roi_n in six.moves.range(num_rois):
+                roi_batch_ind = bottom_rois[roi_n, 0]
+                # Skip if ROI's batch index doesn't match n
+                if n != roi_batch_ind:
+                    continue
+
+                # And it assumes that we don't have any negative offset of course
+                roi_start_w = bottom_rois[roi_n, 1] * spatial_scale
+                roi_start_h = bottom_rois[roi_n, 2] * spatial_scale
+                roi_end_w = bottom_rois[roi_n, 3] * spatial_scale
+                roi_end_h = bottom_rois[roi_n, 4] * spatial_scale
+
+                # Skip if ROI doesn't include (h, w)
+                in_roi = (roi_start_w <= w <= roi_end_w and
+                          roi_start_h <= h <= roi_end_h)
+                if not in_roi:
+                    continue
+
+                # Compute feasible set of pooled units that could have pooled
+                # this bottom unit
+                roi_width = roi_end_w - roi_start_w
+                roi_height = roi_end_h - roi_start_h
+
+                bin_size_h = roi_height / pooled_height
+                bin_size_w = roi_width / pooled_width
+
+                phstart = int(numpy.floor((h - roi_start_h) / bin_size_h))
+                phend = int(numpy.ceil((h - roi_start_h + 1) / bin_size_h))
+                pwstart = int(numpy.floor((w - roi_start_w) / bin_size_w))
+                pwend = int(numpy.ceil((w - roi_start_w + 1) / bin_size_w))
+
+                phstart = min(max(phstart, 0), pooled_height)
+                phend = min(max(phend, 0), pooled_height)
+                pwstart = min(max(pwstart, 0), pooled_width)
+                pwend = min(max(pwend, 0), pooled_width)
+
+                offset = (roi_n * channels + c) * pooled_height * pooled_width
+                for ph in six.moves.range(phstart, phend):
+                    for pw in six.moves.range(pwstart, pwend):
+                        index = offset + ph * pooled_width + pw
+                        maxidx_x = argmax_data_x[index]
+                        maxidx_y = argmax_data_y[index]
+
+                        x_left = int(numpy.floor(maxidx_x))
+                        x_right = int(numpy.ceil(maxidx_x))
+                        y_bottom = int(numpy.floor(maxidx_y))
+                        y_top = int(numpy.ceil(maxidx_y))
+
+                        is_all_in = (0 <= x_left <= (width - 1) and
+                                     0 <= x_right <= (width - 1) and
+                                     0 <= y_bottom <= (height - 1) and
+                                     0 <= y_top <= (height - 1))
+
+                        if is_all_in:
+                            w_ratio = maxidx_x - x_left    # ratio for right
+                            h_ratio = maxidx_y - y_bottom  # ratio for top
+                            # bilinear interpolation in x direction
+                            diff_bottom = (1. - h_ratio) * top_diff[index]
+                            diff_top = h_ratio * top_diff[index]
+                            diff_bottom_left = (1. - w_ratio) * diff_bottom
+                            diff_bottom_right = w_ratio * diff_bottom
+                            diff_top_left = (1. - w_ratio) * diff_top
+                            diff_top_right = w_ratio * diff_top
+
+                            # if (w, h) is 1 location of the 4 bilinear locations, it can get gradient
+                            if w == x_left and h == y_bottom:
+                                gradient += diff_bottom_left
+                            elif w == x_right and h == y_bottom:
+                                gradient += diff_bottom_right
+                            elif w == x_left and h == y_top:
+                                gradient += diff_top_left
+                            elif w == x_right and h == y_top:
+                                gradient += diff_top_right
+                bottom_diff[n, c, h, w] = gradient
+
+        return bottom_diff, None
 
     def backward_gpu(self, inputs, gy):
         bottom_rois = inputs[1]
