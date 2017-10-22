@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-g', '--gpu', type=int, default=-1)
 parser.add_argument('-f', '--func', choices=['align', 'pool', 'resize'],
                     default='align')
+parser.add_argument('-s', '--show', action='store_true')
 args = parser.parse_args()
 
 gpu = args.gpu
@@ -84,7 +85,7 @@ for rois in roiss:
     print('Passed!')
     print('-' * 79)
 
-    if True:
+    if not args.show:
         continue
 
     input_viz = plt.cm.jet(input)
