@@ -24,10 +24,11 @@ import numpy as np
 import mask_rcnn as mrcnn
 
 
-class Transform(object):
+class FasterRCNNTransform(object):
 
-    def __init__(self, faster_rcnn):
+    def __init__(self, faster_rcnn, augmentation=True):
         self.faster_rcnn = faster_rcnn
+        self._augmentation = augmentation
 
     def __call__(self, in_data):
         img, bbox, label = in_data
@@ -37,11 +38,12 @@ class Transform(object):
         scale = o_H / H
         bbox = transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
 
-        # horizontally flip
-        img, params = transforms.random_flip(
-            img, x_random=True, return_param=True)
-        bbox = transforms.flip_bbox(
-            bbox, (o_H, o_W), x_flip=params['x_flip'])
+        if self._augmentation:
+            # horizontally flip
+            img, params = transforms.random_flip(
+                img, x_random=True, return_param=True)
+            bbox = transforms.flip_bbox(
+                bbox, (o_H, o_W), x_flip=params['x_flip'])
 
         return img, bbox, label, scale
 
@@ -149,12 +151,11 @@ def main():
 
     # Dataset
     # -------------------------------------------------------------------------
-
     train_data = FasterRCNNDataset(
         mrcnn.datasets.VOC2012InstanceSeg(split='train'))
     test_data = FasterRCNNDataset(
         mrcnn.datasets.VOC2012InstanceSeg(split='val'))
-    train_data = TransformDataset(train_data, Transform(faster_rcnn))
+    train_data = TransformDataset(train_data, FasterRCNNTransform(faster_rcnn))
 
     train_iter = chainer.iterators.MultiprocessIterator(
         train_data, batch_size=1, n_processes=None, shared_mem=100000000)
