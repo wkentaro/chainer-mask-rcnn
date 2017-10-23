@@ -12,6 +12,7 @@ from chainercv.datasets import voc_bbox_label_names
 import mask_rcnn as mrcnn
 
 from train import InstanceSegmentationVOCEvaluator
+from train import OverfitDataset
 from train import TransformDataset
 
 
@@ -77,6 +78,10 @@ test_data = TransformDataset(test_data, transform_test_data)
 test_iter = chainer.iterators.SerialIterator(
     test_data, batch_size=1, repeat=False, shuffle=False)
 
+test_vis_data = OverfitDataset(test_data, indices=range(0, 9))
+test_vis_iter = chainer.iterators.SerialIterator(
+    test_vis_data, batch_size=1, repeat=False, shuffle=False)
+
 
 class DummyTrainer(object):
 
@@ -89,11 +94,17 @@ class DummyTrainer(object):
 
 
 print('visualization:', osp.join(log_dir, 'iteration=best.jpg'))
-evaluator = InstanceSegmentationVOCEvaluator(
-    test_iter, mask_rcnn, use_07_metric=False,
+mask_rcnn.use_preset('visualize')
+visualizer = InstanceSegmentationVOCEvaluator(
+    test_vis_iter, mask_rcnn, use_07_metric=True,
     label_names=voc_bbox_label_names,
     file_name='iteration=%s.jpg'
 )
-result = evaluator(trainer=DummyTrainer())
+visualizer(trainer=DummyTrainer())
+
 print('evaluation:')
+mask_rcnn.use_preset('evaluate')
+evaluator = InstanceSegmentationVOCEvaluator(
+    test_iter, mask_rcnn, use_07_metric=True)
+result = evaluator()
 pprint.pprint(result)
