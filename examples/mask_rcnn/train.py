@@ -203,7 +203,7 @@ def main():
                         help='Weight decay.')
     parser.add_argument('--update-policy',
                         choices=['almost_all', 'head_only', 'mask_only'],
-                        default='almost_all')
+                        default='head_only', help='Update policy.')
     parser.add_argument('--pooling-func', choices=['pooling', 'align'],
                         default='align', help='Pooling function.')
     parser.add_argument('--overfit', action='store_true',
