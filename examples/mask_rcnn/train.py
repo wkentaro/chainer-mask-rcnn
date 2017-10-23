@@ -191,7 +191,7 @@ def main():
         '--pretrained-model',
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
         default='voc12_train_rpn', help='Pretrained model.')
-    parser.add_argument('--lr', '-l', type=float, default=0.001,
+    parser.add_argument('--lr', '-l', type=float, default=0.02,
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
                         help='Random seed.')
@@ -326,8 +326,10 @@ def main():
     # 0-4000: lr = 0.002      # warmup lr
     # 4000 - step_size: 0.02  # base lr
     # step_size - : 0.002     # stepping lr
-    trainer.extend(extensions.LinearShift('lr', (0.002, 0.02), (0, 4000)),
-                   trigger=(1, 'iteration'))
+    warmup_lr = args.lr * 0.1
+    trainer.extend(
+        extensions.LinearShift('lr', (warmup_lr, args.lr), (0, 4000)),
+        trigger=(1, 'iteration'))
     trainer.extend(extensions.ExponentialShift('lr', 0.1),
                    trigger=(args.step_size, 'iteration'))
 
