@@ -184,13 +184,13 @@ here = osp.dirname(osp.abspath(__file__))
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    # training parameters
     parser.add_argument('--model', choices=['vgg16', 'resnet50', 'resnet101'],
                         default='resnet50', help='Base model of Mask R-CNN.')
     parser.add_argument(
         '--pretrained-model',
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
         default='voc12_train_rpn', help='Pretrained model.')
-    parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
     parser.add_argument('--lr', '-l', type=float, default=0.001,
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
@@ -201,13 +201,15 @@ def main():
                         help='Iteration size.')
     parser.add_argument('--weight_decay', type=float, default=0.0005,
                         help='Weight decay.')
-    parser.add_argument('--overfit', action='store_true',
-                        help='Do overfit training (single image).')
     parser.add_argument('--update-policy',
                         choices=['almost_all', 'head_only', 'mask_only'],
                         default='almost_all')
-    parser.add_argument('--no-roi-align', dest='roi_align',
-                        action='store_false')
+    parser.add_argument('--pooling-func', choices=['pooling', 'align'],
+                        default='align', help='Pooling function.')
+    parser.add_argument('--overfit', action='store_true',
+                        help='Do overfit training (single image).')
+    # other parameters
+    parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
     args = parser.parse_args()
 
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -221,9 +223,9 @@ def main():
             'step_size={step_size}',
             'iteration={iteration}',
             'weight_decay={weight_decay}',
-            'overfit={overfit}',
             'update_policy={update_policy}',
-            'roi_align={roi_align}',
+            'pooling_func={pooling_func}',
+            'overfit={overfit}',
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
     )
@@ -242,6 +244,8 @@ def main():
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
+    elif args.pooling_func == 'pooling':
+        pooling_func = chainer.functions.roi_pooling_2d
     else:
         raise ValueError
 
@@ -251,8 +255,9 @@ def main():
             pretrained_model=args.pretrained_model,
             pooling_func=pooling_func)
     elif args.model in ['resnet50', 'resnet101']:
+        n_layers = int(args.model.lstrip('resnet'))
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
-            resnet_name=args.model,
+            n_layers=n_layers,
             n_fg_class=len(voc_bbox_label_names),
             pretrained_model=args.pretrained_model,
             pooling_func=pooling_func)

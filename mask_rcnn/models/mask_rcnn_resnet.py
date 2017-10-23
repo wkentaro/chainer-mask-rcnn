@@ -152,7 +152,7 @@ class MaskRCNNResNet(MaskRCNN):
         else:
             raise ValueError
 
-        pretrained_model = self._faster_rcnn(
+        pretrained_model = self._FasterRCNN(
             n_fg_class=n_fg_class, pretrained_model=pretrained_model)
 
         self.extractor.copyparams(pretrained_model.extractor)
@@ -183,7 +183,7 @@ class MaskRCNNResNet(MaskRCNN):
             n_fg_class = 20
         else:
             raise ValueError
-        pretrained_model = self._faster_rcnn(
+        pretrained_model = self._FasterRCNN(
             n_fg_class=n_fg_class, pretrained_model=pretrained_model)
 
         self.extractor.copyparams(pretrained_model.extractor)
@@ -207,7 +207,7 @@ class ResNetRoIHead(chainer.Chain):
 
     def __init__(self, n_class, roi_size, spatial_scale,
                  res_initialW=None, loc_initialW=None, score_initialW=None,
-                 roi_align=True):
+                 pooling_func=functions.roi_align_2d):
         # n_class includes the background
         super(ResNetRoIHead, self).__init__()
         with self.init_scope():
@@ -225,11 +225,10 @@ class ResNetRoIHead(chainer.Chain):
             self.mask = L.Convolution2D(
                 256, n_fg_class, 1, initialW=chainer.initializers.Normal(0.01))
 
-        self._roi_align = roi_align
-
         self.n_class = n_class
         self.roi_size = roi_size
         self.spatial_scale = spatial_scale
+        self._pooling_func = pooling_func
 
     def __call__(self, x, rois, roi_indices, pred_bbox=True, pred_mask=True):
         roi_indices = roi_indices.astype(np.float32)
@@ -237,7 +236,7 @@ class ResNetRoIHead(chainer.Chain):
             (roi_indices[:, None], rois), axis=1)
         pool = _roi_pooling_2d_yx(
             x, indices_and_rois, self.roi_size, self.roi_size,
-            self.spatial_scale, self._roi_align)
+            self.spatial_scale, self._pooling_func)
 
         roi_cls_locs = None
         roi_scores = None
