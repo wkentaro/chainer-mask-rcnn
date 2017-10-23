@@ -6,11 +6,14 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 
-from .mask_rcnn import MaskRCNN
+from chainercv.links.model.faster_rcnn import FasterRCNNVGG16
 from chainercv.links.model.faster_rcnn.region_proposal_network \
     import RegionProposalNetwork
 from chainercv.links.model.vgg.vgg16 import VGG16
 from chainercv.utils import download_model
+
+from .. import functions
+from .mask_rcnn import MaskRCNN
 
 
 class MaskRCNNVGG16(MaskRCNN):
@@ -26,8 +29,7 @@ class MaskRCNNVGG16(MaskRCNN):
                  vgg_initialW=None, rpn_initialW=None,
                  loc_initialW=None, score_initialW=None,
                  proposal_creator_params=dict(),
-                 roi_align=True,
-                 copy_cls_and_loc=True,
+                 pooling_func=functions.roi_align_2d,
                  ):
         if n_fg_class is None:
             if pretrained_model not in self._models:
@@ -62,7 +64,7 @@ class MaskRCNNVGG16(MaskRCNN):
             vgg_initialW=vgg_initialW,
             loc_initialW=loc_initialW,
             score_initialW=score_initialW,
-            roi_align=roi_align,
+            pooling_func=pooling_func,
         )
 
         super(MaskRCNNVGG16, self).__init__(
@@ -74,8 +76,6 @@ class MaskRCNNVGG16(MaskRCNN):
             min_size=min_size,
             max_size=max_size
         )
-
-        self._copy_cls_and_loc = copy_cls_and_loc
 
         if pretrained_model in self._models:
             path = download_model(self._models[pretrained_model]['url'])
@@ -107,7 +107,6 @@ class MaskRCNNVGG16(MaskRCNN):
         self.head.fc7.copyparams(pretrained_model.fc7)
 
     def _copy_voc_pretrained_faster_rcnn(self, pretrained_model):
-        from chainercv.links.model.faster_rcnn import FasterRCNNVGG16
         if pretrained_model == 'voc12_train_faster_rcnn':
             pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=vgg16.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064645/snapshot_model.npz')  # NOQA
             n_fg_class = 20
@@ -121,16 +120,15 @@ class MaskRCNNVGG16(MaskRCNN):
         self.rpn.copyparams(pretrained_model.rpn)
         self.head.fc6.copyparams(pretrained_model.head.fc6)
         self.head.fc7.copyparams(pretrained_model.head.fc7)
-        if self._copy_cls_and_loc:
-            self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
-            self.head.score.copyparams(pretrained_model.head.score)
+        self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
+        self.head.score.copyparams(pretrained_model.head.score)
 
 
 class VGG16RoIHead(chainer.Chain):
 
     def __init__(self, n_class, roi_size, spatial_scale,
                  vgg_initialW=None, loc_initialW=None, score_initialW=None,
-                 roi_align=True):
+                 pooling_func=functions.roi_align_2d):
         # n_class includes the background
         super(VGG16RoIHead, self).__init__()
         with self.init_scope():
@@ -148,11 +146,10 @@ class VGG16RoIHead(chainer.Chain):
             self.mask = L.Convolution2D(
                 256, n_fg_class, 1, initialW=chainer.initializers.Normal(0.01))
 
-        self._roi_align = roi_align
-
         self.n_class = n_class
         self.roi_size = roi_size
         self.spatial_scale = spatial_scale
+        self._pooling_func = pooling_func
 
     def __call__(self, x, rois, roi_indices, pred_bbox=True, pred_mask=True):
         roi_indices = roi_indices.astype(np.float32)
@@ -160,7 +157,7 @@ class VGG16RoIHead(chainer.Chain):
             (roi_indices[:, None], rois), axis=1)
         pool = _roi_align_2d_yx(
             x, indices_and_rois, self.roi_size, self.roi_size,
-            self.spatial_scale, self._roi_align)
+            self.spatial_scale, self._pooling_func)
 
         roi_cls_locs = None
         roi_scores = None
@@ -180,12 +177,7 @@ class VGG16RoIHead(chainer.Chain):
 
 
 def _roi_align_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,
-                     roi_align=True):
+                     pooling_func):
     xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
-    if roi_align:
-        pool = F.roi_align_2d(
-            x, xy_indices_and_rois, outh, outw, spatial_scale)
-    else:
-        pool = F.roi_pooling_2d(
-            x, xy_indices_and_rois, outh, outw, spatial_scale)
+    pool = pooling_func(x, xy_indices_and_rois, outh, outw, spatial_scale)
     return pool

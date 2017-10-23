@@ -206,8 +206,6 @@ def main():
     parser.add_argument('--update-policy',
                         choices=['almost_all', 'head_only', 'mask_only'],
                         default='almost_all')
-    parser.add_argument('--no-copy-cls-and-loc', dest='copy_cls_and_loc',
-                        action='store_false')
     parser.add_argument('--no-roi-align', dest='roi_align',
                         action='store_false')
     args = parser.parse_args()
@@ -225,7 +223,6 @@ def main():
             'weight_decay={weight_decay}',
             'overfit={overfit}',
             'update_policy={update_policy}',
-            'copy_cls_and_loc={copy_cls_and_loc}',
             'roi_align={roi_align}',
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
@@ -243,27 +240,29 @@ def main():
         train_data = OverfitDataset(train_data, indices=range(0, 9))
         test_data = OverfitDataset(train_data, indices=range(0, 9))
 
+    if args.pooling_func == 'align':
+        pooling_func = mrcnn.functions.roi_align_2d
+    else:
+        raise ValueError
+
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(voc_bbox_label_names),
             pretrained_model=args.pretrained_model,
-            roi_align=args.roi_align,
-            copy_cls_and_loc=args.copy_cls_and_loc)
+            pooling_func=pooling_func)
     elif args.model in ['resnet50', 'resnet101']:
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             resnet_name=args.model,
             n_fg_class=len(voc_bbox_label_names),
             pretrained_model=args.pretrained_model,
-            roi_align=args.roi_align,
-            copy_cls_and_loc=args.copy_cls_and_loc)
+            pooling_func=pooling_func)
     else:
         raise ValueError
-    # mask_rcnn.use_preset('evaluate')
+    mask_rcnn.use_preset('evaluate')
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
         model.to_gpu()
-    # optimizer = chainer.optimizers.Adam(alpha=args.lr)
     optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
@@ -310,7 +309,7 @@ def main():
     test_data = TransformDataset(test_data, transform_test_data)
 
     train_iter = chainer.iterators.MultiprocessIterator(
-        train_data, batch_size=1, n_processes=None, shared_mem=200000000)
+        train_data, batch_size=1, n_processes=None, shared_mem=100000000)
     test_iter = chainer.iterators.SerialIterator(
         test_data, batch_size=1, repeat=False, shuffle=False)
     updater = chainer.training.updater.StandardUpdater(

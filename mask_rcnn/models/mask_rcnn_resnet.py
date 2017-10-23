@@ -60,7 +60,7 @@ class MaskRCNNResNet(MaskRCNN):
             self._FasterRCNN = FasterRCNNResNet101
         else:
             raise ValueError
-        self.n_layers = n_layers
+        self._n_layers = n_layers
 
         class Extractor(self._ResNetLayers):
 
@@ -143,9 +143,9 @@ class MaskRCNNResNet(MaskRCNN):
     def _copy_voc_pretrained_rpn(self, pretrained_model):
         if pretrained_model == 'voc12_train_rpn':
             n_fg_class = 20
-            if self._resnet_name == 'resnet50':
+            if self._n_layers == 50:
                 pretrained_model = osp.expanduser('~/mask-rcnn/experiments/rpn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171019_173612/snapshot_model.npz')  # NOQA
-            elif self._resnet_name == 'resnet101':
+            elif self._n_layers == 101:
                 pretrained_model = osp.expanduser('~/mask-rcnn/experiments/rpn/logs/model=resnet101.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171019_173616/snapshot_model.npz')  # NOQA
             else:
                 raise ValueError
@@ -168,12 +168,12 @@ class MaskRCNNResNet(MaskRCNN):
 
     def _copy_voc_pretrained_faster_rcnn(self, pretrained_model):
         if pretrained_model == 'voc12_train_faster_rcnn':
-            if self._resnet_name == 'resnet50':
+            if self._n_layers == 50:
                 # FasterRCNNResNet50 (res5 stride=2) + RoiAlign
                 # pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064651/snapshot_model.npz')  # NOQA
                 # FasterRCNNResNet50 (res5 stride=1) + RoiAlign
                 pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171019_013912/snapshot_model.npz')  # NOQA
-            elif self._resnet_name == 'resnet101':
+            elif self._n_layers == 101:
                 # FasterRCNNResNet101 (res5 stride=2) + RoiAlign
                 # pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=resnet101.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064654/snapshot_model.npz')  # NOQA
                 # FasterRCNNResNet101 (res5 stride=1) + RoiAlign
