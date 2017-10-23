@@ -20,8 +20,8 @@ if gpu >= 0:
 chainer.global_config.train = False
 chainer.global_config.enable_backprop = False
 
-log_name = 'model=resnet50.pretrained_model=voc12_train_rpn.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.update_policy=almost_all.pooling_func=pooling.overfit=False.timestamp=20171023_125628'
-# log_name = 'model=resnet50.pretrained_model=voc12_train_rpn.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.update_policy=almost_all.pooling_func=align.overfit=False.timestamp=20171023_124734'
+log_name = 'model=resnet50.pretrained_model=voc12_train_rpn.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.update_policy=almost_all.pooling_func=pooling.overfit=False.timestamp=20171023_125628'  # NOQA
+# log_name = 'model=resnet50.pretrained_model=voc12_train_rpn.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.update_policy=almost_all.pooling_func=align.overfit=False.timestamp=20171023_124734'  # NOQA
 pretrained_model = osp.join('logs', log_name, 'snapshot_model.npz')
 
 if 'model=resnet50.' in log_name:
