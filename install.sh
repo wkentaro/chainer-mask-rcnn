@@ -52,7 +52,7 @@ if [ -d chainercv ]; then
 else
   (git clone https://github.com/chainer/chainercv.git)
 fi
-(cd chainercv && pip install .)
+(cd chainercv && pip install -e .)
 # }
 
 pip install -e .
