@@ -101,7 +101,7 @@ class ROIAlign2D(function.Function):
 
             maxval = 0 if is_empty else - numpy.inf
             maxidx_x = -1
-            minidx_y = -1
+            maxidx_y = -1
             offset = int((roi_batch_ind * channels + c) * height * width)
 
             h = hstart
