@@ -105,6 +105,7 @@ visualizer(trainer=DummyTrainer())
 print('evaluation:')
 mask_rcnn.use_preset('evaluate')
 evaluator = InstanceSegmentationVOCEvaluator(
-    test_iter, mask_rcnn, use_07_metric=True)
+    test_iter, mask_rcnn, use_07_metric=True,
+    label_names=voc_bbox_label_names)
 result = evaluator()
 pprint.pprint(result)
