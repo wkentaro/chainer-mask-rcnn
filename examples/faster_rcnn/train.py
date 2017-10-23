@@ -86,6 +86,8 @@ def main():
                         help='Iteration size.')
     parser.add_argument('--weight_decay', type=float, default=0.0005,
                         help='Weight decay.')
+    parser.add_argument('--pooling-func', choices=['pooling', 'align'],
+                        default='align', help='Pooling function.')
     # other parameters
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU id.')
     args = parser.parse_args()
@@ -100,6 +102,7 @@ def main():
             'step_size={step_size}',
             'iteration={iteration}',
             'weight_decay={weight_decay}',
+            'pooling_func={pooling_func}',
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
     )
@@ -109,6 +112,13 @@ def main():
 
     # Model / Optimizer
     # -------------------------------------------------------------------------
+    if args.pooling_func == 'align':
+        pooling_func = mrcnn.functions.roi_align_2d
+    elif args.pooling_func == 'pooling':
+        pooling_func = chainer.functions.roi_pooling_2d
+    else:
+        raise ValueError
+
     if args.model == 'vgg16':
         faster_rcnn = FasterRCNNVGG16(
             n_fg_class=len(voc_bbox_label_names),
@@ -117,12 +127,12 @@ def main():
         faster_rcnn = mrcnn.models.FasterRCNNResNet(
             n_layers=50, n_fg_class=len(voc_bbox_label_names),
             pretrained_model='imagenet',
-            pooling_func=mrcnn.functions.roi_align_2d)
+            pooling_func=pooling_func)
     elif args.model == 'resnet101':
         faster_rcnn = mrcnn.models.FasterRCNNResNet(
             n_layers=101, n_fg_class=len(voc_bbox_label_names),
             pretrained_model='imagenet',
-            pooling_func=mrcnn.functions.roi_align_2d)
+            pooling_func=pooling_func)
     else:
         raise ValueError
 
