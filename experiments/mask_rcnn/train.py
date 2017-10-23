@@ -197,9 +197,9 @@ def main():
                         help='Random seed.')
     parser.add_argument('--step_size', '-ss', type=int, default=50000,
                         help='Step size of iterations.')
-    parser.add_argument('--iteration', '-i', type=int, default=70000,
+    parser.add_argument('--iteration', '-i', type=int, default=140000,
                         help='Iteration size.')
-    parser.add_argument('--weight_decay', type=float, default=0.0005,
+    parser.add_argument('--weight_decay', type=float, default=0.0001,
                         help='Weight decay.')
     parser.add_argument('--update-policy',
                         choices=['almost_all', 'head_only', 'mask_only'],
