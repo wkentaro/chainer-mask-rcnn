@@ -40,6 +40,12 @@ pip install 'chainer>=2,<3'
 pip install git+https://github.com/wkentaro/mvtk.git
 # }
 
+git_branch () {
+  set +x
+  git branch | egrep '^*' | awk '{print $2}'
+  set -x
+}
+
 # install chainercv {
 if [ -d chainercv ]; then
   (cd chainercv && test "$(git_branch)" = master)
