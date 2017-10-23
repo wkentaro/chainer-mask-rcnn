@@ -96,7 +96,7 @@ for rois in roiss:
     for j in xrange(input.shape[0]):
         for i in xrange(input.shape[1]):
             plt.text(i, j, str(input[j][i]), fontsize=8,
-                    horizontalalignment='center', verticalalignment='center')
+                     horizontalalignment='center', verticalalignment='center')
 
     output_viz = plt.cm.jet(output)
     output_viz = (output_viz * 255).astype(np.uint8)
@@ -106,6 +106,6 @@ for rois in roiss:
     for j in xrange(output.shape[0]):
         for i in xrange(output.shape[1]):
             plt.text(i, j, str(output[j][i]), fontsize=8,
-                    horizontalalignment='center', verticalalignment='center')
+                     horizontalalignment='center', verticalalignment='center')
 
     plt.show()
