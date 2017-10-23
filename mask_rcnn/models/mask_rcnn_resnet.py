@@ -156,15 +156,20 @@ class MaskRCNNResNet(MaskRCNN):
             n_fg_class=n_fg_class, pretrained_model=pretrained_model)
 
         self.extractor.conv1.copyparams(pretrained_model.extractor.conv1)
-        _copy_persistent_chain(self.extractor.conv1, pretrained_model.extractor.conv1)
+        _copy_persistent_chain(self.extractor.conv1,
+                               pretrained_model.extractor.conv1)
         self.extractor.bn1.copyparams(pretrained_model.extractor.bn1)
-        _copy_persistent_chain(self.extractor.bn1, pretrained_model.extractor.bn1)
+        _copy_persistent_chain(self.extractor.bn1,
+                               pretrained_model.extractor.bn1)
         self.extractor.res2.copyparams(pretrained_model.extractor.res2)
-        _copy_persistent_chain(self.extractor.res2, pretrained_model.extractor.res2)
+        _copy_persistent_chain(self.extractor.res2,
+                               pretrained_model.extractor.res2)
         self.extractor.res3.copyparams(pretrained_model.extractor.res3)
-        _copy_persistent_chain(self.extractor.res3, pretrained_model.extractor.res3)
+        _copy_persistent_chain(self.extractor.res3,
+                               pretrained_model.extractor.res3)
         self.extractor.res4.copyparams(pretrained_model.extractor.res4)
-        _copy_persistent_chain(self.extractor.res4, pretrained_model.extractor.res4)
+        _copy_persistent_chain(self.extractor.res4,
+                               pretrained_model.extractor.res4)
 
         self.rpn.copyparams(pretrained_model.rpn)
         _copy_persistent_chain(self.rpn, pretrained_model.rpn)
