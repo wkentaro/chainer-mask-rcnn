@@ -119,6 +119,8 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
             pred_masks, pred_masks2 = itertools.tee(pred_masks)
             pred_scores, pred_scores2 = itertools.tee(pred_scores)
 
+            target.use_preset('visualize')
+
             # visualize
             n_viz = 9
             vizs = []
@@ -156,6 +158,8 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
                 if not osp.isdir(osp.dirname(file_name)):
                     raise
             cv2.imwrite(file_name, viz[:, :, ::-1])
+
+        target.use_preset('evaluate')
 
         # evaluate
         result = mrcnn.utils.evaluations.eval_instseg_voc(
@@ -263,7 +267,6 @@ def main():
             pooling_func=pooling_func)
     else:
         raise ValueError
-    mask_rcnn.use_preset('evaluate')
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
