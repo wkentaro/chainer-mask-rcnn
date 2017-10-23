@@ -215,7 +215,7 @@ def main():
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     args.out = osp.join(
         here, 'logs',
-        '.'.join([
+        '.'.join(filter(None, [
             'model={model}',
             'pretrained_model={pretrained_model}',
             'lr={lr}',
@@ -225,9 +225,9 @@ def main():
             'weight_decay={weight_decay}',
             'update_policy={update_policy}',
             'pooling_func={pooling_func}',
-            'overfit={overfit}',
+            'overfit' if args.overfit else None,
             'timestamp={timestamp}',
-        ]).format(**args.__dict__)
+        ])).format(**args.__dict__)
     )
 
     pprint.pprint(args.__dict__)
