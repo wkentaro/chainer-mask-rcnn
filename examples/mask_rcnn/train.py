@@ -323,14 +323,13 @@ def main():
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
-    # # 0-4000: lr = 0.002      # warmup lr
-    # # 4000 - step_size: 0.02  # base lr
-    # # step_size - : 0.002     # stepping lr
-    # trainer.extend(extensions.ExponentialShift('lr', 10),
-    #                trigger=triggers.ManualScheduleTrigger(
-    #                     points=[4000], unit='iteration'))  # only once
-    # trainer.extend(extensions.ExponentialShift('lr', 0.1),
-    #                trigger=(args.step_size, 'iteration'))
+    # 0-4000: lr = 0.002      # warmup lr
+    # 4000 - step_size: 0.02  # base lr
+    # step_size - : 0.002     # stepping lr
+    trainer.extend(extensions.LinearShift('lr', (0.002, 0.02), (0, 4000)),
+                   trigger=(1, 'iteration'))
+    trainer.extend(extensions.ExponentialShift('lr', 0.1),
+                   trigger=(args.step_size, 'iteration'))
 
     if args.overfit:
         eval_interval = 100, 'iteration'
