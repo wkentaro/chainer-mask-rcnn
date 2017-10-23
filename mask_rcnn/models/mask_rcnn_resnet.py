@@ -144,9 +144,9 @@ class MaskRCNNResNet(MaskRCNN):
         if pretrained_model == 'voc12_train_rpn':
             n_fg_class = 20
             if self._n_layers == 50:
-                pretrained_model = osp.expanduser('~/mask-rcnn/experiments/rpn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171019_173612/snapshot_model.npz')  # NOQA
+                pretrained_model = osp.expanduser('~/mask-rcnn/experiments/rpn/logs/model=resnet50.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171022_135455/snapshot_model.npz')  # NOQA
             elif self._n_layers == 101:
-                pretrained_model = osp.expanduser('~/mask-rcnn/experiments/rpn/logs/model=resnet101.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171019_173616/snapshot_model.npz')  # NOQA
+                pretrained_model = osp.expanduser('~/mask-rcnn/experiments/rpn/logs/model=resnet101.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171022_135501/snapshot_model.npz')  # NOQA
             else:
                 raise ValueError
         else:
