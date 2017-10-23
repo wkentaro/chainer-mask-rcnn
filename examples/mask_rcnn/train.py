@@ -44,12 +44,12 @@ class Transform(object):
         bbox = transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
         mask = transforms.resize(mask, size=(o_H, o_W), interpolation=0)
 
-        # # horizontally flip
-        # img, params = transforms.random_flip(
-        #     img, x_random=True, return_param=True)
-        # bbox = transforms.flip_bbox(
-        #     bbox, (o_H, o_W), x_flip=params['x_flip'])
-        # mask = transforms.flip(mask, (o_H, o_W), x_flip=params['x_flip'])
+        # horizontally flip
+        img, params = transforms.random_flip(
+            img, x_random=True, return_param=True)
+        bbox = transforms.flip_bbox(
+            bbox, (o_H, o_W), x_flip=params['x_flip'])
+        mask = transforms.flip(mask, (o_H, o_W), x_flip=params['x_flip'])
 
         return img, bbox, label, mask, scale
 
