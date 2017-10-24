@@ -31,8 +31,9 @@ import mvtk
 
 class Transform(object):
 
-    def __init__(self, mask_rcnn):
+    def __init__(self, mask_rcnn, augmentation=True):
         self.mask_rcnn = mask_rcnn
+        self._augmentation = augmentation
 
     def __call__(self, in_data):
         img, bbox, label, mask = in_data
@@ -44,12 +45,13 @@ class Transform(object):
         bbox = transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
         mask = transforms.resize(mask, size=(o_H, o_W), interpolation=0)
 
-        # horizontally flip
-        img, params = transforms.random_flip(
-            img, x_random=True, return_param=True)
-        bbox = transforms.flip_bbox(
-            bbox, (o_H, o_W), x_flip=params['x_flip'])
-        mask = transforms.flip(mask, (o_H, o_W), x_flip=params['x_flip'])
+        # if self._augmentation:
+        #     # horizontally flip
+        #     img, params = transforms.random_flip(
+        #         img, x_random=True, return_param=True)
+        #     bbox = transforms.flip_bbox(
+        #         bbox, (o_H, o_W), x_flip=params['x_flip'])
+        #     mask = transforms.flip(mask, (o_H, o_W), x_flip=params['x_flip'])
 
         return img, bbox, label, mask, scale
 
