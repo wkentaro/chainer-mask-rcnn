@@ -191,7 +191,7 @@ def main():
         '--pretrained-model',
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
         default='voc12_train_rpn', help='Pretrained model.')
-    parser.add_argument('--lr', '-l', type=float, default=0.02,
+    parser.add_argument('--lr', '-l', type=float, default=0.001,
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
                         help='Random seed.')
