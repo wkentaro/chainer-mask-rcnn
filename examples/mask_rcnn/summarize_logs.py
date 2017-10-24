@@ -46,7 +46,7 @@ def summarize_logs(logs_dir, keys, target_key, objective):
                 row.append(name)
             elif key in ['epoch', 'iteration']:
                 max_value = df[key].max()
-                row.append('%d/%d' % (dfi[key], max_value))
+                row.append('[%d]/%d' % (dfi[key], max_value))
             elif key.endswith('/loss'):
                 min_value = df[key].min()
                 max_value = df[key].max()
