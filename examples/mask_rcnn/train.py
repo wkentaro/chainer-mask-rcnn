@@ -193,7 +193,8 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     # training parameters
-    parser.add_argument('--model', choices=['vgg16', 'resnet50', 'resnet101'],
+    parser.add_argument('--model', '-m',
+                        choices=['vgg16', 'resnet50', 'resnet101'],
                         default='resnet50', help='Base model of Mask R-CNN.')
     parser.add_argument(
         '--pretrained-model',
@@ -209,10 +210,11 @@ def main():
                         help='Iteration size.')
     parser.add_argument('--weight_decay', type=float, default=0.0005,
                         help='Weight decay.')
-    parser.add_argument('--update-policy',
+    parser.add_argument('--update-policy', '-u',
                         choices=['almost_all', 'head_only', 'mask_only'],
                         default='head_only', help='Update policy.')
-    parser.add_argument('--pooling-func', choices=['pooling', 'align'],
+    parser.add_argument('--pooling-func', '-p',
+                        choices=['pooling', 'align'],
                         default='align', help='Pooling function.')
     parser.add_argument('--overfit', action='store_true',
                         help='Do overfit training (single image).')
