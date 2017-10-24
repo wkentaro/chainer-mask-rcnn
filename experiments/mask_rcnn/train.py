@@ -178,6 +178,12 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
         return observation
 
 
+def git_hash():
+    import subprocess
+    cmd = 'git log -1 --format="%h"'
+    return subprocess.check_output(cmd, shell=True).strip()
+
+
 here = osp.dirname(osp.abspath(__file__))
 
 
@@ -212,6 +218,7 @@ def main():
     parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
     args = parser.parse_args()
 
+    args.git = git_hash()
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     args.out = osp.join(
         here, 'logs',
@@ -226,6 +233,7 @@ def main():
             'update_policy={update_policy}',
             'pooling_func={pooling_func}',
             'overfit' if args.overfit else None,
+            'git={git}',
             'timestamp={timestamp}',
         ])).format(**args.__dict__)
     )
