@@ -324,7 +324,7 @@ def main():
     test_data = TransformDataset(test_data, transform_test_data)
 
     train_iter = chainer.iterators.MultiprocessIterator(
-        train_data, batch_size=1, n_processes=None, shared_mem=100000000)
+        train_data, batch_size=1, n_processes=None, shared_mem=130000000)
     test_iter = chainer.iterators.SerialIterator(
         test_data, batch_size=1, repeat=False, shuffle=False)
     updater = chainer.training.updater.StandardUpdater(
