@@ -213,7 +213,7 @@ def main():
     parser.add_argument('--update-policy', '-u',
                         choices=['almost_all', 'head_only', 'mask_only'],
                         default='head_only', help='Update policy.')
-    parser.add_argument('--pooling-func', '-p',
+    parser.add_argument('--pooling-func', '-pf',
                         choices=['pooling', 'align'],
                         default='align', help='Pooling function.')
     parser.add_argument('--overfit', action='store_true',
