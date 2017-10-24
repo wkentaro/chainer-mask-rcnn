@@ -3,6 +3,7 @@
 import math
 import os
 import os.path as osp
+import re
 
 import pandas as pd
 import tabulate
@@ -14,6 +15,11 @@ def summarize_logs(logs_dir, keys, target_key, objective):
 
     rows = []
     for name in os.listdir(logs_dir):
+        stamp = '<unknown>'
+        m = re.search('.timestamp=(.*).', name)
+        if m and len(m.groups()) == 1:
+            stamp = m.groups()[0]
+
         log_file = osp.join(logs_dir, name, 'log')
         name_n_rows = int(math.ceil(len(name) / 79.))
         name = '\n'.join(name[i * 79:(i + 1) * 79] for i in range(name_n_rows))
@@ -30,7 +36,9 @@ def summarize_logs(logs_dir, keys, target_key, objective):
         #     continue
         row = []
         for key in keys:
-            if key == 'name':
+            if key == 'timestamp':
+                row.append(stamp)
+            elif key == 'name':
                 row.append(name)
             elif key in ['epoch', 'iteration']:
                 max_value = df[key].max()
@@ -43,12 +51,13 @@ def summarize_logs(logs_dir, keys, target_key, objective):
             else:
                 row.append(dfi[key])
         rows.append(row)
-    rows = sorted(rows, key=lambda x: x[4], reverse=objective == 'min')
+    rows = sorted(rows, key=lambda x: x[0], reverse=objective == 'min')
     print(tabulate.tabulate(rows, headers=keys,
                             floatfmt='.3f', tablefmt='grid'))
 
 
 if __name__ == '__main__':
-    keys = ['name', 'epoch', 'iteration', 'main/loss', 'validation/main/map']
+    keys = ['timestamp', 'name', 'epoch', 'iteration',
+            'main/loss', 'validation/main/map']
     objective = 'max'
     summarize_logs('logs', keys, target_key=keys[-1], objective=objective)
