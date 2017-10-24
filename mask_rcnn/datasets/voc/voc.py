@@ -6,7 +6,7 @@ import numpy as np
 import PIL.Image
 import scipy
 
-from .. import utils
+from ... import utils
 
 
 class VOCInstanceSegBase(chainer.dataset.DatasetMixin):
