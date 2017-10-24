@@ -323,15 +323,16 @@ def main():
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
-    # 0-4000: lr = 0.002      # warmup lr
-    # 4000 - step_size: 0.02  # base lr
-    # step_size - : 0.002     # stepping lr
-    warmup_lr = args.lr * 0.1
-    trainer.extend(
-        extensions.LinearShift('lr', (warmup_lr, args.lr), (0, 4000)),
-        trigger=(1, 'iteration'))
-    trainer.extend(extensions.ExponentialShift('lr', 0.1),
-                   trigger=(args.step_size, 'iteration'))
+    # FIXME: this ends up nan loss or low accuracy
+    # # 0-4000: lr = 0.002      # warmup lr
+    # # 4000 - step_size: 0.02  # base lr
+    # # step_size - : 0.002     # stepping lr
+    # warmup_lr = args.lr * 0.1
+    # trainer.extend(
+    #     extensions.LinearShift('lr', (warmup_lr, args.lr), (0, 4000)),
+    #     trigger=(1, 'iteration'))
+    # trainer.extend(extensions.ExponentialShift('lr', 0.1),
+    #                trigger=(args.step_size, 'iteration'))
 
     if args.overfit:
         eval_interval = 100, 'iteration'
