@@ -50,15 +50,15 @@ def summarize_logs(logs_dir, keys, target_key, objective):
             elif key.endswith('/loss'):
                 min_value = df[key].min()
                 max_value = df[key].max()
-                row.append('%.3f<%.3f<%.3f' %
+                row.append('%.3f<[%.3f]<%.3f' %
                            (min_value, dfi[key], max_value))
             elif key.endswith('/map'):
                 if objective == 'max':
                     min_value = df[key].min()
-                    row.append('%.3f<%.3f' % (min_value, dfi[key]))
+                    row.append('%.3f<[%.3f]' % (min_value, dfi[key]))
                 else:
                     max_value = df[key].max()
-                    row.append('%.3f<%.3f' % (dfi[key], max_value))
+                    row.append('[%.3f]<%.3f' % (dfi[key], max_value))
             elif key in dfi:
                 row.append(dfi[key])
             else:
