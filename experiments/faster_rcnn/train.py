@@ -67,6 +67,12 @@ class FasterRCNNDataset(chainer.dataset.DatasetMixin):
         return img, bboxes, labels
 
 
+def git_hash():
+    import subprocess
+    cmd = 'git log -1 --format="%h"'
+    return subprocess.check_output(cmd, shell=True).strip()
+
+
 here = osp.dirname(osp.abspath(__file__))
 
 
@@ -74,7 +80,8 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     # training parameters
-    parser.add_argument('--model', choices=('vgg16', 'resnet50', 'resnet101'),
+    parser.add_argument('--model', '-m',
+                        choices=('vgg16', 'resnet50', 'resnet101'),
                         help='The model to train.', default='resnet50')
     parser.add_argument('--lr', '-l', type=float, default=1e-3,
                         help='Learning rate.')
@@ -86,13 +93,15 @@ def main():
                         help='Iteration size.')
     parser.add_argument('--weight_decay', type=float, default=0.0005,
                         help='Weight decay.')
-    parser.add_argument('--pooling-func', choices=['pooling', 'align'],
+    parser.add_argument('--pooling-func', '-pf',
+                        choices=['pooling', 'align'],
                         default='align', help='Pooling function.')
     # other parameters
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU id.')
     args = parser.parse_args()
 
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    args.git = git_hash()
     args.out = osp.join(
         here, 'logs',
         '.'.join([
@@ -103,6 +112,7 @@ def main():
             'iteration={iteration}',
             'weight_decay={weight_decay}',
             'pooling_func={pooling_func}',
+            'git={git}',
             'timestamp={timestamp}',
         ]).format(**args.__dict__)
     )
