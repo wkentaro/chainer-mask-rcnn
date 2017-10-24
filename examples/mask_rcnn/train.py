@@ -197,7 +197,7 @@ def main():
                         choices=['vgg16', 'resnet50', 'resnet101'],
                         default='resnet50', help='Base model of Mask R-CNN.')
     parser.add_argument(
-        '--pretrained-model',
+        '--pretrained-model', '-pm',
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
         default='voc12_train_rpn', help='Pretrained model.')
     parser.add_argument('--lr', '-l', type=float, default=0.001,
