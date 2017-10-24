@@ -5,6 +5,7 @@ import os
 import os.path as osp
 import re
 
+from termcolor import colored
 import pandas as pd
 import tabulate
 
@@ -46,19 +47,28 @@ def summarize_logs(logs_dir, keys, target_key, objective):
                 row.append(name)
             elif key in ['epoch', 'iteration']:
                 max_value = df[key].max()
-                row.append('[%d]/%d' % (dfi[key], max_value))
+                row.append('%s /%d' %
+                           (colored('%d' % dfi[key], attrs=['underline']),
+                            max_value))
             elif key.endswith('/loss'):
                 min_value = df[key].min()
                 max_value = df[key].max()
-                row.append('%.3f<[%.3f]<%.3f' %
-                           (min_value, dfi[key], max_value))
+                row.append('%.3f< %s <%.3f' %
+                           (min_value,
+                            colored('%.3f' % dfi[key], attrs=['underline']),
+                            max_value))
             elif key.endswith('/map'):
                 if objective == 'max':
                     min_value = df[key].min()
-                    row.append('%.3f<[%.3f]' % (min_value, dfi[key]))
+                    row.append(
+                        '%.3f< %s' %
+                        (min_value,
+                         colored('%.3f' % dfi[key], attrs=['underline'])))
                 else:
                     max_value = df[key].max()
-                    row.append('[%.3f]<%.3f' % (dfi[key], max_value))
+                    row.append('%s <%.3f' %
+                               (colored('%.3f' % dfi[key], attrs=['underline']),
+                                max_value))
             elif key in dfi:
                 row.append(dfi[key])
             else:
