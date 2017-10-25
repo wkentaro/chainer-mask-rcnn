@@ -120,7 +120,7 @@ class MaskRCNNTrainChain(chainer.Chain):
 
         # FIXME
         if len(bbox) == 0:
-            return chainer.Variable(0)
+            return chainer.Variable(self.xp.array(0, dtype=np.float32))
 
         # Sample RoIs and forward
         sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
