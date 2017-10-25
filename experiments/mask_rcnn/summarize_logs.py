@@ -40,13 +40,13 @@ def summarize_logs(logs_dir, keys, target_key, objective):
                 row.append(name)
             elif key in ['epoch', 'iteration']:
                 if dfi is None:
-                    row.append('<unknown>')
+                    row.append('<none>')
                 else:
                     max_value = df[key].max()
                     row.append('%d /%d' % (dfi[key], max_value))
             elif key.endswith('/loss'):
                 if dfi is None:
-                    row.append('<unknown>')
+                    row.append('<none>')
                 else:
                     min_value = df[key].min()
                     max_value = df[key].max()
@@ -54,7 +54,7 @@ def summarize_logs(logs_dir, keys, target_key, objective):
                                (min_value, dfi[key], max_value))
             elif key.endswith('/map'):
                 if dfi is None:
-                    row.append('<unknown>')
+                    row.append('<none>')
                 else:
                     if objective == 'max':
                         min_value = df[key].min()
@@ -65,7 +65,7 @@ def summarize_logs(logs_dir, keys, target_key, objective):
             elif dfi is not None and key in dfi:
                 row.append(dfi[key])
             else:
-                value = '<unknown>'
+                value = '<none>'
                 for kv in split_name(name):
                     k, v = kv.split('=')
                     if k == key:
