@@ -81,7 +81,7 @@ def summarize_logs(logs_dir, keys, target_key, objective):
 
 if __name__ == '__main__':
     keys = [
-        'timestamp', 'hostname', 'model', 'pretrained_model',
+        'timestamp', 'hostname', 'dataset', 'model', 'pretrained_model',
         'update_policy', 'pooling_func',
         'epoch', 'iteration',
         'main/loss', 'validation/main/map',
