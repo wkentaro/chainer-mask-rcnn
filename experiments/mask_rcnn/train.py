@@ -17,8 +17,6 @@ from chainer.datasets import TransformDataset
 from chainer import reporter
 from chainer import training
 from chainer.training import extensions
-# from chainer.training import triggers
-from chainercv.datasets import voc_bbox_label_names
 from chainercv import transforms
 from chainercv.utils import apply_prediction_to_iterator
 import cv2
@@ -268,6 +266,7 @@ def main():
         test_data = mrcnn.datasets.CocoInstanceSeg('val')
     else:
         raise ValueError
+    instance_class_names = train_data.class_names[1:]
     train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
     test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
     if args.overfit:
@@ -283,14 +282,14 @@ def main():
 
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
-            n_fg_class=len(voc_bbox_label_names),
+            n_fg_class=len(instance_class_names),
             pretrained_model=args.pretrained_model,
             pooling_func=pooling_func)
     elif args.model in ['resnet50', 'resnet101']:
         n_layers = int(args.model.lstrip('resnet'))
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             n_layers=n_layers,
-            n_fg_class=len(voc_bbox_label_names),
+            n_fg_class=len(instance_class_names),
             pretrained_model=args.pretrained_model,
             pooling_func=pooling_func)
     else:
@@ -380,7 +379,7 @@ def main():
     trainer.extend(
         InstanceSegmentationVOCEvaluator(
             test_iter, model.mask_rcnn, use_07_metric=True,
-            label_names=voc_bbox_label_names),
+            label_names=instance_class_names),
         trigger=eval_interval)
     trainer.extend(
         extensions.snapshot_object(model.mask_rcnn, 'snapshot_model.npz'),
