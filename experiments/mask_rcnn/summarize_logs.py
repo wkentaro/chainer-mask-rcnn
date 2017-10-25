@@ -36,29 +36,37 @@ def summarize_logs(logs_dir, keys, target_key, objective):
             else:
                 idx = df[target_key].idxmax()
         except Exception:
-            continue
-        dfi = df.ix[idx]
-        # if dfi['validation/main/loss'] == 0:
-        #     continue
+            idx = None
+        dfi = df.ix[idx] if idx else None
         row = []
         for key in keys:
             if key == 'name':
                 row.append(name)
             elif key in ['epoch', 'iteration']:
-                max_value = df[key].max()
-                row.append('%d /%d' % (dfi[key], max_value))
-            elif key.endswith('/loss'):
-                min_value = df[key].min()
-                max_value = df[key].max()
-                row.append('%.3f< %.3f <%.3f' % (min_value, dfi[key], max_value))
-            elif key.endswith('/map'):
-                if objective == 'max':
-                    min_value = df[key].min()
-                    row.append('%.3f< %.3f' % (min_value, dfi[key]))
-                else:
+                if dfi:
                     max_value = df[key].max()
-                    row.append('%.3f <%.3f' % (dfi[key], max_value))
-            elif key in dfi:
+                    row.append('%d /%d' % (dfi[key], max_value))
+                else:
+                    row.append('<unknown>')
+            elif key.endswith('/loss'):
+                if dfi:
+                    min_value = df[key].min()
+                    max_value = df[key].max()
+                    row.append('%.3f< %.3f <%.3f' %
+                               (min_value, dfi[key], max_value))
+                else:
+                    row.append('<unknown>')
+            elif key.endswith('/map'):
+                if dfi:
+                    if objective == 'max':
+                        min_value = df[key].min()
+                        row.append('%.3f< %.3f' % (min_value, dfi[key]))
+                    else:
+                        max_value = df[key].max()
+                        row.append('%.3f <%.3f' % (dfi[key], max_value))
+                else:
+                    row.append('<unknown>')
+            elif dfi and key in dfi:
                 row.append(dfi[key])
             else:
                 value = '<unknown>'
