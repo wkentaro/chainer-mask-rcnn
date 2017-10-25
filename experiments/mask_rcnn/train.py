@@ -44,7 +44,7 @@ class Transform(object):
         if len(bbox):
             bbox = transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
             mask = cv2.resize(
-                mask, size=(o_W, o_H), interpolation=cv2.INTER_NEAREST)
+                mask, dsize=(o_W, o_H), interpolation=cv2.INTER_NEAREST)
 
         # if self._augmentation:
         #     # horizontally flip
