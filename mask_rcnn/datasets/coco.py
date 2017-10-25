@@ -22,6 +22,7 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
             split = split + '2014'
             data_type = split
         elif split == 'minival':
+            split = split + '2014'
             data_type = 'val2014'
         else:
             raise ValueError
