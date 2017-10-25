@@ -58,7 +58,6 @@ class SBDInstanceSeg(VOCInstanceSegBase):
 
 
 if __name__ == '__main__':
-    import cv2
     import mvtk
     split = 'val'
     dataset = SBDInstanceSeg(split)

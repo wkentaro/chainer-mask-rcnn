@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
-import math
 import os
 import os.path as osp
-import re
 
 import pandas as pd
 import tabulate
@@ -27,8 +25,6 @@ def summarize_logs(logs_dir, keys, target_key, objective):
     rows = []
     for name in os.listdir(logs_dir):
         log_file = osp.join(logs_dir, name, 'log')
-        # name_n_rows = int(math.ceil(len(name) / 79.))
-        # name = '\n'.join(name[i * 79:(i + 1) * 79] for i in range(name_n_rows))
         try:
             df = pd.read_json(log_file)
             if objective == 'min':
@@ -79,12 +75,14 @@ def summarize_logs(logs_dir, keys, target_key, objective):
     rows = sorted(rows, key=lambda x: x[0], reverse=objective == 'min')
     print(tabulate.tabulate(rows, headers=keys,
                             floatfmt='.3f', tablefmt='grid',
-                            numalign='center', stralign='center', showindex=True))
+                            numalign='center', stralign='center',
+                            showindex=True))
 
 
 if __name__ == '__main__':
     keys = [
-        'timestamp', 'model', 'pretrained_model', 'update_policy', 'pooling_func',
+        'timestamp', 'model', 'pretrained_model',
+        'update_policy', 'pooling_func',
         'epoch', 'iteration',
         'main/loss', 'validation/main/map',
     ]
