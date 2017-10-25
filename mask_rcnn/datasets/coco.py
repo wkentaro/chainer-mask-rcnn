@@ -26,13 +26,17 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
         self.img_fname = osp.join(
             dataset_dir, data_type, 'COCO_%s_{:012}.jpg' % data_type)
 
+        # set class_names
         labels = self.coco.loadCats(self.coco.getCatIds())
         max_label = max(labels, key=lambda x: x['id'])['id']
         n_label = max_label + 1
-        self.class_names = [None] * n_label
+        class_names = [None] * n_label
         for label in labels:
-            self.class_names[label['id']] = label['name']
-        self.class_names[0] = '__background__'
+            class_names[label['id']] = label['name']
+        class_names[0] = '__background__'
+        class_names = np.asarray(class_names)
+        class_names.setflags(write=0)
+        self.class_names = class_names
 
         self.img_ids = self.coco.getImgIds()
 
