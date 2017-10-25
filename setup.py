@@ -8,7 +8,7 @@ setup(
     packages=find_packages(),
     package_data={
         'mask_rcnn.datasets.voc': ['data/*'],
-    }
+    },
     install_requires=open('requirements.txt').readlines(),
     author='Kentaro Wada',
     author_email='www.kentaro.wada@gmail.com',
