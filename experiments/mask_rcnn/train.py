@@ -40,10 +40,11 @@ class Transform(object):
         img = self.mask_rcnn.prepare(img)
         _, o_H, o_W = img.shape
         scale = o_H / H
-        if len(bbox) > 0:
+
+        if len(bbox):
             bbox = transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
-        if len(mask) > 0:
-            mask = transforms.resize(mask, size=(o_H, o_W), interpolation=0)
+            mask = cv2.resize(
+                mask, size=(o_W, o_H), interpolation=cv2.INTER_NEAREST)
 
         # if self._augmentation:
         #     # horizontally flip
