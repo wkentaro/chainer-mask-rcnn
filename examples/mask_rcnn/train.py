@@ -186,6 +186,12 @@ def git_hash():
     return subprocess.check_output(cmd, shell=True).strip()
 
 
+def get_hostname():
+    import subprocess
+    cmd = 'hostname'
+    return subprocess.check_output(cmd, shell=True).strip()
+
+
 here = osp.dirname(osp.abspath(__file__))
 
 
@@ -223,6 +229,7 @@ def main():
     args = parser.parse_args()
 
     args.git = git_hash()
+    args.hostname = get_hostname()
     args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     args.out = osp.join(
         here, 'logs',
@@ -238,6 +245,7 @@ def main():
             'pooling_func={pooling_func}',
             'overfit' if args.overfit else None,
             'git={git}',
+            'hostname={hostname}',
             'timestamp={timestamp}',
         ])).format(**args.__dict__)
     )
@@ -353,9 +361,9 @@ def main():
         print_interval = 1, 'iteration'
     else:
         eval_interval = 3000, 'iteration'
-        log_interval = 20, 'iteration'
+        log_interval = 1, 'iteration'
         plot_interval = 1000, 'iteration'
-        print_interval = 20, 'iteration'
+        print_interval = 1, 'iteration'
 
     trainer.extend(
         InstanceSegmentationVOCEvaluator(
