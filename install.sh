@@ -42,7 +42,7 @@ pip install git+https://github.com/wkentaro/mvtk.git
 
 git_branch () {
   set +x
-  git branch | egrep '^*' | awk '{print $2}'
+  git branch | grep -e '^*' | awk '{print $2}'
   set -x
 }
 
