@@ -204,11 +204,11 @@ def main():
                         default='voc', help='The dataset.')
     parser.add_argument('--model', '-m',
                         choices=['vgg16', 'resnet50', 'resnet101'],
-                        default='resnet50', help='Base model of Mask R-CNN.')
+                        default='resnet101', help='Base model of Mask R-CNN.')
     parser.add_argument(
         '--pretrained-model', '-pm',
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
-        default='voc12_train_rpn', help='Pretrained model.')
+        default='imagenet', help='Pretrained model.')
     parser.add_argument('--lr', '-l', type=float, default=0.001,
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
@@ -219,9 +219,9 @@ def main():
                         help='Iteration size.')
     parser.add_argument('--weight_decay', type=float, default=0.0005,
                         help='Weight decay.')
-    parser.add_argument('--update-policy', '-u',
+    parser.add_argument('--update-policy', '-up',
                         choices=['almost_all', 'head_only', 'mask_only'],
-                        default='head_only', help='Update policy.')
+                        default='almost_all', help='Update policy.')
     parser.add_argument('--pooling-func', '-pf',
                         choices=['pooling', 'align'],
                         default='align', help='Pooling function.')
