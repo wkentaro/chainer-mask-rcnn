@@ -199,6 +199,9 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     # training parameters
+    parser.add_argument('--dataset', '-d',
+                        choices=['voc', 'coco'],
+                        default='voc', help='The dataset.')
     parser.add_argument('--model', '-m',
                         choices=['vgg16', 'resnet50', 'resnet101'],
                         default='resnet50', help='Base model of Mask R-CNN.')
@@ -234,6 +237,7 @@ def main():
     args.out = osp.join(
         here, 'logs',
         '.'.join(filter(None, [
+            'dataset={dataset}',
             'model={model}',
             'pretrained_model={pretrained_model}',
             'lr={lr}',
@@ -254,10 +258,16 @@ def main():
 
     np.random.seed(args.seed)
 
-    train_data = mrcnn.datasets.MaskRcnnDataset(
-        mrcnn.datasets.SBDInstanceSeg('train'))
-    test_data = mrcnn.datasets.MaskRcnnDataset(
-        mrcnn.datasets.VOC2012InstanceSeg('val'))
+    if args.dataset == 'voc':
+        train_data = mrcnn.datasets.SBDInstanceSeg('train')
+        test_data = mrcnn.datasets.VOC2012InstanceSeg('val')
+    elif args.dataset == 'coco':
+        train_data = mrcnn.datasets.CocoInstanceSeg('train')
+        test_data = mrcnn.datasets.CocoInstanceSeg('val')
+    else:
+        raise ValueError
+    train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
+    test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
     if args.overfit:
         train_data = OverfitDataset(train_data, indices=range(0, 9))
         test_data = OverfitDataset(train_data, indices=range(0, 9))
