@@ -17,12 +17,17 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
 
     class_names = None  # initialized by __init__
 
-    def __init__(self, data_type):
-        assert data_type in ('train', 'val')
-        data_type = data_type + '2014'
+    def __init__(self, split):
+        if split in ['train', 'val']:
+            split = split + '2014'
+            data_type = split
+        elif split == 'minival':
+            data_type = 'val2014'
+        else:
+            raise ValueError
         dataset_dir = osp.expanduser('~/data/datasets/COCO')
         ann_file = osp.join(
-            dataset_dir, 'annotations/instances_%s.json' % data_type)
+            dataset_dir, 'annotations/instances_%s.json' % split)
         self.coco = COCO(ann_file)
         self.img_fname = osp.join(
             dataset_dir, data_type, 'COCO_%s_{:012}.jpg' % data_type)

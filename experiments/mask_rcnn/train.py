@@ -263,7 +263,7 @@ def main():
         test_data = mrcnn.datasets.VOC2012InstanceSeg('val')
     elif args.dataset == 'coco':
         train_data = mrcnn.datasets.CocoInstanceSeg('train')
-        test_data = mrcnn.datasets.CocoInstanceSeg('val')
+        test_data = mrcnn.datasets.CocoInstanceSeg('minival')
     else:
         raise ValueError
     instance_class_names = train_data.class_names[1:]
@@ -371,9 +371,9 @@ def main():
         plot_interval = 100, 'iteration'
         print_interval = 1, 'iteration'
     else:
-        eval_interval = 3000, 'iteration'
+        eval_interval = 10000, 'iteration'
         log_interval = 20, 'iteration'
-        plot_interval = 1000, 'iteration'
+        plot_interval = eval_interval[0] // 2, 'iteration'
         print_interval = 20, 'iteration'
 
     trainer.extend(
