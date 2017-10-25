@@ -1,6 +1,7 @@
 import os.path as osp
 
 import chainer
+import cv2
 import numpy as np
 import PIL.Image
 import PIL.ImageDraw
@@ -47,6 +48,8 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
 
         img_fname = self.img_fname.format(img_id)
         img = skimage.io.imread(img_fname)
+        if img.ndim == 2:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
         lbl_cls, lbl_ins = self._annotations_to_label(
             anns, img.shape[0], img.shape[1])
