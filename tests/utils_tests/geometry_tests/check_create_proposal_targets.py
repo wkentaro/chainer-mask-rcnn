@@ -47,7 +47,8 @@ def visualize_func(dataset, index):
     labels, boxes, masks = mask_rcnn.utils.label2instance_boxes(
         lbl_ins, lbl_cls, return_masks=True)
     H, W = img.shape[:2]
-    rois = _augment_bboxes(boxes, H, W)
+    boxes = boxes.astype(np.float32)
+    rois = _augment_bboxes(boxes, H, W).astype(np.float32)
     labels -= 1
     masks = masks.astype(np.int32)
 
