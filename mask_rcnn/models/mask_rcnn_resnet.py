@@ -7,8 +7,8 @@ import chainer.functions as F
 import chainer.links as L
 
 from chainer.links.model.vision.resnet import BuildingBlock
-from chainer.links.model.vision.resnet import ResNet50Layers
 from chainer.links.model.vision.resnet import ResNet101Layers
+from chainer.links.model.vision.resnet import ResNet50Layers
 from chainercv.links.model.faster_rcnn.region_proposal_network \
     import RegionProposalNetwork
 from chainercv.utils import download_model
@@ -16,8 +16,8 @@ from chainercv.utils import download_model
 from .. import functions
 from .faster_rcnn_resnet import _copy_persistent_chain
 from .faster_rcnn_resnet import _global_average_pooling_2d
-from .faster_rcnn_resnet import FasterRCNNResNet50
 from .faster_rcnn_resnet import FasterRCNNResNet101
+from .faster_rcnn_resnet import FasterRCNNResNet50
 from .mask_rcnn import MaskRCNN
 
 
