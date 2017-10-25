@@ -255,7 +255,7 @@ def main():
     np.random.seed(args.seed)
 
     train_data = mrcnn.datasets.MaskRcnnDataset(
-        mrcnn.datasets.VOC2012InstanceSeg('train'))
+        mrcnn.datasets.SBDInstanceSeg('train'))
     test_data = mrcnn.datasets.MaskRcnnDataset(
         mrcnn.datasets.VOC2012InstanceSeg('val'))
     if args.overfit:
