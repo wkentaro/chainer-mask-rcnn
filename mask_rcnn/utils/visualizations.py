@@ -79,11 +79,11 @@ def visualize_instance_segmentation(lbl_ins, lbl_cls, img, class_names):
     # visualize instances
     lbl_ins = lbl_ins.copy()
     lbl_ins[lbl_cls == 0] = -1
+    lbl_ins[lbl_cls == -1] = -1
     viz = skimage.color.label2rgb(lbl_ins, img, bg_label=-1)
     viz = (viz * 255).astype(np.uint8)
     # visualize classes
-    ins_clss, boxes = label2instance_boxes(
-        lbl_ins, lbl_cls, ignore_class=(-1, 0))
+    ins_clss, boxes = label2instance_boxes(lbl_ins, lbl_cls)
     if ins_clss.size > 0:
         viz = draw_instance_boxes(
             viz, boxes, ins_clss,

@@ -29,7 +29,7 @@ def _augment_bboxes(bboxes, H, W):
         for box in bboxes:
             roi = []
             for yx in box:
-                scale = np.random.normal(1.0, scale=0.2)
+                scale = np.random.normal(1.0, scale=0.1)
                 yx = int(scale * yx)
                 roi.append(yx)
             bboxes_aug.append(roi)
@@ -61,6 +61,8 @@ def visualize_func(dataset, index):
             loc_normalize_std=(0.1, 0.1, 0.2, 0.2))
         gt_roi_masks = [None] * len(sample_rois)
     else:
+        if True:
+            masks = lbl_ins
         sample_rois, gt_roi_locs, gt_roi_labels, gt_roi_masks = \
             mask_rcnn.utils.create_proposal_targets(
                 rois, boxes, labels, masks,
