@@ -20,4 +20,4 @@ class MaskRcnnDataset(chainer.dataset.DatasetMixin):
         labels -= 1  # background: 0 -> -1
         bboxes = bboxes.astype(np.float32, copy=False)
         masks = masks.astype(np.int32, copy=False)
-        return img, bboxes, labels, masks
+        return img, bboxes, labels, lbl_ins

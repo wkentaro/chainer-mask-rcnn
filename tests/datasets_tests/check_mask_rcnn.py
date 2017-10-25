@@ -8,19 +8,22 @@ import mask_rcnn
 
 
 def visualize_func(dataset, index):
-    img, bboxes, labels, masks = dataset[index]
+    img, bboxes, labels, lbl_ins = dataset[index]
+    labels += 1
     bboxes = bboxes.astype(np.int32)
-    masks = masks.astype(bool)
-
-    n_fg_class = dataset.n_class - 1
 
     viz = mask_rcnn.utils.draw_instance_boxes(
-        img, bboxes, labels, n_class=n_fg_class)
+        img, bboxes, labels, n_class=dataset.n_class)
 
     viz1 = mvtk.image.tile([img, viz])
 
+    instance_ids = np.unique(lbl_ins)
+    instance_ids = instance_ids[instance_ids != -1]
+
     vizs = []
-    for label, bbox, mask in zip(labels, bboxes, masks):
+    for idx_ins, (label, bbox) in enumerate(zip(labels, bboxes)):
+        ins_id = instance_ids[idx_ins]
+        mask = lbl_ins == ins_id
         viz = img.copy()
         viz[~mask] = 255
         y1, x1, y2, x2 = bbox
@@ -28,10 +31,10 @@ def visualize_func(dataset, index):
         scale = math.sqrt((400. * 400.) / (viz.shape[0] * viz.shape[1]))
         viz = cv2.resize(viz, None, None, fx=scale, fy=scale)
         H, W = viz.shape[:2]
-        caption = dataset._instance_dataset.class_names[1:][label]
+        caption = dataset._instance_dataset.class_names[label]
         viz = mask_rcnn.utils.draw_instance_boxes(
             viz, [(0, 0, H, W)], [label],
-            captions=[caption], n_class=n_fg_class, thickness=10)
+            captions=[caption], n_class=dataset.n_class, thickness=10)
         vizs.append(viz)
     viz2 = mvtk.image.tile(vizs)
 
