@@ -127,7 +127,7 @@ class MaskRCNNTrainChain(chainer.Chain):
             create_proposal_targets(
                 roi, bbox, label, mask,
                 self.loc_normalize_mean, self.loc_normalize_std, mask_size=14)
-        del roi, bbox, label, mask
+        del roi, label, mask
         del rois, bboxes, labels, masks
 
         sample_roi_index = self.xp.zeros((len(sample_roi),), dtype=np.int32)
