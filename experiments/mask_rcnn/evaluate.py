@@ -73,7 +73,8 @@ def transform_test_data(in_data):
 
 
 test_data = mrcnn.datasets.MaskRcnnDataset(
-    mrcnn.datasets.VOC2012InstanceSeg('val'))
+    mrcnn.datasets.VOC2012InstanceSeg('val'),
+    return_masks=True)
 test_data = TransformDataset(test_data, transform_test_data)
 test_iter = chainer.iterators.SerialIterator(
     test_data, batch_size=1, repeat=False, shuffle=False)
