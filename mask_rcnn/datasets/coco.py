@@ -88,6 +88,9 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
                 else:
                     rle = [ann['segmentation']]
                 mask = pycocotools.mask.decode(rle)[:, :, 0]
+                # FIXME: some of minival annotations are malformed.
+                if mask.shape != (height, width):
+                    continue
                 lbl_cls[mask == 1] = ann['category_id']
                 lbl_ins[mask == 1] = ins_id
         return lbl_cls, lbl_ins
