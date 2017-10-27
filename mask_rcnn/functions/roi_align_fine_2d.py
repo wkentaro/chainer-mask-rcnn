@@ -74,8 +74,8 @@ class ROIAlignFine2D(function.Function):
             float roi_end_h = (bottom_rois[n * 5 + 4]) * spatial_scale;
 
             // Force malformed ROIs to be 1x1
-            float roi_width = max(roi_end_w - roi_start_w, static_cast<float>(1));
-            float roi_height = max(roi_end_h - roi_start_h, static_cast<float>(1));
+            float roi_width = roi_end_w - roi_start_w;
+            float roi_height = roi_end_h - roi_start_h;
             float bin_size_h = static_cast<float>(roi_height)
                                / static_cast<float>(pooled_height);
             float bin_size_w = static_cast<float>(roi_width)
@@ -178,8 +178,8 @@ class ROIAlignFine2D(function.Function):
               // this bottom unit
 
               // Force malformed ROIs to be 1x1
-              float roi_width = max(roi_end_w - roi_start_w, static_cast<float>(1));
-              float roi_height = max(roi_end_h - roi_start_h, static_cast<float>(1));
+              float roi_width = roi_end_w - roi_start_w;
+              float roi_height = roi_end_h - roi_start_h;
 
               float bin_size_h = static_cast<float>(roi_height)
                                  / static_cast<float>(pooled_height);
