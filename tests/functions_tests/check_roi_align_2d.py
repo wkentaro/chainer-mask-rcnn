@@ -10,7 +10,8 @@ import mask_rcnn as mrcnn
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-g', '--gpu', type=int, default=-1)
-parser.add_argument('-f', '--func', choices=['align', 'pool', 'resize'],
+parser.add_argument('-f', '--func',
+                    choices=['align', 'align_fine', 'pool', 'resize'],
                     default='align')
 parser.add_argument('-s', '--show', action='store_true')
 args = parser.parse_args()
@@ -56,6 +57,9 @@ for rois in roiss:
     if args.func == 'align':
         y = mrcnn.functions.roi_align_2d(
             x, rois, outh=2, outw=2, spatial_scale=1)
+    elif args.func == 'align_fine':
+        y = mrcnn.functions.roi_align_fine_2d(
+            x, rois, outh=2, outw=2, spatial_scale=1)
     elif args.func == 'pool':
         y = chainer.functions.roi_pooling_2d(
             x, rois, outh=2, outw=2, spatial_scale=1)
@@ -77,13 +81,20 @@ for rois in roiss:
     print(output)
     print('-' * 79)
 
-    print('check_backward:')
-    gradient_check.check_backward(
-        mrcnn.functions.ROIAlign2D(2, 2, 1),
-        (x.data, rois.data), y.grad, no_grads=[False, True],
-    )
-    print('Passed!')
-    print('-' * 79)
+    if args.func in ['align', 'align_fine']:
+        print('check_backward:')
+        if args.func == 'align':
+            gradient_check.check_backward(
+                mrcnn.functions.ROIAlign2D(2, 2, 1),
+                (x.data, rois.data), y.grad, no_grads=[False, True],
+            )
+        else:
+            gradient_check.check_backward(
+                mrcnn.functions.ROIAlignFine2D(2, 2, 1),
+                (x.data, rois.data), y.grad, no_grads=[False, True],
+            )
+        print('Passed!')
+        print('-' * 79)
 
     if not args.show:
         continue
