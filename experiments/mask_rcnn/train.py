@@ -218,7 +218,7 @@ def main():
                         help='Step size of iterations.')
     parser.add_argument('--iteration', '-i', type=int, default=140000,
                         help='Iteration size.')
-    parser.add_argument('--weight_decay', type=float, default=0.0001,
+    parser.add_argument('--weight_decay', type=float, default=0.0005,
                         help='Weight decay.')
     parser.add_argument('--update-policy', '-up',
                         choices=['almost_all', 'head_only', 'mask_only'],
