@@ -345,7 +345,7 @@ def main():
     test_data = TransformDataset(test_data, transform_test_data)
 
     train_iter = chainer.iterators.MultiprocessIterator(
-        train_data, batch_size=1, n_processes=None, shared_mem=150000000)
+        train_data, batch_size=1, n_processes=4, shared_mem=100000000)
     test_iter = chainer.iterators.SerialIterator(
         test_data, batch_size=1, repeat=False, shuffle=False)
     updater = chainer.training.updater.StandardUpdater(
@@ -371,9 +371,9 @@ def main():
         plot_interval = 100, 'iteration'
         print_interval = 1, 'iteration'
     else:
-        eval_interval = 10000, 'iteration'
+        eval_interval = len(train_data) // train_iter.batch_size, 'iteration'
         log_interval = 20, 'iteration'
-        plot_interval = eval_interval[0] // 2, 'iteration'
+        plot_interval = eval_interval[0], 'iteration'
         print_interval = 20, 'iteration'
 
     trainer.extend(
