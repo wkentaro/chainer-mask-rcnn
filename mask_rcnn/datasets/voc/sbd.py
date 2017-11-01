@@ -47,6 +47,7 @@ class SBDInstanceSeg(VOCInstanceSegBase):
         mat = scipy.io.loadmat(ins_file)
         ins = mat['GTinst'][0]['Segmentation'][0].astype(np.int32)
         ins[ins == 255] = -1
+        ins[np.isin(lbl, [-1, 0])] = -1
         return img, lbl, ins
 
     def __len__(self):

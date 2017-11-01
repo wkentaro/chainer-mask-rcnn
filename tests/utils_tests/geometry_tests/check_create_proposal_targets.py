@@ -27,12 +27,18 @@ def _augment_bboxes(bboxes, H, W):
     bboxes_aug = []
     for _ in xrange(100):
         for box in bboxes:
-            roi = []
-            for yx in box:
-                scale = np.random.normal(1.0, scale=0.2)
-                yx = int(scale * yx)
-                roi.append(yx)
-            bboxes_aug.append(roi)
+            y1, x1, y2, x2 = box
+            h = y2 - y1
+            w = x2 - x1
+            cy = (y2 + y1) / 2.
+            cx = (x2 + x1) / 2.
+            cy = cy + np.random.normal(0, scale=0.05) * h
+            cx = cx + np.random.normal(0, scale=0.05) * w
+            y1 = int(cy - h / 2.)
+            x1 = int(cx - w / 2.)
+            y2 = int(cy + h / 2.)
+            x2 = int(cx + w / 2.)
+            bboxes_aug.append((y1, x1, y2, x2))
     bboxes_aug = _validate_bboxes(bboxes_aug, H, W)
     return bboxes_aug
 
@@ -44,13 +50,11 @@ def visualize_func(dataset, index):
         lbl_ins, lbl_cls, img, dataset.class_names)
     vizs.append(viz)
 
-    labels, boxes, masks = mask_rcnn.utils.label2instance_boxes(
-        lbl_ins, lbl_cls, return_masks=True)
+    mrcnn_dataset = mask_rcnn.datasets.MaskRcnnDataset(
+        dataset, return_masks=False)
+    img, boxes, labels, masks = mrcnn_dataset[index]
     H, W = img.shape[:2]
-    boxes = boxes.astype(np.float32)
     rois = _augment_bboxes(boxes, H, W).astype(np.float32)
-    labels -= 1
-    masks = masks.astype(np.int32)
 
     proposal_target_creator = ProposalTargetCreator()
 
