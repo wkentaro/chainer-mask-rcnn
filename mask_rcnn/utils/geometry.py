@@ -39,7 +39,11 @@ def create_proposal_targets(rois, boxes, labels, masks,
             rois, boxes, labels,
             loc_normalize_mean, loc_normalize_std)
 
-    N, H, W = masks.shape
+    if masks.ndim == 2:
+        H, W = masks.shape
+        N = len(boxes)
+    else:
+        N, H, W = masks.shape
     assert boxes.shape == (N, 4)
     assert labels.shape == (N,)
 
@@ -52,7 +56,12 @@ def create_proposal_targets(rois, boxes, labels, masks,
         if id_cls == 0:
             continue
         idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes])
-        mask_ins = masks[idx_ins]
+        if masks.ndim == 2:
+            instance_ids = np.unique(masks)
+            ins_id = instance_ids[instance_ids != -1][idx_ins]
+            mask_ins = (masks == ins_id).astype(np.int32)
+        else:
+            mask_ins = masks[idx_ins]
         assert mask_ins.dtype == np.int32
         mask_roi = np.zeros_like(mask_ins)
         mask_roi[y1:y2, x1:x2] = 1
@@ -71,9 +80,7 @@ def create_proposal_targets(rois, boxes, labels, masks,
     return sample_rois, gt_roi_locs, gt_roi_labels, gt_roi_masks
 
 
-def label2instance_boxes(label_instance, label_class,
-                         ignore_instance=-1, ignore_class=(-1, 0),
-                         return_masks=False):
+def label2instance_boxes(label_instance, label_class, return_masks=False):
     """Convert instance label to boxes.
 
     Parameters
@@ -82,10 +89,6 @@ def label2instance_boxes(label_instance, label_class,
         Label image for instance id.
     label_class: numpy.ndarray, (H, W)
         Label image for class.
-    ignore_instance: int or tuple of int
-        Label value ignored about label_instance. (default: -1)
-    ignore_class: int or tuple of int
-        Label value ignored about label_class. (default: (-1, 0))
     return_masks: bool
         Flag to return each instance mask.
 
@@ -98,25 +101,18 @@ def label2instance_boxes(label_instance, label_class,
     instance_masks: numpy.ndarray, (n_instance, H, W), bool
         Masks for each instance. Only returns when return_masks=True.
     """
-    if not isinstance(ignore_instance, collections.Iterable):
-        ignore_instance = (ignore_instance,)
-    if not isinstance(ignore_class, collections.Iterable):
-        ignore_class = (ignore_class,)
     # instance_class is 'Class of the Instance'
     instance_classes = []
     boxes = []
     instance_masks = []
     instances = np.unique(label_instance)
-    for inst in instances:
-        if inst in ignore_instance:
-            continue
-
+    for inst in instances[instances != -1]:
         mask_inst = label_instance == inst
         count = collections.Counter(label_class[mask_inst].tolist())
         instance_class = max(count.items(), key=lambda x: x[1])[0]
 
-        if instance_class in ignore_class:
-            continue
+        assert inst not in [-1]
+        assert instance_class not in [-1, 0]
 
         where = np.argwhere(mask_inst)
         (y1, x1), (y2, x2) = where.min(0), where.max(0) + 1

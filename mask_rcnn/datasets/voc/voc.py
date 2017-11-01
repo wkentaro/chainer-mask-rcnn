@@ -79,6 +79,7 @@ class VOC2012InstanceSeg(VOCInstanceSegBase):
         lbl_ins = PIL.Image.open(seg_object_file)
         lbl_ins = np.array(lbl_ins, dtype=np.int32)
         lbl_ins[lbl_ins == 255] = -1
+        lbl_ins[np.isin(lbl_cls, [-1, 0])] = -1
         return img, lbl_cls, lbl_ins
 
 

@@ -20,9 +20,7 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
     assert instance_classes.shape == (instance_classes.shape[0],)
 
     if masks is not None:
-        masks = np.asarray(masks)
-        assert isinstance(masks, np.ndarray)
-        assert masks.shape[0] == boxes.shape[0]
+        assert len(masks) == len(boxes)
 
     if captions is not None:
         captions = np.asarray(captions)
@@ -82,8 +80,7 @@ def visualize_instance_segmentation(lbl_ins, lbl_cls, img, class_names):
     viz = skimage.color.label2rgb(lbl_ins, img, bg_label=-1)
     viz = (viz * 255).astype(np.uint8)
     # visualize classes
-    ins_clss, boxes = label2instance_boxes(
-        lbl_ins, lbl_cls, ignore_class=(-1, 0))
+    ins_clss, boxes = label2instance_boxes(lbl_ins, lbl_cls)
     if ins_clss.size > 0:
         viz = draw_instance_boxes(
             viz, boxes, ins_clss,
