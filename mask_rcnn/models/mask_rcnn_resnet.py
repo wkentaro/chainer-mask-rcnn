@@ -66,9 +66,10 @@ class MaskRCNNResNet(MaskRCNN):
 
             def __init__(self, *args, **kwargs):
                 super(Extractor, self).__init__(*args, **kwargs)
-                # # Remove no need layers to save memory
-                # self.res5 = chainer.Link()
-                # self.fc6 = chainer.Link()
+                # Remove no need layers to save memory
+                delattr(self, 'res5')
+                delattr(self, 'fc6')
+                self.res5 = self.fc6 = None
 
             def __call__(self, x):
                 pick = 'res4'
