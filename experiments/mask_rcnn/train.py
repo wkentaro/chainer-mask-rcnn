@@ -215,19 +215,14 @@ def main():
         '--pretrained-model', '-pm',
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
         default='imagenet', help='Pretrained model.')
-    parser.add_argument('--lr', '-l', type=float, default=0.001,
+    parser.add_argument('--lr', '-l', type=float, default=0.002,
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
                         help='Random seed.')
-    parser.add_argument('--step_size', '-ss', type=int, default=50000,
-                        help='Step size of iterations.')
     parser.add_argument('--iteration', '-i', type=int, default=140000,
                         help='Iteration size.')
-    parser.add_argument('--weight_decay', type=float, default=0.0005,
+    parser.add_argument('--weight_decay', type=float, default=0.0001,
                         help='Weight decay.')
-    parser.add_argument('--update-policy', '-up',
-                        choices=['almost_all', 'head_only', 'mask_only'],
-                        default='almost_all', help='Update policy.')
     parser.add_argument('--pooling-func', '-pf',
                         choices=['pooling', 'align'],
                         default='align', help='Pooling function.')
@@ -248,10 +243,8 @@ def main():
             'pretrained_model={pretrained_model}',
             'lr={lr}',
             'seed={seed}',
-            'step_size={step_size}',
             'iteration={iteration}',
             'weight_decay={weight_decay}',
-            'update_policy={update_policy}',
             'pooling_func={pooling_func}',
             'overfit' if args.overfit else None,
             'git={git}',
@@ -308,36 +301,6 @@ def main():
     optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
-    if args.update_policy == 'almost_all':
-        # This is only relevant to ResNet training.
-        if args.model in ['resnet50', 'resnet101']:
-            for p in model.params():
-                # Do not update batch normalization layers.
-                if p.name == 'gamma':
-                    p.update_rule.enabled = False
-                elif p.name == 'beta':
-                    p.update_rule.enabled = False
-        # Do not update for the first two blocks.
-        mask_rcnn.extractor.conv1.disable_update()
-        mask_rcnn.extractor.bn1.disable_update()
-        mask_rcnn.extractor.res2.disable_update()
-    elif args.update_policy == 'head_only':
-        mask_rcnn.extractor.disable_update()
-        mask_rcnn.rpn.disable_update()
-    elif args.update_policy == 'mask_only':
-        mask_rcnn.extractor.disable_update()
-        mask_rcnn.rpn.disable_update()
-        if args.model == 'vgg16':
-            mask_rcnn.head.fc6.disable_update()
-            mask_rcnn.head.fc7.disable_update()
-            mask_rcnn.head.cls_loc.disable_update()
-            mask_rcnn.head.score.disable_update()
-        elif args.model in ['resnet50', 'resnet101']:
-            mask_rcnn.head.res5.disable_update()
-            mask_rcnn.head.cls_loc.disable_update()
-            mask_rcnn.head.score.disable_update()
-    else:
-        raise ValueError
 
     train_data = TransformDataset(train_data, Transform(mask_rcnn))
 
@@ -381,19 +344,51 @@ def main():
         train_iter, optimizer, device=args.gpu,
         converter=concat_examples)
 
+    # 0 - 1/5: lr=0.002, update heads only
+    # 1/5 - 1/2: lr=0.002 / 10, update res4+ only
+    # 1/2 - max_iteration: lr=0.002 / 100, update all
+
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
-    # FIXME: this ends up nan loss or low accuracy
-    # # 0-4000: lr = 0.002      # warmup lr
-    # # 4000 - step_size: 0.02  # base lr
-    # # step_size - : 0.002     # stepping lr
-    # warmup_lr = args.lr * 0.1
-    # trainer.extend(
-    #     extensions.LinearShift('lr', (warmup_lr, args.lr), (0, 4000)),
-    #     trigger=(1, 'iteration'))
-    # trainer.extend(extensions.ExponentialShift('lr', 0.1),
-    #                trigger=(args.step_size, 'iteration'))
+    mask_rcnn.extractor.disable_update()
+
+    class EnableRes4PlusExtension(object):
+
+        def __init__(self, target):
+            self._target = target
+
+        def __call__(self, trainer):
+            self._target.mask_rcnn.extractor.res4.enable_update()
+
+    trainer.extend(
+        EnableRes4PlusExtension(model),
+        trigger=training.triggers.ManualScheduleTrigger(
+            [args.iteration // 5], 'iteration'
+        ),
+    )
+
+    class EnableAllExtension(object):
+
+        def __init__(self, target):
+            self._target = target
+
+        def __call__(self, trainer):
+            self._target.mask_rcnn.extractor.enable_update()
+
+    trainer.extend(
+        EnableAllExtension(model),
+        trigger=training.triggers.ManualScheduleTrigger(
+            [args.iteration // 2], 'iteration'
+        ),
+    )
+
+    trainer.extend(
+        training.extensions.ExponentialShift('lr', 0.1),
+        trigger=training.triggers.ManualScheduleTrigger(
+            [args.iteration // 5, args.iteration // 2], 'iteration'
+        ),
+    )
 
     if args.overfit:
         eval_interval = 100, 'iteration'
