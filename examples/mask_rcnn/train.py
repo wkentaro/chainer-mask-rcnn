@@ -355,6 +355,8 @@ def main():
 
     class EnableRes4PlusExtension(object):
 
+        name = 'EnableRes4PlusExtension'
+
         def __init__(self, target):
             self._target = target
 
@@ -369,6 +371,8 @@ def main():
     )
 
     class EnableAllExtension(object):
+
+        name = 'EnableAllExtension'
 
         def __init__(self, target):
             self._target = target
