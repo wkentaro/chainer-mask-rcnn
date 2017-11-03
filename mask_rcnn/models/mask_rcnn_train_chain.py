@@ -6,10 +6,7 @@ import chainer.functions as F
 
 from chainercv.links.model.faster_rcnn.utils.anchor_target_creator import\
     AnchorTargetCreator
-from chainercv.links.model.faster_rcnn.utils.proposal_target_creator import\
-    ProposalTargetCreator
-
-from ..utils import create_proposal_targets
+from ..utils import ProposalTargetCreator
 
 
 class MaskRCNNTrainChain(chainer.Chain):
@@ -118,16 +115,15 @@ class MaskRCNNTrainChain(chainer.Chain):
         roi = rois
         mask = masks[0]
 
-        # FIXME
         if len(bbox) == 0:
             return chainer.Variable(self.xp.array(0, dtype=np.float32))
 
         # Sample RoIs and forward
         sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
-            create_proposal_targets(
-                roi, bbox, label, mask,
-                self.loc_normalize_mean, self.loc_normalize_std, mask_size=14)
+            self.proposal_target_creator(roi, bbox, label, mask)
+
         sample_roi_index = self.xp.zeros((len(sample_roi),), dtype=np.int32)
+
         roi_cls_loc, roi_score, roi_mask = self.mask_rcnn.head(
             features, sample_roi, sample_roi_index)
 
