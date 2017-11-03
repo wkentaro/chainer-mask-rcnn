@@ -30,7 +30,7 @@ class MaskRCNNResNet(MaskRCNN):
                  n_layers,
                  n_fg_class=None,
                  pretrained_model=None,
-                 min_size=800, max_size=None,
+                 min_size=600, max_size=1000,
                  ratios=[0.5, 1, 2], anchor_scales=[8, 16, 32],
                  res_initialW=None, rpn_initialW=None,
                  loc_initialW=None, score_initialW=None,
