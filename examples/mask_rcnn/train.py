@@ -282,7 +282,7 @@ def main():
     else:
         raise ValueError
     instance_class_names = train_data.class_names[1:]
-    train_data = mrcnn.datasets.MaskRcnnDataset(train_data, return_masks=False)
+    train_data = mrcnn.datasets.MaskRcnnDataset(train_data, return_masks=True)
     test_data = mrcnn.datasets.MaskRcnnDataset(test_data, return_masks=True)
     if args.overfit:
         train_data = OverfitDataset(train_data, indices=range(0, 9))

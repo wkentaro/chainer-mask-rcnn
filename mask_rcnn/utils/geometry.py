@@ -1,6 +1,6 @@
 import collections
 
-import cv2
+# import cv2
 import numpy as np
 
 
@@ -21,63 +21,64 @@ def get_mask_overlap(mask1, mask2):
     return 1.0 * intersect / union
 
 
-def create_proposal_targets(rois, boxes, labels, masks,
-                            loc_normalize_mean, loc_normalize_std,
-                            mask_size):
-    import chainer
-    from chainercv.links.model.faster_rcnn.utils.proposal_target_creator\
-        import ProposalTargetCreator
-    xp = chainer.cuda.get_array_module(rois)
-    rois = chainer.cuda.to_cpu(rois)
-    boxes = chainer.cuda.to_cpu(boxes)
-    labels = chainer.cuda.to_cpu(labels)
-    masks = chainer.cuda.to_cpu(masks)
-
-    proposal_target_creator = ProposalTargetCreator(n_sample=64)
-    sample_rois, gt_roi_locs, gt_roi_labels = \
-        proposal_target_creator(
-            rois, boxes, labels,
-            loc_normalize_mean, loc_normalize_std)
-
-    if masks.ndim == 2:
-        H, W = masks.shape
-        N = len(boxes)
-    else:
-        N, H, W = masks.shape
-    assert boxes.shape == (N, 4)
-    assert labels.shape == (N,)
-
-    n_sample = len(sample_rois)
-    gt_roi_masks = - np.ones((n_sample, mask_size, mask_size), dtype=np.int32)
-    for i, (id_cls, roi) in enumerate(zip(gt_roi_labels, sample_rois)):
-        y1, x1, y2, x2 = map(int, roi)
-        assert 0 <= y1 and y2 <= H
-        assert 0 <= x1 and x2 <= W
-        if id_cls == 0:
-            continue
-        idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes])
-        if masks.ndim == 2:
-            instance_ids = np.unique(masks)
-            ins_id = instance_ids[instance_ids != -1][idx_ins]
-            mask_ins = (masks == ins_id).astype(np.int32)
-        else:
-            mask_ins = masks[idx_ins]
-        assert mask_ins.dtype == np.int32
-        mask_roi = np.zeros_like(mask_ins)
-        mask_roi[y1:y2, x1:x2] = 1
-        mask_ins = mask_ins & mask_roi
-
-        mask_ins = mask_ins[y1:y2, x1:x2]
-        mask_ins = mask_ins.astype(np.float32)
-        mask_ins = cv2.resize(mask_ins, (mask_size, mask_size))
-        mask_ins = np.round(mask_ins).astype(np.int32)
-        gt_roi_masks[i] = mask_ins
-    if xp != np:
-        sample_rois = chainer.cuda.to_gpu(sample_rois)
-        gt_roi_locs = chainer.cuda.to_gpu(gt_roi_locs)
-        gt_roi_labels = chainer.cuda.to_gpu(gt_roi_labels)
-        gt_roi_masks = chainer.cuda.to_gpu(gt_roi_masks)
-    return sample_rois, gt_roi_locs, gt_roi_labels, gt_roi_masks
+# def create_proposal_targets(rois, boxes, labels, masks,
+#                             loc_normalize_mean, loc_normalize_std,
+#                             mask_size):
+#     import chainer
+#     from chainercv.links.model.faster_rcnn.utils.proposal_target_creator\
+#         import ProposalTargetCreator
+#     xp = chainer.cuda.get_array_module(rois)
+#     rois = chainer.cuda.to_cpu(rois)
+#     boxes = chainer.cuda.to_cpu(boxes)
+#     labels = chainer.cuda.to_cpu(labels)
+#     masks = chainer.cuda.to_cpu(masks)
+#
+#     proposal_target_creator = ProposalTargetCreator(n_sample=64)
+#     sample_rois, gt_roi_locs, gt_roi_labels = \
+#         proposal_target_creator(
+#             rois, boxes, labels,
+#             loc_normalize_mean, loc_normalize_std)
+#
+#     if masks.ndim == 2:
+#         H, W = masks.shape
+#         N = len(boxes)
+#     else:
+#         N, H, W = masks.shape
+#     assert boxes.shape == (N, 4)
+#     assert labels.shape == (N,)
+#
+#     n_sample = len(sample_rois)
+#     gt_roi_masks = - np.ones(
+#        (n_sample, mask_size, mask_size), dtype=np.int32)
+#     for i, (id_cls, roi) in enumerate(zip(gt_roi_labels, sample_rois)):
+#         y1, x1, y2, x2 = map(int, roi)
+#         assert 0 <= y1 and y2 <= H
+#         assert 0 <= x1 and x2 <= W
+#         if id_cls == 0:
+#             continue
+#         idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes])
+#         if masks.ndim == 2:
+#             instance_ids = np.unique(masks)
+#             ins_id = instance_ids[instance_ids != -1][idx_ins]
+#             mask_ins = (masks == ins_id).astype(np.int32)
+#         else:
+#             mask_ins = masks[idx_ins]
+#         assert mask_ins.dtype == np.int32
+#         mask_roi = np.zeros_like(mask_ins)
+#         mask_roi[y1:y2, x1:x2] = 1
+#         mask_ins = mask_ins & mask_roi
+#
+#         mask_ins = mask_ins[y1:y2, x1:x2]
+#         mask_ins = mask_ins.astype(np.float32)
+#         mask_ins = cv2.resize(mask_ins, (mask_size, mask_size))
+#         mask_ins = np.round(mask_ins).astype(np.int32)
+#         gt_roi_masks[i] = mask_ins
+#     if xp != np:
+#         sample_rois = chainer.cuda.to_gpu(sample_rois)
+#         gt_roi_locs = chainer.cuda.to_gpu(gt_roi_locs)
+#         gt_roi_labels = chainer.cuda.to_gpu(gt_roi_labels)
+#         gt_roi_masks = chainer.cuda.to_gpu(gt_roi_masks)
+#     return sample_rois, gt_roi_locs, gt_roi_labels, gt_roi_masks
 
 
 def label2instance_boxes(label_instance, label_class, return_masks=False):
@@ -220,18 +221,18 @@ def label_rois(rois, label_instance, label_class, overlap_thresh=0.5):
     return roi_clss, roi_inst_masks
 
 
-def instance_label_accuracy_score(lbl_ins1, lbl_ins2):
-    best_overlaps = []
-    for l1 in np.unique(lbl_ins1):
-        if l1 == -1:
-            continue
-        mask1 = lbl_ins1 == l1
-        best_overlap = 0
-        for l2 in np.unique(lbl_ins2):
-            if l2 == -1:
-                continue
-            mask2 = lbl_ins2 == l2
-            overlap = get_mask_overlap(mask1, mask2)
-            best_overlap = max(best_overlap, overlap)
-        best_overlaps.append(best_overlap)
-    return np.mean(best_overlaps)
+# def instance_label_accuracy_score(lbl_ins1, lbl_ins2):
+#     best_overlaps = []
+#     for l1 in np.unique(lbl_ins1):
+#         if l1 == -1:
+#             continue
+#         mask1 = lbl_ins1 == l1
+#         best_overlap = 0
+#         for l2 in np.unique(lbl_ins2):
+#             if l2 == -1:
+#                 continue
+#             mask2 = lbl_ins2 == l2
+#             overlap = get_mask_overlap(mask1, mask2)
+#             best_overlap = max(best_overlap, overlap)
+#         best_overlaps.append(best_overlap)
+#     return np.mean(best_overlaps)
