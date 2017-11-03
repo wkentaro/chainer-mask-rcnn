@@ -2,124 +2,160 @@
 
 import argparse
 import datetime
+import json
 import os
 import os.path as osp
+import subprocess
 
-import pandas as pd
+import pandas
 import tabulate
 
 
-def split_name(name):
-    splits = name.split('.')
-    splits_new = []
-    for kv in splits:
+def get_params_from_name(name):
+    splits = []
+    for kv in name.split('.'):
         if '=' in kv:
-            splits_new.append(kv)
+            splits.append(kv)
         else:
-            splits_new[-1] += kv
-    return splits_new
+            splits[-1] += '.' + kv
+    params = {}
+    for split in splits:
+        key, value = split.split('=')
+        params[key] = value
+    return params
+
+
+def summarize_log(logs_dir, name, keys, target_key, objective, show_active):
+    params = get_params_from_name(name)
+
+    log_file = osp.join(logs_dir, name, 'log')
+    try:
+        df = pandas.DataFrame(json.load(open(log_file)))
+    except Exception:
+        return None, None, osp.join(logs_dir, name)
+
+    try:
+        if objective == 'min':
+            idx = df[target_key].idxmin()
+        else:
+            idx = df[target_key].idxmax()
+    except Exception:
+        idx = None
+
+    dfi = df.ix[idx] if idx else None
+    row = []
+    is_active = True
+    for key in keys:
+        if key == 'name':
+            row.append(name)
+        elif key in ['epoch', 'iteration']:
+            if dfi is None:
+                value = '<none>'
+            else:
+                value = '%d' % dfi[key]
+            max_value = df[key].max()
+            row.append('%s /%d' % (value, max_value))
+        elif key == 'git_branch':
+            value = params.get('git', '<none>')
+            cmd = 'git log {:s} -1 --format="%d"'.format(value)
+            try:
+                value = subprocess.check_output(
+                    cmd, shell=True, stderr=subprocess.PIPE).strip()
+                value = value.lstrip('(').rstrip(')')
+                value = value.split(',')[0]
+            except subprocess.CalledProcessError:
+                value = ''
+            row.append(value or '<none>')
+        elif key.endswith('/loss'):
+            if dfi is None:
+                value = '<none>'
+            else:
+                value = '%.3f' % dfi[key]
+            min_value = df[key].min()
+            max_value = df[key].max()
+            row.append('%.3f< %s <%.3f' % (min_value, value, max_value))
+        elif key.endswith('/map'):
+            min_value = max_value = '<none>'
+            if dfi is None:
+                value = '<none>'
+            else:
+                value = '%.3f' % dfi[key]
+            if objective == 'max':
+                if df is not None and key in df:
+                    min_value = '%.3f' % df[key].min()
+                row.append('%s< %s' % (min_value, value))
+            else:
+                if df is not None and key in df:
+                    max_value = '%.3f' % df[key].max()
+                row.append('%s <%s' % (value, max_value))
+        elif key == 'last_time':
+            if df is None:
+                value = '<none>'
+            else:
+                elapsed_time = df['elapsed_time'].max()
+                value = params.get('timestamp', '<none>')
+                if value is not '<none>':
+                    value = datetime.datetime.strptime(
+                        value, '%Y%m%d_%H%M%S')
+                    value += datetime.timedelta(seconds=elapsed_time)
+                    now = datetime.datetime.now()
+                    value = now - value
+                    if value > datetime.timedelta(minutes=10):
+                        is_active = False
+                    value -= datetime.timedelta(
+                        microseconds=value.microseconds)
+                    value = max(datetime.timedelta(seconds=0), value)
+                    value = '- %s' % value.__str__()
+            row.append(value)
+        elif key in params:
+            row.append(params[key])
+        elif dfi is not None and key in dfi:
+            row.append(dfi[key])
+        else:
+            row.append('<none>')
+    return row, is_active, None
+
+
+def _summarize_log(args):
+    return summarize_log(*args)
 
 
 def summarize_logs(logs_dir, keys, target_key, objective, show_active):
     assert objective in ['min', 'max']
     assert target_key in keys
 
+    args_list = []
+    for name in os.listdir(logs_dir):
+        args_list.append((
+            logs_dir,
+            name,
+            keys,
+            target_key,
+            objective,
+            show_active,
+        ))
+
+    from concurrent.futures import ProcessPoolExecutor
+    with ProcessPoolExecutor(max_workers=4) as executor:
+        results = executor.map(_summarize_log, args_list)
+
     rows = []
     ignored = []
-    for name in os.listdir(logs_dir):
-        log_file = osp.join(logs_dir, name, 'log')
-        try:
-            df = pd.read_json(log_file)
-        except Exception:
-            ignored.append(osp.join(logs_dir, name))
+    for row, is_active, log_dir_ignored in results:
+        if log_dir_ignored:
+            ignored.append(log_dir_ignored)
             continue
-
-        try:
-            if objective == 'min':
-                idx = df[target_key].idxmin()
-            else:
-                idx = df[target_key].idxmax()
-        except Exception:
-            idx = None
-
-        dfi = df.ix[idx] if idx else None
-        row = []
-        is_active = True
-        for key in keys:
-            if key == 'name':
-                row.append(name)
-            elif key in ['epoch', 'iteration']:
-                if dfi is None:
-                    value = '<none>'
-                else:
-                    value = '%d' % dfi[key]
-                max_value = df[key].max()
-                row.append('%s /%d' % (value, max_value))
-            elif key.endswith('/loss'):
-                if dfi is None:
-                    value = '<none>'
-                else:
-                    value = '%.3f' % dfi[key]
-                min_value = df[key].min()
-                max_value = df[key].max()
-                row.append('%.3f< %s <%.3f' % (min_value, value, max_value))
-            elif key.endswith('/map'):
-                min_value = max_value = '<none>'
-                if dfi is None:
-                    value = '<none>'
-                else:
-                    value = '%.3f' % dfi[key]
-                if objective == 'max':
-                    if df is not None and key in df:
-                        min_value = '%.3f' % df[key].min()
-                    row.append('%s< %s' % (min_value, value))
-                else:
-                    if df is not None and key in df:
-                        max_value = '%.3f' % df[key].max()
-                    row.append('%s <%s' % (value, max_value))
-            elif key == 'last_time':
-                if df is None:
-                    value = '<none>'
-                else:
-                    elapsed_time = df['elapsed_time'].max()
-
-                    value = '<none>'
-                    key = 'timestamp'
-                    for kv in split_name(name):
-                        k, v = kv.split('=')
-                        if k == key:
-                            value = v
-                    if value is not '<none>':
-                        value = datetime.datetime.strptime(
-                            value, '%Y%m%d_%H%M%S')
-                        value += datetime.timedelta(seconds=elapsed_time)
-                        now = datetime.datetime.now()
-                        value = now - value
-                        if value > datetime.timedelta(minutes=10):
-                            is_active = False
-                        value -= datetime.timedelta(
-                            microseconds=value.microseconds)
-                        value = '- %s' % value.__str__()
-                row.append(value)
-            elif dfi is not None and key in dfi:
-                row.append(dfi[key])
-            else:
-                value = '<none>'
-                for kv in split_name(name):
-                    k, v = kv.split('=')
-                    if k == key:
-                        value = v
-                row.append(value)
         if show_active:
             if is_active:
                 rows.append(row)
         else:
             rows.append(row)
+
     rows = sorted(rows, key=lambda x: x[0], reverse=True)
     print(tabulate.tabulate(rows, headers=keys,
                             floatfmt='.3f', tablefmt='grid',
                             numalign='center', stralign='center',
-                            showindex=True))
+                            showindex=True, disable_numparse=True))
 
     if not ignored:
         return
@@ -135,10 +171,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     keys = [
-        'timestamp', 'last_time',
-        'git', 'hostname', 'model', 'pooling_func',
+        'timestamp', 'last_time', 'dataset',
+        'git', 'git_branch', 'hostname',
+        # 'model',
+        'lr', 'pooling_func',
         'epoch', 'iteration',
-        'main/loss', 'validation/main/map',
+        # 'main/loss',
+        'validation/main/map',
     ]
     objective = 'max'
     summarize_logs('logs', keys, target_key=keys[-1],
