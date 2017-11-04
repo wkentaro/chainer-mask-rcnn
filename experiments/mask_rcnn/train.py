@@ -54,13 +54,8 @@ class Transform(object):
         if len(bbox) > 0:
             bbox = transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
         if len(mask) > 0:
-            if mask.ndim == 2:
-                # label
-                mask = cv2.resize(mask, dsize=(o_W, o_H), interpolation=0)
-            else:
-                # instance masks
-                mask = transforms.resize(
-                    mask, size=(o_H, o_W), interpolation=0)
+            mask = transforms.resize(
+                mask, size=(o_H, o_W), interpolation=0)
 
         if self._augmentation:
             # horizontally flip
@@ -282,8 +277,8 @@ def main():
     else:
         raise ValueError
     instance_class_names = train_data.class_names[1:]
-    train_data = mrcnn.datasets.MaskRcnnDataset(train_data, return_masks=True)
-    test_data = mrcnn.datasets.MaskRcnnDataset(test_data, return_masks=True)
+    train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
+    test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
     if args.overfit:
         train_data = OverfitDataset(train_data, indices=range(0, 9))
         test_data = OverfitDataset(train_data, indices=range(0, 9))
