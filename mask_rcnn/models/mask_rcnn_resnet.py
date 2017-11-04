@@ -64,6 +64,8 @@ class MaskRCNNResNet(MaskRCNN):
 
         class Extractor(self._ResNetLayers):
 
+            mode = 'all'
+
             def __init__(self, *args, **kwargs):
                 super(Extractor, self).__init__(*args, **kwargs)
                 # Remove no need layers to save memory
@@ -72,10 +74,19 @@ class MaskRCNNResNet(MaskRCNN):
                 self.res5 = self.fc6 = None
 
             def __call__(self, x):
-                pick = 'res4'
+                assert self.mode in ['head', 'res4+', 'all']
+                h = x
                 with chainer.using_config('train', False):
-                    feat = super(Extractor, self).__call__(x, layers=[pick])
-                return feat[pick]
+                    for key, funcs in self.functions.items():
+                        for func in funcs:
+                            h = func(h)
+                        if key == 'res3' and self.mode == 'res4+':
+                            h.unchain_backward()
+                        if key == 'res4':
+                            if self.mode == 'head':
+                                h.unchain_backward()
+                            break
+                return h
 
         extractor = Extractor(pretrained_model=None)
         rpn = RegionProposalNetwork(
