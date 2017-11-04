@@ -351,6 +351,7 @@ def main():
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
+    model.mask_rcnn.extractor.mode = 'head'
     mask_rcnn.extractor.disable_update()
 
     class EnableRes4PlusExtension(object):
@@ -361,6 +362,7 @@ def main():
             self._target = target
 
         def __call__(self, trainer):
+            self._target.mask_rcnn.extractor.mode = 'res4+'
             self._target.mask_rcnn.extractor.res4.enable_update()
 
     trainer.extend(
@@ -378,6 +380,7 @@ def main():
             self._target = target
 
         def __call__(self, trainer):
+            self._target.mask_rcnn.extractor.mode = 'all'
             self._target.mask_rcnn.extractor.enable_update()
 
     trainer.extend(
