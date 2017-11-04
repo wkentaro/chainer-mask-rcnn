@@ -39,11 +39,7 @@ def get_mask_overlap(mask1, mask2):
 #             rois, boxes, labels,
 #             loc_normalize_mean, loc_normalize_std)
 #
-#     if masks.ndim == 2:
-#         H, W = masks.shape
-#         N = len(boxes)
-#     else:
-#         N, H, W = masks.shape
+#     N, H, W = masks.shape
 #     assert boxes.shape == (N, 4)
 #     assert labels.shape == (N,)
 #
@@ -57,12 +53,7 @@ def get_mask_overlap(mask1, mask2):
 #         if id_cls == 0:
 #             continue
 #         idx_ins = np.argmax([get_bbox_overlap(b, roi) for b in boxes])
-#         if masks.ndim == 2:
-#             instance_ids = np.unique(masks)
-#             ins_id = instance_ids[instance_ids != -1][idx_ins]
-#             mask_ins = (masks == ins_id).astype(np.int32)
-#         else:
-#             mask_ins = masks[idx_ins]
+#         mask_ins = masks[idx_ins]
 #         assert mask_ins.dtype == np.int32
 #         mask_roi = np.zeros_like(mask_ins)
 #         mask_roi[y1:y2, x1:x2] = 1
