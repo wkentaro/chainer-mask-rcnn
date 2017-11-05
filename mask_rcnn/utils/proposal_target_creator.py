@@ -168,8 +168,11 @@ class ProposalTargetCreator(object):
             idx_ins = gt_assignment[i_pos]
             gt_roi = np.round(bbox[idx_ins]).astype(np.int32)
             gt_mask = mask[idx_ins]
-            gt_roi_mask_i = intersect_bbox_mask(
-                roi, gt_roi, gt_mask, self.mask_size)
+            # XXX: It seems not good, because it shifts mask coords.
+            # gt_roi_mask_i = intersect_bbox_mask(
+            #     roi, gt_roi, gt_mask, self.mask_size)
+            gt_roi_mask_i = gt_mask[roi[0]:roi[2], roi[1]:roi[3]]
+            gt_roi_mask_i = gt_roi_mask_i.astype(np.float32)
             gt_roi_mask_i = cv2.resize(
                 gt_roi_mask_i, (self.mask_size, self.mask_size))
             gt_roi_mask_i = gt_roi_mask_i >= self.binary_thresh
