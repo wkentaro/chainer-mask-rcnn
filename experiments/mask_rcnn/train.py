@@ -238,7 +238,7 @@ def main():
     parser.add_argument('--weight_decay', type=float, default=0.0001,
                         help='Weight decay.')
     parser.add_argument('--pooling-func', '-pf',
-                        choices=['pooling', 'align'],
+                        choices=['pooling', 'align', 'resize'],
                         default='align', help='Pooling function.')
     parser.add_argument('--overfit', action='store_true',
                         help='Do overfit training (single image).')
@@ -292,6 +292,8 @@ def main():
         pooling_func = mrcnn.functions.roi_align_2d
     elif args.pooling_func == 'pooling':
         pooling_func = chainer.functions.roi_pooling_2d
+    elif args.pooling_func == 'resize':
+        pooling_func = mrcnn.functions.crop_and_resize
     else:
         raise ValueError
 
