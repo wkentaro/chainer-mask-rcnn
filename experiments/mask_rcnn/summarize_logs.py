@@ -62,7 +62,10 @@ def summarize_log(logs_dir, name, keys, target_key, objective, show_active):
                 value = subprocess.check_output(
                     cmd, shell=True, stderr=subprocess.PIPE).strip()
                 value = value.lstrip('(').rstrip(')')
-                value = value.split(',')[0]
+                value = value.split(',')
+                if 'HEAD' in value:
+                    value.remove('HEAD')
+                value = value[0]
             except subprocess.CalledProcessError:
                 value = ''
             row.append(value or '<none>')
