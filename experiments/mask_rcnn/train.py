@@ -9,6 +9,7 @@ import itertools
 import os
 import os.path as osp
 import pprint
+import random
 
 os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
@@ -19,6 +20,7 @@ from chainer import training
 from chainer.training import extensions
 from chainercv import transforms
 from chainercv.utils import apply_prediction_to_iterator
+import cupy
 import cv2
 import numpy as np
 import six
@@ -267,7 +269,9 @@ def main():
 
     pprint.pprint(args.__dict__)
 
+    random.seed(args.seed)
     np.random.seed(args.seed)
+    cupy.random.seed(args.seed)
 
     if args.dataset == 'voc':
         train_data = mrcnn.datasets.SBDInstanceSeg('train')
