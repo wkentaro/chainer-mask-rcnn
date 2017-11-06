@@ -233,7 +233,7 @@ def main():
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
                         help='Random seed.')
-    parser.add_argument('--iteration', '-i', type=int, default=140000,
+    parser.add_argument('--iteration', '-i', type=int, default=120000,
                         help='Iteration size.')
     parser.add_argument('--weight_decay', type=float, default=0.0001,
                         help='Weight decay.')
