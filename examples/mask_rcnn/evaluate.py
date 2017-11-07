@@ -78,7 +78,8 @@ test_data = TransformDataset(test_data, transform_test_data)
 test_iter = chainer.iterators.SerialIterator(
     test_data, batch_size=1, repeat=False, shuffle=False)
 
-test_vis_data = OverfitDataset(test_data, indices=range(0, 9))
+test_vis_data = OverfitDataset(
+    test_data, indices=[4, 22, 26, 34, 35, 39, 42, 44, 52])
 test_vis_iter = chainer.iterators.SerialIterator(
     test_vis_data, batch_size=1, repeat=False, shuffle=False)
 
