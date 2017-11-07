@@ -37,6 +37,7 @@ pip install -U numpy
 pip install scikit-image
 pip install imgaug
 pip install 'chainer>=2,<3'
+pip install git+https://github.com/wkentaro/pascal3d.git
 pip install git+https://github.com/wkentaro/mvtk.git
 # }
 
