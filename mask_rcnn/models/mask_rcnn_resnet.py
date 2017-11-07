@@ -255,25 +255,36 @@ class ResNetRoIHead(chainer.Chain):
         self.spatial_scale = spatial_scale
         self._pooling_func = pooling_func
 
-    def __call__(self, x, rois, roi_indices):
-        roi_indices = roi_indices.astype(np.float32)
-        indices_and_rois = self.xp.concatenate(
-            (roi_indices[:, None], rois), axis=1)
-        pool = _roi_pooling_2d_yx(
-            x, indices_and_rois, self.roi_size, self.roi_size,
-            self.spatial_scale, self._pooling_func)
+    def __call__(self, x, rois, roi_indices, pred_bbox=True, pred_mask=True,
+                 res5=None, return_res5=False):
+        if res5 is None:
+            roi_indices = roi_indices.astype(np.float32)
+            indices_and_rois = self.xp.concatenate(
+                (roi_indices[:, None], rois), axis=1)
+            pool = _roi_pooling_2d_yx(
+                x, indices_and_rois, self.roi_size, self.roi_size,
+                self.spatial_scale, self._pooling_func)
 
-        with chainer.using_config('train', False):
-            res5 = self.res5(pool)
+            with chainer.using_config('train', False):
+                res5 = self.res5(pool)
 
-        pool5 = _global_average_pooling_2d(res5)
-        roi_cls_locs = self.cls_loc(pool5)
-        roi_scores = self.score(pool5)
+        roi_cls_locs = None
+        roi_scores = None
+        roi_masks = None
 
-        deconv6 = F.relu(self.deconv6(res5))
-        roi_masks = self.mask(deconv6)
+        if pred_bbox:
+            pool5 = _global_average_pooling_2d(res5)
+            roi_cls_locs = self.cls_loc(pool5)
+            roi_scores = self.score(pool5)
 
-        return roi_cls_locs, roi_scores, roi_masks
+        if pred_mask:
+            deconv6 = F.relu(self.deconv6(res5))
+            roi_masks = self.mask(deconv6)
+
+        if return_res5:
+            return roi_cls_locs, roi_scores, roi_masks, res5
+        else:
+            return roi_cls_locs, roi_scores, roi_masks
 
 
 def _roi_pooling_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,

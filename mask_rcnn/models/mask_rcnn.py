@@ -223,21 +223,20 @@ class MaskRCNN(chainer.Chain):
         img = (img - self.mean).astype(np.float32, copy=False)
         return img
 
-    def _suppress(self, raw_cls_bbox, raw_prob, raw_roi_index,
-                  raw_roi, raw_roi_mask):
+    def _suppress(self, raw_cls_bbox, raw_prob, raw_roi_index, raw_roi):
         bbox = list()
         label = list()
         score = list()
         roi_index = list()
         roi = list()
-        roi_mask = list()
+        roi_keep = list()
         # skip cls_id = 0 because it is the background class
         for l in range(1, self.n_class):
             cls_bbox_l = raw_cls_bbox.reshape((-1, self.n_class, 4))[:, l, :]
             prob_l = raw_prob[:, l]
             roi_index_l = raw_roi_index[:, l]
             roi_l = raw_roi
-            roi_mask_l = raw_roi_mask[:, l - 1]
+            roi_keep_l = np.arange(cls_bbox_l.shape[0], dtype=np.int32)
 
             # thresholding by score
             keep = prob_l > self.score_thresh
@@ -245,7 +244,7 @@ class MaskRCNN(chainer.Chain):
             prob_l = prob_l[keep]
             roi_index_l = roi_index_l[keep]
             roi_l = roi_l[keep]
-            roi_mask_l = roi_mask_l[keep]
+            roi_keep_l = roi_keep_l[keep]
 
             # thresholding by nms
             keep = non_maximum_suppression(
@@ -256,14 +255,14 @@ class MaskRCNN(chainer.Chain):
             score.append(prob_l[keep])
             roi_index.append(roi_index_l[keep])
             roi.append(roi_l[keep])
-            roi_mask.append(roi_mask_l[keep])
+            roi_keep.append(roi_keep_l[keep])
         bbox = np.concatenate(bbox, axis=0).astype(np.float32)
         label = np.concatenate(label, axis=0).astype(np.int32)
         score = np.concatenate(score, axis=0).astype(np.float32)
         roi_index = np.concatenate(roi_index, axis=0).astype(np.int32)
         roi = np.concatenate(roi, axis=0).astype(np.float32)
-        roi_mask = np.concatenate(roi_mask, axis=0).astype(np.float32)
-        return bbox, label, score, roi_index, roi, roi_mask
+        roi_keep = np.concatenate(roi_keep, axis=0).astype(np.int32)
+        return bbox, label, score, roi_index, roi, roi_keep
 
     def predict_masks(self, imgs):
         """Detect objects from images.
@@ -302,14 +301,13 @@ class MaskRCNN(chainer.Chain):
                 h = self.extractor(img_var)
                 rpn_locs, rpn_scores, rois, roi_indices, anchor =\
                     self.rpn(h, img_size, scale)
-                roi_cls_locs, roi_scores, roi_masks = self.head(
-                    h, rois, roi_indices)
+                roi_cls_locs, roi_scores, _, res5 = self.head(
+                    h, rois, roi_indices, pred_mask=False, return_res5=True)
             # We are assuming that batch size is 1.
             roi_cls_loc = roi_cls_locs.data
             roi_score = roi_scores.data
             roi = rois / scale
             roi_index = roi_indices
-            roi_mask = roi_masks.data
 
             # Convert predictions to bounding boxes in image coordinates.
             # Bounding boxes are scaled to the scale of the input images.
@@ -338,13 +336,21 @@ class MaskRCNN(chainer.Chain):
             raw_prob = cuda.to_cpu(prob)
             raw_roi_index = cuda.to_cpu(roi_index)
             raw_roi = cuda.to_cpu(roi)
-            raw_roi_mask = cuda.to_cpu(roi_mask)
 
-            bbox, label, score, roi_index, roi, roi_mask = self._suppress(
-                raw_cls_bbox, raw_prob, raw_roi_index, raw_roi, raw_roi_mask)
+            bbox, label, score, roi_index, roi, roi_keep = self._suppress(
+                raw_cls_bbox, raw_prob, raw_roi_index, raw_roi)
             bboxes.append(bbox)
             labels.append(label)
             scores.append(score)
+
+            if len(roi_keep) > 0:
+                with chainer.using_config('train', False), \
+                        chainer.function.no_backprop_mode():
+                    _, _, roi_masks = self.head(
+                        x=None, rois=None, roi_indices=None,
+                        res5=res5[roi_keep, :, :, :], pred_bbox=False)
+                roi_mask = cuda.to_cpu(roi_masks.data)
+                roi_mask = roi_mask[np.arange(len(bbox)), label]
 
             n_bbox = len(bbox)
             mask = np.zeros((n_bbox, size[0], size[1]), dtype=bool)
