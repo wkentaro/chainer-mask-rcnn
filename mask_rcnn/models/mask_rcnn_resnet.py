@@ -255,7 +255,7 @@ class ResNetRoIHead(chainer.Chain):
         self.spatial_scale = spatial_scale
         self._pooling_func = pooling_func
 
-    def __call__(self, x, rois, roi_indices, pred_bbox=True, pred_mask=True):
+    def __call__(self, x, rois, roi_indices):
         roi_indices = roi_indices.astype(np.float32)
         indices_and_rois = self.xp.concatenate(
             (roi_indices[:, None], rois), axis=1)
@@ -263,21 +263,15 @@ class ResNetRoIHead(chainer.Chain):
             x, indices_and_rois, self.roi_size, self.roi_size,
             self.spatial_scale, self._pooling_func)
 
-        roi_cls_locs = None
-        roi_scores = None
-        roi_masks = None
-
         with chainer.using_config('train', False):
             res5 = self.res5(pool)
 
-        if pred_bbox:
-            pool5 = _global_average_pooling_2d(res5)
-            roi_cls_locs = self.cls_loc(pool5)
-            roi_scores = self.score(pool5)
+        pool5 = _global_average_pooling_2d(res5)
+        roi_cls_locs = self.cls_loc(pool5)
+        roi_scores = self.score(pool5)
 
-        if pred_mask:
-            deconv6 = F.relu(self.deconv6(res5))
-            roi_masks = self.mask(deconv6)
+        deconv6 = F.relu(self.deconv6(res5))
+        roi_masks = self.mask(deconv6)
 
         return roi_cls_locs, roi_scores, roi_masks
 
