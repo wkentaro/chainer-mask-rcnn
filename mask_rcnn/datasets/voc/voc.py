@@ -84,13 +84,16 @@ class VOC2012InstanceSeg(VOCInstanceSegBase):
 
 
 if __name__ == '__main__':
-    import cv2
+    import mvtk
     split = 'val'
     dataset = VOC2012InstanceSeg(split)
-    for i in xrange(len(dataset)):
-        img, lbl_cls, lbl_ins = dataset[i]
+    dataset.split = split
+
+    def visualize_func(dataset, index):
+        print(index)
+        img, lbl_cls, lbl_ins = dataset[index]
         viz = utils.visualize_instance_segmentation(
             lbl_ins, lbl_cls, img, dataset.class_names)
-        cv2.imshow('VOC2012 (%s)' % split, viz[:, :, ::-1])
-        if cv2.waitKey(0) == ord('q'):
-            break
+        return mvtk.image.tile([img, viz])
+
+    mvtk.datasets.view_dataset(dataset, visualize_func)
