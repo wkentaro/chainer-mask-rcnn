@@ -46,7 +46,7 @@ class MaskRCNNTrainChain(chainer.Chain):
 
     def __init__(self, mask_rcnn, rpn_sigma=3., roi_sigma=1.,
                  anchor_target_creator=AnchorTargetCreator(),
-                 proposal_target_creator=ProposalTargetCreator(),
+                 proposal_target_creator=ProposalTargetCreator(n_sample=64),
                  ):
         super(MaskRCNNTrainChain, self).__init__()
         with self.init_scope():
