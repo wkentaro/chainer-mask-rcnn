@@ -264,9 +264,13 @@ def main():
 
     pprint.pprint(args.__dict__)
 
+    if args.gpu >= 0:
+        chainer.cuda.get_device_from_id(args.gpu).use()
+
     random.seed(args.seed)
     np.random.seed(args.seed)
-    cupy.random.seed(args.seed)
+    if args.gpu >= 0:
+        cupy.random.seed(args.seed)
 
     if args.dataset == 'voc':
         train_data = mrcnn.datasets.SBDInstanceSeg('train')
@@ -309,7 +313,6 @@ def main():
     mask_rcnn.use_preset('evaluate')
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.gpu >= 0:
-        chainer.cuda.get_device_from_id(args.gpu).use()
         model.to_gpu()
     optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     optimizer.setup(model)
