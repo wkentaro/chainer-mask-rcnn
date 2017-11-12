@@ -348,9 +348,9 @@ class MaskRCNN(chainer.Chain):
                         chainer.function.no_backprop_mode():
                     _, _, roi_masks = self.head(
                         x=None, rois=None, roi_indices=None,
-                        res5=res5[roi_keep, :, :, :], pred_bbox=False)
+                        res5=res5, pred_bbox=False)
                 roi_mask = cuda.to_cpu(roi_masks.data)
-                roi_mask = roi_mask[np.arange(len(bbox)), label]
+                roi_mask = roi_mask[roi_keep, label]
 
             n_bbox = len(bbox)
             mask = np.zeros((n_bbox, size[0], size[1]), dtype=bool)
