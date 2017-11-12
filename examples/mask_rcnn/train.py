@@ -155,10 +155,14 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
                     masks=gt_mask, captions=self.label_names[gt_label],
                     bg_class=-1)
 
+                captions = []
+                for p_score, l_name in zip(pred_score,
+                                           self.label_names[pred_label]):
+                    caption = '{:s} {:.1%}'.format(l_name, p_score)
+                    captions.append(caption)
                 pred_viz = mrcnn.utils.draw_instance_boxes(
                     img, pred_bbox, pred_label, n_class=n_fg_class,
-                    masks=pred_mask, captions=self.label_names[pred_label],
-                    bg_class=-1)
+                    masks=pred_mask, captions=captions, bg_class=-1)
 
                 viz = np.vstack([gt_viz, pred_viz])
                 vizs.append(viz)
