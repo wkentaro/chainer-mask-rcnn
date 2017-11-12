@@ -48,8 +48,7 @@ def visualize_func(dataset, index):
         lbl_ins, lbl_cls, img, dataset.class_names)
     vizs.append(viz)
 
-    mrcnn_dataset = mask_rcnn.datasets.MaskRcnnDataset(
-        dataset, return_masks=True)
+    mrcnn_dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset)
     img, boxes, labels, masks = mrcnn_dataset[index]
     H, W = img.shape[:2]
     rois = _augment_bboxes(boxes, H, W).astype(np.float32)
