@@ -51,11 +51,26 @@ def visualize_func(dataset, index):
     mrcnn_dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset)
     img, boxes, labels, masks = mrcnn_dataset[index]
     H, W = img.shape[:2]
-    rois = _augment_bboxes(boxes, H, W).astype(np.float32)
 
     if False:
-        from chainercv.links.model.faster_rcnn.utils.proposal_target_creator import\
-            ProposalTargetCreator
+        rois = _augment_bboxes(boxes, H, W).astype(np.float32)
+    else:
+        import selectivesearch
+        img_lbl, regions = selectivesearch.selective_search(
+            img, scale=500, sigma=0.9, min_size=10)
+        rois = []
+        for region in regions:
+            x1, y1, w, h = region['rect']
+            if (w * h) == 0:
+                continue
+            x2 = x1 + w
+            y2 = y1 + h
+            rois.append((y1, x1, y2, x2))
+        rois = np.asarray(rois, dtype=np.float32)
+
+    if False:
+        from chainercv.links.model.faster_rcnn.utils.proposal_target_creator \
+            import ProposalTargetCreator
         proposal_target_creator = ProposalTargetCreator()
 
         sample_rois, gt_roi_locs, gt_roi_labels = proposal_target_creator(
@@ -77,6 +92,7 @@ def visualize_func(dataset, index):
     for roi, mask in zip(sample_rois, gt_roi_masks):
         y1, x1, y2, x2 = roi
         mask = mask.astype(float)
+        mask[mask < 0] = 0
         mask = cv2.resize(mask, (int(x2 - x1), int(y2 - y1)))
         mask = np.round(mask).astype(bool)
         masks.append(mask)
@@ -84,12 +100,11 @@ def visualize_func(dataset, index):
     captions = dataset.class_names[gt_roi_labels]
     viz = mask_rcnn.utils.draw_instance_boxes(
         img, sample_rois, gt_roi_labels, n_class=21,
-        captions=captions, masks=masks, bg_class=0)
+        captions=captions, masks=masks, bg_class=-1)
     vizs.append(viz)
 
     return mvtk.image.tile(vizs)
 
-    #
     # vizs = []
     # for roi, id_cls, gt_roi_mask in \
     #         zip(sample_rois, gt_roi_labels, gt_roi_masks):
