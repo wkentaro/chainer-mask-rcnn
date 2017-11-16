@@ -26,8 +26,8 @@ import chainer
 from chainer import cuda
 import chainer.functions as F
 from chainercv.links.model.faster_rcnn.utils.loc2bbox import loc2bbox
-from chainercv.utils import non_maximum_suppression
 from chainercv.transforms.image.resize import resize
+from chainercv.utils import non_maximum_suppression
 import six
 
 from ..utils import instance_boxes2label
