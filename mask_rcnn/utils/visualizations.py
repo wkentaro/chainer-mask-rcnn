@@ -2,12 +2,13 @@ import cv2
 import fcn
 import numpy as np
 import skimage.color
+import skimage.segmentation
 
 from .geometry import label2instance_boxes
 
 
 def draw_instance_boxes(img, boxes, instance_classes, n_class,
-                        masks=None, captions=None, bg_class=0, thickness=0):
+                        masks=None, captions=None, bg_class=0, thickness=2):
     # validation
     assert isinstance(img, np.ndarray)
     assert img.shape == (img.shape[0], img.shape[1], 3)
@@ -31,23 +32,15 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
     cmap = fcn.utils.labelcolormap(n_class)
     cmap_inst = fcn.utils.labelcolormap(len(boxes) + 1)[1:]  # skip black
 
-    CV_AA = 16
-    for i_box in range(boxes.shape[0]):
-        box = boxes[i_box]
-        inst_class = instance_classes[i_box]
+    if masks is not None:
+        for i_box in range(boxes.shape[0]):
+            box = boxes[i_box]
+            y1, x1, y2, x2 = box.astype(int).tolist()
 
-        if inst_class == bg_class:
-            continue
+            inst_class = instance_classes[i_box]
+            if inst_class == bg_class:
+                continue
 
-        # get color for the label
-        color = cmap[inst_class]
-        color = (color * 255).tolist()
-
-        y1, x1, y2, x2 = box.astype(int).tolist()
-        cv2.rectangle(img_viz, (x1, y1), (x2, y2), color[::-1],
-                      thickness=thickness, lineType=CV_AA)
-
-        if masks is not None:
             mask_inst = masks[i_box]
             if mask_inst.shape != (y2 - y1, x2 - x1):
                 mask_inst = mask_inst[y1:y2, x1:x2]
@@ -57,15 +50,32 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
                 img_viz[y1:y2, x1:x2][mask_inst] * 0.3 +
                 color_inst * 0.7
             )
+            mask_boundary = skimage.segmentation.find_boundaries(mask_inst)
+            img_viz[y1:y2, x1:x2][mask_boundary] = color_inst
             assert img_viz.dtype == np.uint8
+
+    CV_AA = 16
+    for i_box in range(boxes.shape[0]):
+        box = boxes[i_box]
+        y1, x1, y2, x2 = box.astype(int).tolist()
+
+        inst_class = instance_classes[i_box]
+        if inst_class == bg_class:
+            continue
+
+        # get color for the label
+        color = cmap[inst_class]
+        color = (color * 255).tolist()
+        cv2.rectangle(img_viz, (x1, y1), (x2, y2), color[::-1],
+                      thickness=thickness, lineType=CV_AA)
 
         if captions is not None:
             caption = captions[i_box]
             font_scale = 0.4
             ret, baseline = cv2.getTextSize(
                 caption, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
-            cv2.rectangle(img_viz, (x1, y2 - ret[1] - baseline),
-                          (x1 + ret[0], y2), color[::-1], -1)
+            # cv2.rectangle(img_viz, (x1, y2 - ret[1] - baseline),
+            #               (x1 + ret[0], y2), color[::-1], -1)
             cv2.putText(img_viz, caption, (x1, y2 - baseline),
                         cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255),
                         1, CV_AA)
