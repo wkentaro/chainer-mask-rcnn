@@ -166,9 +166,9 @@ class ProposalTargetCreator(object):
         for i, i_pos in enumerate(pos_index):
             roi = np.round(sample_roi[i]).astype(np.int32)
             idx_ins = gt_assignment[i_pos]
-            gt_roi = np.round(bbox[idx_ins]).astype(np.int32)
             gt_mask = mask[idx_ins]
             # XXX: It seems not good, because it shifts mask coords.
+            # gt_roi = np.round(bbox[idx_ins]).astype(np.int32)
             # gt_roi_mask_i = intersect_bbox_mask(
             #     roi, gt_roi, gt_mask, self.mask_size)
             gt_roi_mask_i = gt_mask[roi[0]:roi[2], roi[1]:roi[3]]
