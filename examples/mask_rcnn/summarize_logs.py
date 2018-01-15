@@ -6,27 +6,14 @@ import json
 import os
 import os.path as osp
 import subprocess
+import yaml
 
 import pandas
 import tabulate
 
 
-def get_params_from_name(name):
-    splits = []
-    for kv in name.split('.'):
-        if '=' in kv:
-            splits.append(kv)
-        else:
-            splits[-1] += '.' + kv
-    params = {}
-    for split in splits:
-        key, value = split.split('=')
-        params[key] = value
-    return params
-
-
 def summarize_log(logs_dir, name, keys, target_key, objective, show_active):
-    params = get_params_from_name(name)
+    params = yaml.load(open(osp.join(logs_dir, name, 'params.yaml')))
 
     log_file = osp.join(logs_dir, name, 'log')
     try:
