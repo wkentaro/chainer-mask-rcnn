@@ -8,8 +8,9 @@ import datetime
 import itertools
 import os
 import os.path as osp
-import pprint
 import random
+import sys
+import yaml
 
 os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
@@ -247,26 +248,14 @@ def main():
 
     args.git = git_hash()
     args.hostname = get_hostname()
-    args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    args.out = osp.join(
-        here, 'logs',
-        '.'.join(filter(None, [
-            'dataset={dataset}',
-            'model={model}',
-            'pretrained_model={pretrained_model}',
-            'lr={lr}',
-            'seed={seed}',
-            'iteration={iteration}',
-            'weight_decay={weight_decay}',
-            'pooling_func={pooling_func}',
-            'overfit' if args.overfit else None,
-            'git={git}',
-            'hostname={hostname}',
-            'timestamp={timestamp}',
-        ])).format(**args.__dict__)
-    )
+    now = datetime.datetime.now()
+    args.timestamp = now.isoformat()
+    args.out = osp.join(here, 'logs', now.strftime('%Y%m%d_%H%M%S'))
 
-    pprint.pprint(args.__dict__)
+    os.makedirs(args.out)
+    with open(osp.join(args.out, 'params.yaml'), 'w') as f:
+        yaml.safe_dump(args.__dict__, f, default_flow_style=False)
+    yaml.safe_dump(args.__dict__, sys.stdout, default_flow_style=False)
 
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
