@@ -6,7 +6,8 @@ import argparse
 import datetime
 import os
 import os.path as osp
-import pprint
+import sys
+import yaml
 
 os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
@@ -100,23 +101,17 @@ def main():
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU id.')
     args = parser.parse_args()
 
-    args.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    now = datetime.datetime.now()
+    args.timestamp = now.isoformat()
     args.git = git_hash()
-    args.out = osp.join(
-        here, 'logs',
-        '.'.join([
-            'model={model}',
-            'lr={lr}',
-            'seed={seed}',
-            'step_size={step_size}',
-            'iteration={iteration}',
-            'weight_decay={weight_decay}',
-            'pooling_func={pooling_func}',
-            'git={git}',
-            'timestamp={timestamp}',
-        ]).format(**args.__dict__)
-    )
-    pprint.pprint(args.__dict__)
+    args.out = osp.join(here, 'logs', now.strftime('%Y%m%d_%H%M%S'))
+
+    os.makedirs(args.out)
+    with open(osp.join(args.out, 'params.yaml'), 'w') as f:
+        yaml.safe_dump(args.__dict__, f, default_flow_style=False)
+    print('# ' + '-' * 77)
+    yaml.safe_dump(args.__dict__, sys.stdout, default_flow_style=False)
+    print('# ' + '-' * 77)
 
     np.random.seed(args.seed)
 
