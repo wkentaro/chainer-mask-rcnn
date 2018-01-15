@@ -255,7 +255,9 @@ def main():
     os.makedirs(args.out)
     with open(osp.join(args.out, 'params.yaml'), 'w') as f:
         yaml.safe_dump(args.__dict__, f, default_flow_style=False)
+    print('# ' + '-' * 77)
     yaml.safe_dump(args.__dict__, sys.stdout, default_flow_style=False)
+    print('# ' + '-' * 77)
 
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
