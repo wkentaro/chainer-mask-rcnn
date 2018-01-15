@@ -5,28 +5,6 @@ import cv2
 import numpy as np
 
 
-def intersect_bbox_mask(bbox, gt_bbox, gt_mask, mask_size):
-    min_y = max(bbox[0], gt_bbox[0])
-    min_x = max(bbox[1], gt_bbox[1])
-    max_y = min(bbox[2], gt_bbox[2])
-    max_x = min(bbox[3], gt_bbox[3])
-
-    if min_y > max_y or min_x > max_x:
-        return np.zeros((mask_size, mask_size))
-
-    h = max_y - min_y
-    w = max_x - min_x
-    start_y = min_y - bbox[0]
-    start_x = min_x - bbox[1]
-    end_y = start_y + h
-    end_x = start_x + w
-
-    gt_roi_mask = np.zeros((bbox[2] - bbox[0], bbox[3] - bbox[1]))
-    gt_clipped_mask = gt_mask[min_y:max_y, min_x:max_x]
-    gt_roi_mask[start_y:end_y, start_x:end_x] = gt_clipped_mask
-    return gt_roi_mask
-
-
 class ProposalTargetCreator(object):
     """Assign ground truth bounding boxes to given RoIs.
 
@@ -160,17 +138,13 @@ class ProposalTargetCreator(object):
         gt_roi_loc = ((gt_roi_loc - np.array(loc_normalize_mean, np.float32)
                        ) / np.array(loc_normalize_std, np.float32))
 
+        # Compute gt masks
         gt_roi_mask = - np.ones(
             (len(sample_roi), self.mask_size, self.mask_size),
             dtype=np.int32)
-        for i, i_pos in enumerate(pos_index):
+        for i, pos_ind in enumerate(pos_index):
             roi = np.round(sample_roi[i]).astype(np.int32)
-            idx_ins = gt_assignment[i_pos]
-            gt_mask = mask[idx_ins]
-            # XXX: It seems not good, because it shifts mask coords.
-            # gt_roi = np.round(bbox[idx_ins]).astype(np.int32)
-            # gt_roi_mask_i = intersect_bbox_mask(
-            #     roi, gt_roi, gt_mask, self.mask_size)
+            gt_mask = mask[gt_assignment[pos_ind]]
             gt_roi_mask_i = gt_mask[roi[0]:roi[2], roi[1]:roi[3]]
             gt_roi_mask_i = gt_roi_mask_i.astype(np.float32)
             gt_roi_mask_i = cv2.resize(
