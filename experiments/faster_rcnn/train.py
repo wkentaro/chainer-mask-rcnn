@@ -95,7 +95,7 @@ def main():
     parser.add_argument('--weight_decay', type=float, default=0.0005,
                         help='Weight decay.')
     parser.add_argument('--pooling-func', '-pf',
-                        choices=['pooling', 'align'],
+                        choices=['pooling', 'align', 'resize'],
                         default='align', help='Pooling function.')
     # other parameters
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU id.')
@@ -121,6 +121,8 @@ def main():
         pooling_func = mrcnn.functions.roi_align_2d
     elif args.pooling_func == 'pooling':
         pooling_func = chainer.functions.roi_pooling_2d
+    elif args.pooling_func == 'resize':
+        pooling_func = mrcnn.functions.crop_and_resize
     else:
         raise ValueError
 
