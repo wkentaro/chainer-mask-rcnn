@@ -161,9 +161,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     keys = [
-        'timestamp', 'last_time', 'dataset',
+        'timestamp', 'last_time',
+        # 'dataset',
         'git', 'git_branch', 'hostname',
-        # 'model',
+        'model',
         'lr', 'pooling_func',
         'epoch', 'iteration',
         # 'main/loss',
