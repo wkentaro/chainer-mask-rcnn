@@ -371,8 +371,11 @@ def main():
 
         return tuple(result)
 
-    updater = chainer.training.updater.StandardUpdater(
-        train_iter, optimizer, device=args.gpu,
+    # updater = chainer.training.updater.StandardUpdater(
+    #     train_iter, optimizer, device=args.gpu,
+    #     converter=concat_examples)
+    updater = mrcnn.updaters.GradsAccumulateUpdater(
+        16, train_iter, optimizer, device=args.gpu,
         converter=concat_examples)
 
     # 0 - 1/5: lr=0.002, update heads only
