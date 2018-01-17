@@ -5,10 +5,10 @@ from __future__ import division
 import argparse
 import copy
 import datetime
-import itertools
 import os
 import os.path as osp
 import random
+import shutil
 import sys
 import yaml
 
@@ -89,25 +89,103 @@ class OverfitDataset(chainer.dataset.DatasetMixin):
         return self._dataset.get_example(index)
 
 
+class InstanceSegmenationVisReport(chainer.training.extensions.Evaluator):
+
+    def __init__(self, iterator, target, label_names=None,
+                 file_name='visualizations/iteration=%08d.jpg',
+                 shape=(3, 3)):
+        super(InstanceSegmenationVisReport, self).__init__(iterator, target)
+        self.label_names = np.asarray(label_names)
+        self.file_name = file_name
+        self._shape = shape
+
+    def __call__(self, trainer):
+        iterator = self._iterators['main']
+        target = self._targets['main']
+
+        target.use_preset('visualize')
+
+        if hasattr(iterator, 'reset'):
+            iterator.reset()
+            it = iterator
+        else:
+            it = copy.copy(iterator)
+
+        def n_iterator(n, iterator):
+            for _ in range(n):
+                yield next(iterator)
+
+        N = min(len(it.dataset), self._shape[0] * self._shape[1])
+        it = n_iterator(N, it)
+
+        imgs, pred_values, gt_values = apply_prediction_to_iterator(
+            target.predict_masks, it)
+
+        pred_bboxes, pred_masks, pred_labels, pred_scores = pred_values
+
+        if len(gt_values) == 4:
+            gt_bboxes, gt_labels, gt_masks, _ = gt_values
+        elif len(gt_values) == 3:
+            gt_bboxes, gt_labels, gt_masks = gt_values
+
+        # visualize
+        vizs = []
+        for img, gt_bbox, gt_label, gt_mask, \
+            pred_bbox, pred_label, pred_mask, pred_score \
+                in six.moves.zip(imgs, gt_bboxes, gt_labels, gt_masks,
+                                 pred_bboxes, pred_labels, pred_masks,
+                                 pred_scores):
+            # organize input
+            img = img.transpose(1, 2, 0)  # CHW -> HWC
+            gt_mask = gt_mask.astype(bool)
+
+            n_fg_class = len(self.label_names)
+
+            gt_viz = mrcnn.utils.draw_instance_boxes(
+                img, gt_bbox, gt_label, n_class=n_fg_class,
+                masks=gt_mask, captions=self.label_names[gt_label],
+                bg_class=-1)
+
+            captions = []
+            for p_score, l_name in zip(pred_score,
+                                       self.label_names[pred_label]):
+                caption = '{:s} {:.1%}'.format(l_name, p_score)
+                captions.append(caption)
+            pred_viz = mrcnn.utils.draw_instance_boxes(
+                img, pred_bbox, pred_label, n_class=n_fg_class,
+                masks=pred_mask, captions=captions, bg_class=-1)
+
+            viz = np.vstack([gt_viz, pred_viz])
+            vizs.append(viz)
+            if len(vizs) >= (self._shape[0] * self._shape[1]):
+                break
+
+        viz = mvtk.image.tile(vizs, shape=self._shape)
+        file_name = osp.join(
+            trainer.out, self.file_name % trainer.updater.iteration)
+        try:
+            os.makedirs(osp.dirname(file_name))
+        except OSError:
+            pass
+        cv2.imwrite(file_name, viz[:, :, ::-1])
+        shutil.copy(file_name, osp.join(osp.dirname(file_name), 'latest.jpg'))
+
+        target.use_preset('evaluate')
+
+
 class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
 
-    def __init__(
-            self, iterator, target, use_07_metric=False, label_names=None,
-            file_name='visualizations/iteration=%08d.jpg'):
+    def __init__(self, iterator, target, use_07_metric=False,
+                 label_names=None):
         super(InstanceSegmentationVOCEvaluator, self).__init__(
             iterator, target)
         self.use_07_metric = use_07_metric
         self.label_names = np.asarray(label_names)
-        self.file_name = file_name
-
-        self._trainer = None
 
     def __call__(self, trainer=None):
-        self._trainer = trainer
         return super(InstanceSegmentationVOCEvaluator, self).__call__(trainer)
 
     def evaluate(self):
-        trainer = self._trainer
         iterator = self._iterators['main']
         target = self._targets['main']
 
@@ -127,57 +205,6 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
         elif len(gt_values) == 3:
             gt_bboxes, gt_labels, gt_masks = gt_values
             gt_difficults = None
-
-        if trainer:
-            gt_bboxes, gt_bboxes2 = itertools.tee(gt_bboxes)
-            gt_labels, gt_labels2 = itertools.tee(gt_labels)
-            gt_masks, gt_masks2 = itertools.tee(gt_masks)
-            pred_bboxes, pred_bboxes2 = itertools.tee(pred_bboxes)
-            pred_labels, pred_labels2 = itertools.tee(pred_labels)
-            pred_masks, pred_masks2 = itertools.tee(pred_masks)
-            pred_scores, pred_scores2 = itertools.tee(pred_scores)
-
-            # visualize
-            n_viz = 9
-            vizs = []
-            for img, gt_bbox, gt_label, gt_mask, \
-                pred_bbox, pred_label, pred_mask, pred_score \
-                    in six.moves.zip(imgs, gt_bboxes2, gt_labels2, gt_masks2,
-                                     pred_bboxes2, pred_labels2, pred_masks2,
-                                     pred_scores2):
-                # organize input
-                img = img.transpose(1, 2, 0)  # CHW -> HWC
-                gt_mask = gt_mask.astype(bool)
-
-                n_fg_class = len(self.label_names)
-
-                gt_viz = mrcnn.utils.draw_instance_boxes(
-                    img, gt_bbox, gt_label, n_class=n_fg_class,
-                    masks=gt_mask, captions=self.label_names[gt_label],
-                    bg_class=-1)
-
-                captions = []
-                for p_score, l_name in zip(pred_score,
-                                           self.label_names[pred_label]):
-                    caption = '{:s} {:.1%}'.format(l_name, p_score)
-                    captions.append(caption)
-                pred_viz = mrcnn.utils.draw_instance_boxes(
-                    img, pred_bbox, pred_label, n_class=n_fg_class,
-                    masks=pred_mask, captions=captions, bg_class=-1)
-
-                viz = np.vstack([gt_viz, pred_viz])
-                vizs.append(viz)
-                if len(vizs) >= n_viz:
-                    break
-            viz = mvtk.image.tile(vizs)
-            file_name = osp.join(
-                trainer.out, self.file_name % trainer.updater.iteration)
-            try:
-                os.makedirs(osp.dirname(file_name))
-            except OSError:
-                if not osp.isdir(osp.dirname(file_name)):
-                    raise
-            cv2.imwrite(file_name, viz[:, :, ::-1])
 
         # evaluate
         result = mrcnn.utils.evaluations.eval_instseg_voc(
@@ -421,8 +448,11 @@ def main():
 
     trainer.extend(
         InstanceSegmentationVOCEvaluator(
-            test_iter, model.mask_rcnn, use_07_metric=True,
-            label_names=instance_class_names),
+            test_iter, model.mask_rcnn, use_07_metric=True),
+        trigger=eval_interval)
+    trainer.extend(
+        InstanceSegmenationVisReport(
+            test_iter, model.mask_rcnn, label_names=instance_class_names),
         trigger=eval_interval)
     trainer.extend(
         extensions.snapshot_object(model.mask_rcnn, 'snapshot_model.npz'),
