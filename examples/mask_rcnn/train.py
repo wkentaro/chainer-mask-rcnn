@@ -111,13 +111,6 @@ class InstanceSegmenationVisReport(chainer.training.extensions.Evaluator):
         else:
             it = copy.copy(iterator)
 
-        def n_iterator(n, iterator):
-            for _ in range(n):
-                yield next(iterator)
-
-        N = min(len(it.dataset), self._shape[0] * self._shape[1])
-        it = n_iterator(N, it)
-
         imgs, pred_values, gt_values = apply_prediction_to_iterator(
             target.predict_masks, it)
 
