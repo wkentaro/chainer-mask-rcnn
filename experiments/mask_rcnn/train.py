@@ -91,7 +91,7 @@ class OverfitDataset(chainer.dataset.DatasetMixin):
 
 class InstanceSegmenationVisReport(chainer.training.extensions.Evaluator):
 
-    def __init__(self, iterator, target, label_names=None,
+    def __init__(self, iterator, target, label_names,
                  file_name='visualizations/iteration=%08d.jpg',
                  shape=(3, 3)):
         super(InstanceSegmenationVisReport, self).__init__(iterator, target)
@@ -180,7 +180,7 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
         super(InstanceSegmentationVOCEvaluator, self).__init__(
             iterator, target)
         self.use_07_metric = use_07_metric
-        self.label_names = np.asarray(label_names)
+        self.label_names = label_names
 
     def __call__(self, trainer=None):
         return super(InstanceSegmentationVOCEvaluator, self).__call__(trainer)
@@ -448,11 +448,13 @@ def main():
 
     trainer.extend(
         InstanceSegmentationVOCEvaluator(
-            test_iter, model.mask_rcnn, use_07_metric=True),
+            test_iter, model.mask_rcnn, use_07_metric=True,
+            label_names=instance_class_names),
         trigger=eval_interval)
     trainer.extend(
         InstanceSegmenationVisReport(
-            test_iter, model.mask_rcnn, label_names=instance_class_names),
+            test_iter, model.mask_rcnn,
+            label_names=instance_class_names),
         trigger=eval_interval)
     trainer.extend(
         extensions.snapshot_object(model.mask_rcnn, 'snapshot_model.npz'),
