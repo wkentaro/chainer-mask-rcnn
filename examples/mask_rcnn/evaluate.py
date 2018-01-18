@@ -8,6 +8,7 @@ import pprint
 
 import chainer
 from chainercv.datasets import voc_bbox_label_names
+import yaml
 
 import mask_rcnn as mrcnn
 
@@ -24,7 +25,7 @@ args = parser.parse_args()
 
 gpu = args.gpu
 log_dir = args.log_dir
-log = osp.basename(log_dir)
+params = yaml.load(open(osp.join(log_dir, 'params.yaml')))
 
 gpu = 0
 if gpu >= 0:
@@ -34,24 +35,9 @@ chainer.global_config.enable_backprop = False
 
 pretrained_model = osp.join(log_dir, 'snapshot_model.npz')
 
-if 'model=resnet50.' in log:
-    model = 'resnet50'
-elif 'model=resnet101.' in log:
-    model = 'resnet101'
-else:
-    raise ValueError
-
-if '.pooling_func=align.' in log:
-    pooling_func = mrcnn.functions.roi_align_2d
-elif '.pooling_func=pooling.' in log:
-    pooling_func = chainer.functions.roi_pooling_2d
-else:
-    raise RuntimeError
-
-
-print('log:', log)
-print('model:', model)
-print('pooling_func:', pooling_func)
+model = params['model']
+pooling_func = params['pooling_func']
+pprint.pprint(params)
 
 
 n_layers = int(model.lstrip('resnet'))
