@@ -41,6 +41,8 @@ if params['pooling_func'] == 'align':
     pooling_func = mrcnn.functions.roi_align_2d
 elif params['pooling_func'] == 'pooling':
     pooling_func = chainer.functions.roi_pooling_2d
+elif params['pooling_func'] == 'resize':
+    pooling_func = mrcnn.functions.crop_and_resize
 else:
     raise ValueError
 pprint.pprint(params)
