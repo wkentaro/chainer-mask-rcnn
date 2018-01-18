@@ -89,12 +89,12 @@ class OverfitDataset(chainer.dataset.DatasetMixin):
         return self._dataset.get_example(index)
 
 
-class InstanceSegmenationVisReport(chainer.training.extensions.Evaluator):
+class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
 
     def __init__(self, iterator, target, label_names,
                  file_name='visualizations/iteration=%08d.jpg',
                  shape=(3, 3)):
-        super(InstanceSegmenationVisReport, self).__init__(iterator, target)
+        super(InstanceSegmentationVisReport, self).__init__(iterator, target)
         self.label_names = np.asarray(label_names)
         self.file_name = file_name
         self._shape = shape
@@ -445,7 +445,7 @@ def main():
             label_names=instance_class_names),
         trigger=eval_interval)
     trainer.extend(
-        InstanceSegmenationVisReport(
+        InstanceSegmentationVisReport(
             test_iter, model.mask_rcnn,
             label_names=instance_class_names),
         trigger=eval_interval)

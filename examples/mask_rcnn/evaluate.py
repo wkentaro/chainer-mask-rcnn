@@ -12,6 +12,7 @@ import yaml
 
 import mask_rcnn as mrcnn
 
+from train import InstanceSegmentationVisReport
 from train import InstanceSegmentationVOCEvaluator
 from train import OverfitDataset
 from train import TransformDataset
@@ -36,7 +37,12 @@ chainer.global_config.enable_backprop = False
 pretrained_model = osp.join(log_dir, 'snapshot_model.npz')
 
 model = params['model']
-pooling_func = params['pooling_func']
+if params['pooling_func'] == 'align':
+    pooling_func = mrcnn.functions.roi_align_2d
+elif params['pooling_func'] == 'pooling':
+    pooling_func = chainer.functions.roi_pooling_2d
+else:
+    raise ValueError
 pprint.pprint(params)
 
 
@@ -83,9 +89,8 @@ class DummyTrainer(object):
 
 
 print('visualization:', osp.join(log_dir, 'iteration=best.jpg'))
-mask_rcnn.use_preset('visualize')
-visualizer = InstanceSegmentationVOCEvaluator(
-    test_vis_iter, mask_rcnn, use_07_metric=True,
+visualizer = InstanceSegmentationVisReport(
+    test_vis_iter, mask_rcnn,
     label_names=voc_bbox_label_names,
     file_name='iteration=%s.jpg'
 )
