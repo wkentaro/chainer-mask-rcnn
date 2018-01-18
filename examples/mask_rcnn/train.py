@@ -296,7 +296,7 @@ def main():
 
     if args.dataset == 'voc':
         train_data = mrcnn.datasets.SBDInstanceSeg('train')
-        test_data = mrcnn.datasets.VOC2012InstanceSeg('val')
+        test_data = mrcnn.datasets.SBDInstanceSeg('val')
     elif args.dataset == 'coco':
         train_data = mrcnn.datasets.CocoInstanceSeg('train')
         test_data = mrcnn.datasets.CocoInstanceSeg('minival')
