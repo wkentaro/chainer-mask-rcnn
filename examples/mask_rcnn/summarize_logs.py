@@ -162,7 +162,8 @@ if __name__ == '__main__':
 
     keys = [
         'name',
-        'timestamp', 'last_time',
+        # 'timestamp',
+        'last_time',
         'dataset',
         'git',
         # 'git_branch',
