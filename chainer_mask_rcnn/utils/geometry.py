@@ -99,7 +99,8 @@ def label2instance_boxes(label_instance, label_class, return_masks=False):
     # instance_class is 'Class of the Instance'
     instance_classes = np.zeros((n_instance,), dtype=np.int32)
     boxes = np.zeros((n_instance, 4), dtype=np.int32)
-    instance_masks = [None] * n_instance
+    H, W = label_instance.shape
+    instance_masks = np.zeros((n_instance, H, W), dtype=bool)
     for i, inst in enumerate(instances):
         mask_inst = label_instance == inst
         count = collections.Counter(label_class[mask_inst].tolist())
@@ -114,7 +115,6 @@ def label2instance_boxes(label_instance, label_class, return_masks=False):
         instance_classes[i] = instance_class
         boxes[i] = (y1, x1, y2, x2)
         instance_masks[i] = mask_inst
-    instance_masks = np.asarray(instance_masks)
     if return_masks:
         return instance_classes, boxes, instance_masks
     else:
