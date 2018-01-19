@@ -93,12 +93,14 @@ def label2instance_boxes(label_instance, label_class, return_masks=False):
     instance_masks: numpy.ndarray, (n_instance, H, W), bool
         Masks for each instance. Only returns when return_masks=True.
     """
-    # instance_class is 'Class of the Instance'
-    instance_classes = []
-    boxes = []
-    instance_masks = []
     instances = np.unique(label_instance)
-    for inst in instances[instances != -1]:
+    instances = instances[instances != -1]
+    n_instance = len(instances)
+    # instance_class is 'Class of the Instance'
+    instance_classes = np.zeros((n_instance,), dtype=np.int32)
+    boxes = np.zeros((n_instance, 4), dtype=np.int32)
+    instance_masks = [None] * n_instance
+    for i, inst in enumerate(instances):
         mask_inst = label_instance == inst
         count = collections.Counter(label_class[mask_inst].tolist())
         instance_class = max(count.items(), key=lambda x: x[1])[0]
@@ -109,12 +111,10 @@ def label2instance_boxes(label_instance, label_class, return_masks=False):
         where = np.argwhere(mask_inst)
         (y1, x1), (y2, x2) = where.min(0), where.max(0) + 1
 
-        instance_classes.append(instance_class)
-        boxes.append((y1, x1, y2, x2))
-        instance_masks.append(mask_inst)
-    instance_classes = np.array(instance_classes)
-    boxes = np.array(boxes)
-    instance_masks = np.array(instance_masks)
+        instance_classes[i] = instance_class
+        boxes[i] = (y1, x1, y2, x2)
+        instance_masks[i] = mask_inst
+    instance_masks = np.asarray(instance_masks)
     if return_masks:
         return instance_classes, boxes, instance_masks
     else:
