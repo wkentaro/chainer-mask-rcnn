@@ -3,8 +3,8 @@ from __future__ import print_function
 import cv2
 import numpy as np
 
-import mask_rcnn
-from mask_rcnn.utils.evaluations import eval_instseg_voc
+import chainer_mask_rcnn as mask_rcnn
+from chainer_mask_rcnn.utils.evaluations import eval_instseg_voc
 
 
 def check_eval_instseg_voc():

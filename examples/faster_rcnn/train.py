@@ -22,7 +22,7 @@ from chainercv.links.model.faster_rcnn import FasterRCNNTrainChain
 from chainercv import transforms
 import numpy as np
 
-import mask_rcnn as mrcnn
+import chainer_mask_rcnn as mrcnn
 
 
 class FasterRCNNTransform(object):

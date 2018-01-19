@@ -9,7 +9,7 @@ from chainer import testing
 from chainer.testing import attr
 from chainer.testing import condition
 
-from mask_rcnn import functions
+from chainer_mask_rcnn import functions
 
 
 class TestROIAlign2D(unittest.TestCase):

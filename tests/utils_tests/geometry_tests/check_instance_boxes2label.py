@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import matplotlib.pyplot as plt
 
-import mask_rcnn
+import chainer_mask_rcnn as mask_rcnn
 
 
 def main():

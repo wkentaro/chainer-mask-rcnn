@@ -10,7 +10,7 @@ import chainer
 from chainercv.datasets import voc_bbox_label_names
 import yaml
 
-import mask_rcnn as mrcnn
+import chainer_mask_rcnn as mrcnn
 
 from train import InstanceSegmentationVisReport
 from train import InstanceSegmentationVOCEvaluator

@@ -1,5 +1,5 @@
-from mask_rcnn.datasets.mask_rcnn import MaskRcnnDataset
-from mask_rcnn.datasets.voc import VOC2012InstanceSeg
+from chainer_mask_rcnn.datasets.mask_rcnn import MaskRcnnDataset
+from chainer_mask_rcnn.datasets.voc import VOC2012InstanceSeg
 
 
 def test_MaskRcnnDataset():

@@ -4,7 +4,7 @@ import cv2
 import mvtk
 import numpy as np
 
-import mask_rcnn
+import chainer_mask_rcnn as mask_rcnn
 
 
 def _validate_bboxes(bboxes, H, W):

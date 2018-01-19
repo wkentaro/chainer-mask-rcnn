@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import mask_rcnn as mrcnn
+import chainer_mask_rcnn as mrcnn
 import mvtk
 
 
