@@ -2,7 +2,7 @@ import cv2
 import mvtk
 import numpy as np
 
-import mask_rcnn
+import chainer_mask_rcnn as mask_rcnn
 
 
 def _validate_bboxes(bboxes, H, W):
@@ -79,7 +79,7 @@ def visualize_func(dataset, index):
             loc_normalize_std=(0.1, 0.1, 0.2, 0.2))
         gt_roi_masks = [None] * len(sample_rois)
     else:
-        from mask_rcnn.utils.proposal_target_creator import\
+        from chainer_mask_rcnn.utils.proposal_target_creator import\
             ProposalTargetCreator
         proposal_target_creator = ProposalTargetCreator()
         sample_rois, gt_roi_locs, gt_roi_labels, gt_roi_masks = \

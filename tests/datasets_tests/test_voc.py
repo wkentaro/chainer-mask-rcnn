@@ -1,7 +1,7 @@
 import numpy as np
 
-from mask_rcnn.datasets.voc import VOC2012InstanceSeg
-from mask_rcnn.datasets.voc import VOCInstanceSegBase
+from chainer_mask_rcnn.datasets.voc import VOC2012InstanceSeg
+from chainer_mask_rcnn.datasets.voc import VOCInstanceSegBase
 
 
 def test_VOCInstanceSegBase():

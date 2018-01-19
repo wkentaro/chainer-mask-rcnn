@@ -4,7 +4,7 @@ import cv2
 import mvtk
 import numpy as np
 
-import mask_rcnn
+import chainer_mask_rcnn as mrcnn
 
 
 def visualize_func(dataset, index):
@@ -12,7 +12,7 @@ def visualize_func(dataset, index):
     bboxes = bboxes.astype(np.int32)
     masks = masks.astype(bool)
 
-    viz = mask_rcnn.utils.draw_instance_boxes(
+    viz = mrcnn.utils.draw_instance_boxes(
         img, bboxes, labels, n_class=dataset.n_fg_class)
 
     viz1 = mvtk.image.tile([img, viz])
@@ -30,7 +30,7 @@ def visualize_func(dataset, index):
         viz = cv2.resize(viz, None, None, fx=scale, fy=scale)
         H, W = viz.shape[:2]
         caption = dataset.fg_class_names[label]
-        viz = mask_rcnn.utils.draw_instance_boxes(
+        viz = mrcnn.utils.draw_instance_boxes(
             viz, [(0, 0, H, W)], [label],
             captions=[caption], n_class=dataset.n_fg_class, thickness=10)
         vizs.append(viz)
@@ -40,8 +40,8 @@ def visualize_func(dataset, index):
 
 
 def main():
-    instance_dataset = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
-    dataset = mask_rcnn.datasets.MaskRcnnDataset(instance_dataset)
+    instance_dataset = mrcnn.datasets.VOC2012InstanceSeg(split='train')
+    dataset = mrcnn.datasets.MaskRcnnDataset(instance_dataset)
     dataset.split = 'train'
     dataset.n_class = len(instance_dataset.class_names)
     mvtk.datasets.view_dataset(dataset, visualize_func)

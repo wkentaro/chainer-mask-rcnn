@@ -5,7 +5,7 @@ from chainer import cuda
 import chainercv
 import numpy as np
 
-import mask_rcnn
+import chainer_mask_rcnn as mask_rcnn
 
 
 gpu = 0

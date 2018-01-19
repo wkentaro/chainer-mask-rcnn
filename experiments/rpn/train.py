@@ -19,7 +19,7 @@ from chainercv.datasets import voc_bbox_label_names
 from chainercv.links import FasterRCNNVGG16
 import numpy as np
 
-import mask_rcnn as mrcnn
+import chainer_mask_rcnn as mrcnn
 
 here = osp.dirname(osp.abspath(__file__))  # NOQA
 sys.path.insert(0, osp.join(here, '../faster_rcnn'))  # NOQA

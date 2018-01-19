@@ -12,7 +12,7 @@ import chainercv
 import cv2
 import numpy as np
 
-import mask_rcnn
+import chainer_mask_rcnn as mask_rcnn
 import mvtk
 
 

@@ -5,7 +5,7 @@ from chainer import gradient_check
 import matplotlib.pyplot as plt
 import numpy as np
 
-import mask_rcnn as mrcnn
+import chainer_mask_rcnn as mrcnn
 
 
 parser = argparse.ArgumentParser()
