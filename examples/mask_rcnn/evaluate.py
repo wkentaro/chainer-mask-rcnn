@@ -104,4 +104,8 @@ evaluator = InstanceSegmentationVOCEvaluator(
     test_iter, mask_rcnn, use_07_metric=True,
     label_names=voc_bbox_label_names)
 result = evaluator()
-pprint.pprint(result)
+
+output = pprint.pformat(result)
+with open(osp.join(log_dir, 'evaluate.py.txt'), 'w') as f:
+    f.write(output + '\n')
+pprint.pprint(output)
