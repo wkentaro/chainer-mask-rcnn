@@ -1,4 +1,4 @@
-# mask-rcnn
+# chainer-maskrcnn
 
 Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 
@@ -13,5 +13,7 @@ Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 ## Testing
 
 ```bash
-nosetests -vs tests
+pip install hacking pytest
+flake8 .
+pytest tests
 ```
