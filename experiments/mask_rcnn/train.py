@@ -256,8 +256,6 @@ def main():
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
                         help='Random seed.')
-    parser.add_argument('--iteration', '-i', type=int, default=140000,
-                        help='Iteration size.')
     parser.add_argument('--weight_decay', type=float, default=0.0001,
                         help='Weight decay.')
     parser.add_argument('--pooling-func', '-pf',
@@ -274,6 +272,13 @@ def main():
     now = datetime.datetime.now()
     args.timestamp = now.isoformat()
     args.out = osp.join(here, 'logs', now.strftime('%Y%m%d_%H%M%S'))
+
+    if args.dataset == 'voc':
+        args.iteration = 140000
+    elif args.dataset == 'coco':
+        args.iteration = 160000 * 16  # 160k * 16 batchsize in original
+    else:
+        raise ValueError
 
     os.makedirs(args.out)
     with open(osp.join(args.out, 'params.yaml'), 'w') as f:
