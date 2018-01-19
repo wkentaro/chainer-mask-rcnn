@@ -222,7 +222,10 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
 
 def git_info():
     import subprocess
-    cmd = 'git log -1 --format="%h - %d %B"'
+    cmd = 'git log -1 --format="%d"'
+    output = subprocess.check_output(cmd, shell=True).strip()
+    branch = output.lstrip('(').rstrip(')').split(',')[-1].strip()
+    cmd = 'git log -1 --format="%h - ({}) %B"'.format(branch)
     return subprocess.check_output(cmd, shell=True).strip()
 
 
