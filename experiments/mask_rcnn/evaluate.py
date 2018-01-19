@@ -107,4 +107,4 @@ result = evaluator()
 output = pprint.pformat(result)
 with open(osp.join(log_dir, 'evaluate.py.txt'), 'w') as f:
     f.write(output + '\n')
-pprint.pprint(output)
+print(output)
