@@ -220,15 +220,9 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
         return observation
 
 
-def git_hash():
+def git_info():
     import subprocess
-    cmd = 'git log -1 --format="%h"'
-    return subprocess.check_output(cmd, shell=True).strip()
-
-
-def git_branch():
-    import subprocess
-    cmd = 'git log -1 --format="%d %B"'
+    cmd = 'git log -1 --format="%h - %d %B"'
     return subprocess.check_output(cmd, shell=True).strip()
 
 
@@ -272,8 +266,7 @@ def main():
     parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
     args = parser.parse_args()
 
-    args.git = git_hash()
-    args.git_branch = git_branch()
+    args.git = git_info()
     args.hostname = get_hostname()
     now = datetime.datetime.now()
     args.timestamp = now.isoformat()
