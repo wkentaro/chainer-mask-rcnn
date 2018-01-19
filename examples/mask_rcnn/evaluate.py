@@ -74,7 +74,7 @@ test_iter = chainer.iterators.SerialIterator(
     test_data, batch_size=1, repeat=False, shuffle=False)
 
 test_vis_data = OverfitDataset(
-    test_data, indices=[4, 22, 26, 34, 35, 39, 42, 44, 52])
+    test_data, indices=[196, 204, 216, 257, 326, 473, 566, 649, 1063])
 test_vis_iter = chainer.iterators.SerialIterator(
     test_vis_data, batch_size=1, repeat=False, shuffle=False)
 
