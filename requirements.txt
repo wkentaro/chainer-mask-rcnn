@@ -1,2 +1,6 @@
+chainer
+chainercv
 matplotlib
+pandas
+PyYAML
 tabulate
