@@ -28,7 +28,6 @@ gpu = args.gpu
 log_dir = args.log_dir
 params = yaml.load(open(osp.join(log_dir, 'params.yaml')))
 
-gpu = 0
 if gpu >= 0:
     chainer.cuda.get_device_from_id(gpu).use()
 chainer.global_config.train = False
