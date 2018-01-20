@@ -343,14 +343,28 @@ class MaskRCNN(chainer.Chain):
             labels.append(label)
             scores.append(score)
 
+            use_refined_roi = True
+
             if len(roi_keep) > 0:
                 with chainer.using_config('train', False), \
                         chainer.function.no_backprop_mode():
-                    _, _, roi_masks = self.head(
-                        x=None, rois=None, roi_indices=None,
-                        res5=res5, pred_bbox=False)
+                    if use_refined_roi:
+                        rois = self.xp.asarray(bbox) * scale
+                        roi_indices = self.xp.zeros(
+                            (len(bbox),), dtype=np.int32)
+                        _, _, roi_masks = self.head(
+                            x=h, rois=rois, roi_indices=roi_indices,
+                            pred_bbox=False, pred_mask=True)
+                        roi = bbox
+                    else:
+                        _, _, roi_masks = self.head(
+                            x=None, rois=None, roi_indices=None,
+                            res5=res5, pred_bbox=False)
                 roi_mask = cuda.to_cpu(roi_masks.data)
-                roi_mask = roi_mask[roi_keep, label]
+                if use_refined_roi:
+                    roi_mask = roi_mask[np.arange(len(label)), label]
+                else:
+                    roi_mask = roi_mask[roi_keep, label]
 
             n_bbox = len(bbox)
             mask = np.zeros((n_bbox, size[0], size[1]), dtype=bool)
