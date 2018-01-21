@@ -256,7 +256,8 @@ def main():
         '--pretrained-model', '-pm',
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
         default='imagenet', help='Pretrained model.')
-    parser.add_argument('--lr', '-l', type=float, default=0.002,
+    # 0.02 / 16 (batch size of original paper)
+    parser.add_argument('--lr', '-l', type=float, default=0.00125,
                         help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
                         help='Random seed.')
@@ -264,7 +265,7 @@ def main():
                         help='Weight decay.')
     parser.add_argument('--pooling-func', '-pf',
                         choices=['pooling', 'align', 'resize'],
-                        default='align', help='Pooling function.')
+                        default='pooling', help='Pooling function.')
     parser.add_argument('--overfit', action='store_true',
                         help='Do overfit training (single image).')
     # other parameters
@@ -279,9 +280,12 @@ def main():
     args.out = osp.join(here, 'logs', now.strftime('%Y%m%d_%H%M%S'))
 
     if args.dataset == 'voc':
-        args.iteration = 140000
+        args.iteration = int(140e3)
+        args.step_size = int((120e3 / 160e3) * 140e3)
     elif args.dataset == 'coco':
-        args.iteration = 160000 * 16  # 160k * 16 batchsize in original
+        # 160k * 16 batchsize in original
+        args.iteration = int(160e3 * 16)
+        args.step_size = int(120e3)
     else:
         raise ValueError
 
@@ -388,58 +392,59 @@ def main():
         train_iter, optimizer, device=args.gpu,
         converter=concat_examples)
 
-    # 0 - 1/5: lr=0.002, update heads only
-    # 1/5 - 1/2: lr=0.002 / 10, update res4+ only
-    # 1/2 - max_iteration: lr=0.002 / 100, update all
-
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
-    model.mask_rcnn.extractor.mode = 'head'
-    mask_rcnn.extractor.disable_update()
+    model.mask_rcnn.extractor.mode = 'all'
+    mask_rcnn.extractor.conv1.disable_update()
+    mask_rcnn.extractor.bn1.disable_update()
+    mask_rcnn.extractor.res2.disable_update()
 
-    class EnableRes4PlusExtension(object):
+    trainer.extend(extensions.ExponentialShift('lr', 0.1),
+                   trigger=(args.step_size, 'iteration'))
 
-        name = 'EnableRes4PlusExtension'
-
-        def __init__(self, target):
-            self._target = target
-
-        def __call__(self, trainer):
-            self._target.mask_rcnn.extractor.mode = 'res4+'
-            self._target.mask_rcnn.extractor.res4.enable_update()
-
-    trainer.extend(
-        EnableRes4PlusExtension(model),
-        trigger=training.triggers.ManualScheduleTrigger(
-            [args.iteration // 5], 'iteration'
-        ),
-    )
-
-    class EnableAllExtension(object):
-
-        name = 'EnableAllExtension'
-
-        def __init__(self, target):
-            self._target = target
-
-        def __call__(self, trainer):
-            self._target.mask_rcnn.extractor.mode = 'all'
-            self._target.mask_rcnn.extractor.enable_update()
-
-    trainer.extend(
-        EnableAllExtension(model),
-        trigger=training.triggers.ManualScheduleTrigger(
-            [args.iteration // 2], 'iteration'
-        ),
-    )
-
-    trainer.extend(
-        training.extensions.ExponentialShift('lr', 0.1),
-        trigger=training.triggers.ManualScheduleTrigger(
-            [args.iteration // 5, args.iteration // 2], 'iteration'
-        ),
-    )
+    # class EnableRes4PlusExtension(object):
+    #
+    #     name = 'EnableRes4PlusExtension'
+    #
+    #     def __init__(self, target):
+    #         self._target = target
+    #
+    #     def __call__(self, trainer):
+    #         self._target.mask_rcnn.extractor.mode = 'res4+'
+    #         self._target.mask_rcnn.extractor.res4.enable_update()
+    #
+    # trainer.extend(
+    #     EnableRes4PlusExtension(model),
+    #     trigger=training.triggers.ManualScheduleTrigger(
+    #         [args.iteration // 5], 'iteration'
+    #     ),
+    # )
+    #
+    # class EnableAllExtension(object):
+    #
+    #     name = 'EnableAllExtension'
+    #
+    #     def __init__(self, target):
+    #         self._target = target
+    #
+    #     def __call__(self, trainer):
+    #         self._target.mask_rcnn.extractor.mode = 'all'
+    #         self._target.mask_rcnn.extractor.enable_update()
+    #
+    # trainer.extend(
+    #     EnableAllExtension(model),
+    #     trigger=training.triggers.ManualScheduleTrigger(
+    #         [args.iteration // 2], 'iteration'
+    #     ),
+    # )
+    #
+    # trainer.extend(
+    #     training.extensions.ExponentialShift('lr', 0.1),
+    #     trigger=training.triggers.ManualScheduleTrigger(
+    #         [args.iteration // 5, args.iteration // 2], 'iteration'
+    #     ),
+    # )
 
     if args.overfit:
         eval_interval = 100, 'iteration'
