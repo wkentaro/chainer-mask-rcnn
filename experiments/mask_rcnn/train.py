@@ -94,11 +94,12 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
 
     def __init__(self, iterator, target, label_names,
                  file_name='visualizations/iteration=%08d.jpg',
-                 shape=(3, 3)):
+                 shape=(3, 3), copy_latest=True):
         super(InstanceSegmentationVisReport, self).__init__(iterator, target)
         self.label_names = np.asarray(label_names)
         self.file_name = file_name
         self._shape = shape
+        self._copy_latest = copy_latest
 
     def __call__(self, trainer):
         iterator = self._iterators['main']
@@ -162,7 +163,10 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
         except OSError:
             pass
         cv2.imwrite(file_name, viz[:, :, ::-1])
-        shutil.copy(file_name, osp.join(osp.dirname(file_name), 'latest.jpg'))
+
+        if self._copy_latest:
+            shutil.copy(file_name,
+                        osp.join(osp.dirname(file_name), 'latest.jpg'))
 
         target.use_preset('evaluate')
 

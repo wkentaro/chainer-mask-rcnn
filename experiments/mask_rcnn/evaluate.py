@@ -8,6 +8,7 @@ import pprint
 
 import chainer
 from chainercv.datasets import voc_bbox_label_names
+import numpy as np
 import yaml
 
 import chainer_mask_rcnn as mrcnn
@@ -93,7 +94,8 @@ print('visualization:', osp.join(log_dir, 'iteration=best.jpg'))
 visualizer = InstanceSegmentationVisReport(
     test_vis_iter, mask_rcnn,
     label_names=voc_bbox_label_names,
-    file_name='iteration=%s.jpg'
+    file_name='iteration=%s.jpg',
+    copy_latest=False,
 )
 visualizer(trainer=DummyTrainer())
 
@@ -104,7 +106,13 @@ evaluator = InstanceSegmentationVOCEvaluator(
     label_names=voc_bbox_label_names)
 result = evaluator()
 
-output = pprint.pformat(result)
-with open(osp.join(log_dir, 'evaluate.py.txt'), 'w') as f:
-    f.write(output + '\n')
-print(output)
+for k in result:
+    if isinstance(result[k], np.float64):
+        result[k] = float(result[k])
+
+yaml_file = osp.join(log_dir, 'result_evaluate.yaml')
+with open(yaml_file, 'w') as f:
+    yaml.safe_dump(result, f, default_flow_style=False)
+
+print('saved result: %s' % yaml_file)
+pprint.pprint(result)
