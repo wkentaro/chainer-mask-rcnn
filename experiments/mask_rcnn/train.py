@@ -9,6 +9,7 @@ import os
 import os.path as osp
 import random
 import shutil
+import subprocess
 import sys
 import yaml
 
@@ -220,8 +221,12 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
         return observation
 
 
+def git_hash():
+    cmd = 'git log -1 --format="%h"'
+    return subprocess.check_output(cmd, shell=True).strip()
+
+
 def git_info():
-    import subprocess
     cmd = 'git log -1 --format="%d"'
     output = subprocess.check_output(cmd, shell=True).strip()
     branch = output.lstrip('(').rstrip(')').split(',')[-1].strip()
@@ -230,7 +235,6 @@ def git_info():
 
 
 def get_hostname():
-    import subprocess
     cmd = 'hostname'
     return subprocess.check_output(cmd, shell=True).strip()
 
@@ -268,6 +272,7 @@ def main():
     args = parser.parse_args()
 
     args.git = git_info()
+    args.git_hash = git_hash()
     args.hostname = get_hostname()
     now = datetime.datetime.now()
     args.timestamp = now.isoformat()
