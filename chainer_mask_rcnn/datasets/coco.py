@@ -18,10 +18,10 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
     class_names = None  # initialized by __init__
 
     def __init__(self, split):
-        if split in ['train', 'val']:
+        if split == 'train':
             split = split + '2014'
-            data_type = split
-        elif split == 'minival':
+            data_type = 'train2014'
+        elif split in ['val', 'minival', 'valminusminival']:
             split = split + '2014'
             data_type = 'val2014'
         else:

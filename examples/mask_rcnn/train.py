@@ -312,8 +312,12 @@ def main():
         train_data = mrcnn.datasets.SBDInstanceSeg('train')
         test_data = mrcnn.datasets.VOC2012InstanceSeg('val')
     elif args.dataset == 'coco':
-        train_data = mrcnn.datasets.CocoInstanceSeg('train')
+        train_data = chainer.datasets.ConcatenatedDataset(
+            mrcnn.datasets.CocoInstanceSeg('train'),
+            mrcnn.datasets.CocoInstanceSeg('valminusminival'),
+        )
         test_data = mrcnn.datasets.CocoInstanceSeg('minival')
+        train_data.class_names = test_data.class_names
     else:
         raise ValueError
     instance_class_names = train_data.class_names[1:]
