@@ -473,7 +473,7 @@ def main():
                 ['validation/main/map'],
                 file_name='accuracy.png', trigger=plot_interval
             ),
-            trigger=plot_interval,
+            trigger=eval_interval,
         )
 
         trainer.extend(extensions.dump_graph('main/loss'))
