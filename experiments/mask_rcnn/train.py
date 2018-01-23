@@ -321,8 +321,12 @@ def main():
     else:
         raise ValueError
     instance_class_names = train_data.class_names[1:]
-    train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
-    test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
+    if comm.rank == 0:
+        train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
+        test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
+    else:
+        del train_data
+        del test_data
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
@@ -364,8 +368,7 @@ def main():
     mask_rcnn.extractor.res2.disable_update()
 
     if comm.rank == 0:
-        train_data = TransformDataset(
-            train_data, Transform(mask_rcnn))
+        train_data = TransformDataset(train_data, Transform(mask_rcnn))
         test_data = TransformDataset(
             test_data, Transform(mask_rcnn, train=False))
     else:
