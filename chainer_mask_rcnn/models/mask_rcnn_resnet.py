@@ -74,12 +74,14 @@ class MaskRCNNResNet(MaskRCNN):
                 self.res5 = self.fc6 = None
 
             def __call__(self, x):
-                assert self.mode in ['head', 'res4+', 'all']
+                assert self.mode in ['head', 'res3+', 'res4+', 'all']
                 h = x
                 with chainer.using_config('train', False):
                     for key, funcs in self.functions.items():
                         for func in funcs:
                             h = func(h)
+                        if key == 'res2' and self.mode == 'res3+':
+                            h.unchain_backward()
                         if key == 'res3' and self.mode == 'res4+':
                             h.unchain_backward()
                         if key == 'res4':

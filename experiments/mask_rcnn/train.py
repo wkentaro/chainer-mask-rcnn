@@ -399,7 +399,7 @@ def main():
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
-    model.mask_rcnn.extractor.mode = 'all'
+    model.mask_rcnn.extractor.mode = 'res3+'
     mask_rcnn.extractor.conv1.disable_update()
     mask_rcnn.extractor.bn1.disable_update()
     mask_rcnn.extractor.res2.disable_update()
