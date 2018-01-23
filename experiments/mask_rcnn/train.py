@@ -5,6 +5,7 @@ from __future__ import division
 import argparse
 import copy
 import datetime
+import multiprocessing
 import os
 import os.path as osp
 import random
@@ -22,6 +23,7 @@ from chainer import training
 from chainer.training import extensions
 from chainercv import transforms
 from chainercv.utils import apply_prediction_to_iterator
+import chainermn
 import cupy
 import cv2
 import numpy as np
@@ -173,10 +175,10 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
 
 class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
 
-    def __init__(self, iterator, target, use_07_metric=False,
-                 label_names=None):
+    def __init__(self, iterator, target, device=None,
+                 use_07_metric=False, label_names=None):
         super(InstanceSegmentationVOCEvaluator, self).__init__(
-            iterator, target)
+            iterator=iterator, target=target, device=device)
         self.use_07_metric = use_07_metric
         self.label_names = label_names
 
@@ -270,8 +272,6 @@ def main():
     parser.add_argument('--pooling-func', '-pf',
                         choices=['pooling', 'align', 'resize'],
                         default='pooling', help='Pooling function.')
-    parser.add_argument('--overfit', action='store_true',
-                        help='Do overfit training (single image).')
     # other parameters
     parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
     args = parser.parse_args()
@@ -293,15 +293,16 @@ def main():
     else:
         raise ValueError
 
-    os.makedirs(args.out)
-    with open(osp.join(args.out, 'params.yaml'), 'w') as f:
-        yaml.safe_dump(args.__dict__, f, default_flow_style=False)
-    print('# ' + '-' * 77)
-    yaml.safe_dump(args.__dict__, sys.stdout, default_flow_style=False)
-    print('# ' + '-' * 77)
+    comm = chainermn.create_communicator('hierarchical')
+    device = comm.intra_rank
 
-    if args.gpu >= 0:
-        chainer.cuda.get_device_from_id(args.gpu).use()
+    if comm.mpi_comm.rank == 0:
+        os.makedirs(args.out)
+        with open(osp.join(args.out, 'params.yaml'), 'w') as f:
+            yaml.safe_dump(args.__dict__, f, default_flow_style=False)
+        print('# ' + '-' * 77)
+        yaml.safe_dump(args.__dict__, sys.stdout, default_flow_style=False)
+        print('# ' + '-' * 77)
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -319,9 +320,6 @@ def main():
     instance_class_names = train_data.class_names[1:]
     train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
     test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
-    if args.overfit:
-        train_data = OverfitDataset(train_data, indices=range(0, 9))
-        test_data = OverfitDataset(train_data, indices=range(0, 9))
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
@@ -348,29 +346,43 @@ def main():
         raise ValueError
     mask_rcnn.use_preset('evaluate')
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
-    if args.gpu >= 0:
-        model.to_gpu()
+
+    chainer.cuda.get_device(device).use()
+    model.to_gpu()
+
     optimizer = chainer.optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
+    optimizer = chainermn.create_multi_node_optimizer(optimizer, comm)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
 
-    train_data = TransformDataset(train_data, Transform(mask_rcnn))
+    model.mask_rcnn.extractor.mode = 'res3+'
+    mask_rcnn.extractor.conv1.disable_update()
+    mask_rcnn.extractor.bn1.disable_update()
+    mask_rcnn.extractor.res2.disable_update()
 
-    def transform_test_data(in_data):
-        img = in_data[0]
-        img = img.transpose(2, 0, 1)
-        out_data = list(in_data)
-        out_data[0] = img
-        return tuple(out_data)
+    if comm.rank == 0:
+        train_data = TransformDataset(train_data, Transform(mask_rcnn))
 
-    test_data = TransformDataset(test_data, transform_test_data)
+        def transform_test_data(in_data):
+            img = in_data[0]
+            img = img.transpose(2, 0, 1)
+            out_data = list(in_data)
+            out_data[0] = img
+            return tuple(out_data)
 
-    # train_iter = chainer.iterators.MultiprocessIterator(
-    #     train_data, batch_size=1, n_processes=4, shared_mem=100000000)
-    train_iter = chainer.iterators.SerialIterator(
-        train_data, batch_size=1)
-    test_iter = chainer.iterators.SerialIterator(
-        test_data, batch_size=1, repeat=False, shuffle=False)
+        test_data = TransformDataset(test_data, transform_test_data)
+    else:
+        train_data = None
+        test_data = None
+    train_data = chainermn.scatter_dataset(train_data, comm, shuffle=True)
+    test_data = chainermn.scatter_dataset(test_data, comm)
+
+    multiprocessing.set_start_method('forkserver')
+    train_iter = chainer.iterators.MultiprocessIterator(
+        train_data, batch_size=1, n_processes=4, shared_mem=100000000)
+    test_iter = chainer.iterators.MultiprocessIterator(
+        test_data, batch_size=1, n_processes=4, shared_mem=100000000,
+        repeat=False, shuffle=False)
 
     def concat_examples(batch, device=None, padding=None):
         from chainer.dataset.convert import _concat_arrays
@@ -392,107 +404,58 @@ def main():
 
         return tuple(result)
 
-    updater = chainer.training.updater.StandardUpdater(
+    updater = chainer.training.StandardUpdater(
         train_iter, optimizer, device=args.gpu,
         converter=concat_examples)
 
     trainer = training.Trainer(
         updater, (args.iteration, 'iteration'), out=args.out)
 
-    model.mask_rcnn.extractor.mode = 'res3+'
-    mask_rcnn.extractor.conv1.disable_update()
-    mask_rcnn.extractor.bn1.disable_update()
-    mask_rcnn.extractor.res2.disable_update()
-
     trainer.extend(extensions.ExponentialShift('lr', 0.1),
                    trigger=(args.step_size, 'iteration'))
 
-    # XXX: this is better than the ExponentialShift,
-    #      (65 vs 66map) but complicated.
-    # class EnableRes4PlusExtension(object):
-    #
-    #     name = 'EnableRes4PlusExtension'
-    #
-    #     def __init__(self, target):
-    #         self._target = target
-    #
-    #     def __call__(self, trainer):
-    #         self._target.mask_rcnn.extractor.mode = 'res4+'
-    #         self._target.mask_rcnn.extractor.res4.enable_update()
-    #
-    # trainer.extend(
-    #     EnableRes4PlusExtension(model),
-    #     trigger=training.triggers.ManualScheduleTrigger(
-    #         [args.iteration // 5], 'iteration'
-    #     ),
-    # )
-    #
-    # class EnableAllExtension(object):
-    #
-    #     name = 'EnableAllExtension'
-    #
-    #     def __init__(self, target):
-    #         self._target = target
-    #
-    #     def __call__(self, trainer):
-    #         self._target.mask_rcnn.extractor.mode = 'all'
-    #         self._target.mask_rcnn.extractor.enable_update()
-    #
-    # trainer.extend(
-    #     EnableAllExtension(model),
-    #     trigger=training.triggers.ManualScheduleTrigger(
-    #         [args.iteration // 2], 'iteration'
-    #     ),
-    # )
-    #
-    # trainer.extend(
-    #     training.extensions.ExponentialShift('lr', 0.1),
-    #     trigger=training.triggers.ManualScheduleTrigger(
-    #         [args.iteration // 5, args.iteration // 2], 'iteration'
-    #     ),
-    # )
+    eval_interval = len(train_data) // train_iter.batch_size, 'iteration'
+    log_interval = 20, 'iteration'
+    plot_interval = eval_interval[0], 'iteration'
+    print_interval = 20, 'iteration'
 
-    if args.overfit:
-        eval_interval = 100, 'iteration'
-        log_interval = 1, 'iteration'
-        plot_interval = 100, 'iteration'
-        print_interval = 1, 'iteration'
-    else:
-        eval_interval = len(train_data) // train_iter.batch_size, 'iteration'
-        log_interval = 20, 'iteration'
-        plot_interval = eval_interval[0], 'iteration'
-        print_interval = 20, 'iteration'
+    checkpointer = chainermn.create_multi_node_checkpointer(
+        name='mask-rcnn', comm=comm)
+    checkpointer.maybe_load(trainer, optimizer)
+    trainer.extend(checkpointer, trigger=eval_interval)
 
-    trainer.extend(
-        InstanceSegmentationVOCEvaluator(
-            test_iter, model.mask_rcnn, use_07_metric=True,
-            label_names=instance_class_names),
-        trigger=eval_interval)
-    trainer.extend(
-        InstanceSegmentationVisReport(
-            test_iter, model.mask_rcnn,
-            label_names=instance_class_names),
-        trigger=eval_interval)
-    trainer.extend(
-        extensions.snapshot_object(model.mask_rcnn, 'snapshot_model.npz'),
-        trigger=training.triggers.MaxValueTrigger(
-            'validation/main/map', eval_interval))
-    trainer.extend(chainer.training.extensions.observe_lr(),
-                   trigger=log_interval)
-    trainer.extend(extensions.LogReport(trigger=log_interval))
-    trainer.extend(extensions.PrintReport(
-        ['iteration', 'epoch', 'elapsed_time', 'lr',
-         'main/loss',
-         'main/roi_loc_loss',
-         'main/roi_cls_loss',
-         'main/roi_mask_loss',
-         'main/rpn_loc_loss',
-         'main/rpn_cls_loss',
-         'validation/main/map',
-         ]), trigger=print_interval)
-    trainer.extend(extensions.ProgressBar(update_interval=10))
+    evaluator = InstanceSegmentationVOCEvaluator(
+        test_iter, model.mask_rcnn, device=device,
+        use_07_metric=True, label_names=instance_class_names)
+    evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
+    trainer.extend(evaluator, trigger=eval_interval)
 
-    if extensions.PlotReport.available():
+    if comm.rank == 0:
+        trainer.extend(
+            InstanceSegmentationVisReport(
+                test_iter, model.mask_rcnn,
+                label_names=instance_class_names),
+            trigger=eval_interval)
+        trainer.extend(
+            extensions.snapshot_object(model.mask_rcnn, 'snapshot_model.npz'),
+            trigger=training.triggers.MaxValueTrigger(
+                'validation/main/map', eval_interval))
+        trainer.extend(chainer.training.extensions.observe_lr(),
+                       trigger=log_interval)
+        trainer.extend(extensions.LogReport(trigger=log_interval))
+        trainer.extend(extensions.PrintReport([
+            'iteration', 'epoch', 'elapsed_time', 'lr',
+            'main/loss',
+            'main/roi_loc_loss',
+            'main/roi_cls_loss',
+            'main/roi_mask_loss',
+            'main/rpn_loc_loss',
+            'main/rpn_cls_loss',
+            'validation/main/map',
+        ]), trigger=print_interval)
+        trainer.extend(extensions.ProgressBar(update_interval=10))
+
+        assert extensions.PlotReport.available()
         trainer.extend(
             extensions.PlotReport(
                 ['main/loss',
@@ -503,17 +466,17 @@ def main():
                  'main/rpn_cls_loss'],
                 file_name='loss.png', trigger=plot_interval
             ),
-            trigger=plot_interval
+            trigger=plot_interval,
         )
         trainer.extend(
             extensions.PlotReport(
                 ['validation/main/map'],
                 file_name='accuracy.png', trigger=plot_interval
             ),
-            trigger=plot_interval
+            trigger=plot_interval,
         )
 
-    trainer.extend(extensions.dump_graph('main/loss'))
+        trainer.extend(extensions.dump_graph('main/loss'))
 
     trainer.run()
 
