@@ -229,20 +229,22 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
 
 def git_hash():
     cmd = 'git log -1 --format="%h"'
-    return subprocess.check_output(cmd, shell=True).strip()
+    return subprocess.check_output(cmd, shell=True).strip().decode()
 
 
 def git_info():
     cmd = 'git log -1 --format="%d"'
     output = subprocess.check_output(cmd, shell=True).strip()
+    output = output.decode()
     branch = output.lstrip('(').rstrip(')').split(',')[-1].strip()
+
     cmd = 'git log -1 --format="%h - ({}) %B"'.format(branch)
-    return subprocess.check_output(cmd, shell=True).strip()
+    return subprocess.check_output(cmd, shell=True).strip().decode()
 
 
 def get_hostname():
     cmd = 'hostname'
-    return subprocess.check_output(cmd, shell=True).strip()
+    return subprocess.check_output(cmd, shell=True).strip().decode()
 
 
 here = osp.dirname(osp.abspath(__file__))
