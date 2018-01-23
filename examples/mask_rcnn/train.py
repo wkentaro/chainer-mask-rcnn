@@ -51,6 +51,10 @@ class Transform(object):
     def __call__(self, in_data):
         img, bbox, label, mask = in_data
         img = img.transpose(2, 0, 1)  # H, W, C -> C, H, W
+
+        if not self.train:
+            return img, bbox, label, mask
+
         _, H, W = img.shape
         img = self.mask_rcnn.prepare(img)
         _, o_H, o_W = img.shape
@@ -61,16 +65,15 @@ class Transform(object):
             mask = transforms.resize(
                 mask, size=(o_H, o_W), interpolation=0)
 
-        if self.train:
-            # horizontally flip
-            img, params = transforms.random_flip(
-                img, x_random=True, return_param=True)
-            bbox = transforms.flip_bbox(
-                bbox, (o_H, o_W), x_flip=params['x_flip'])
-            if mask.ndim == 2:
-                mask = flip_image(mask[None, :, :], x_flip=params['x_flip'])[0]
-            else:
-                mask = flip_image(mask, x_flip=params['x_flip'])
+        # horizontally flip
+        img, params = transforms.random_flip(
+            img, x_random=True, return_param=True)
+        bbox = transforms.flip_bbox(
+            bbox, (o_H, o_W), x_flip=params['x_flip'])
+        if mask.ndim == 2:
+            mask = flip_image(mask[None, :, :], x_flip=params['x_flip'])[0]
+        else:
+            mask = flip_image(mask, x_flip=params['x_flip'])
 
         return img, bbox, label, mask, scale
 
@@ -175,15 +178,14 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
 
 class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
 
+    name = 'validation'
+
     def __init__(self, iterator, target, device=None,
                  use_07_metric=False, label_names=None):
         super(InstanceSegmentationVOCEvaluator, self).__init__(
             iterator=iterator, target=target, device=device)
         self.use_07_metric = use_07_metric
         self.label_names = label_names
-
-    def __call__(self, trainer=None):
-        return super(InstanceSegmentationVOCEvaluator, self).__call__(trainer)
 
     def evaluate(self):
         iterator = self._iterators['main']
@@ -367,6 +369,7 @@ def main():
     train_data = chainermn.scatter_dataset(train_data, comm, shuffle=True)
     test_data = chainermn.scatter_dataset(test_data, comm)
 
+    # FIXME: It raises error of already set.
     # multiprocessing.set_start_method('forkserver')
     train_iter = chainer.iterators.MultiprocessIterator(
         train_data, batch_size=1, n_processes=4, shared_mem=100000000)
