@@ -264,9 +264,6 @@ def main():
         '--pretrained-model', '-pm',
         choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
         default='imagenet', help='Pretrained model.')
-    # 0.02 / 16 (batch size of original paper)
-    parser.add_argument('--lr', '-l', type=float, default=0.00125,
-                        help='Learning rate.')
     parser.add_argument('--seed', '-s', type=int, default=0,
                         help='Random seed.')
     parser.add_argument('--weight_decay', type=float, default=0.0001,
@@ -274,9 +271,10 @@ def main():
     parser.add_argument('--pooling-func', '-pf',
                         choices=['pooling', 'align', 'resize'],
                         default='pooling', help='Pooling function.')
-    # other parameters
-    parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU id.')
     args = parser.parse_args()
+
+    comm = chainermn.create_communicator('hierarchical')
+    device = comm.intra_rank
 
     args.git = git_info()
     args.git_hash = git_hash()
@@ -285,18 +283,16 @@ def main():
     args.timestamp = now.isoformat()
     args.out = osp.join(here, 'logs', now.strftime('%Y%m%d_%H%M%S'))
 
-    if args.dataset == 'voc':
-        args.iteration = int(140e3)
-        args.step_size = int((120e3 / 160e3) * 140e3)
-    elif args.dataset == 'coco':
-        # 160k * 16 batchsize in original
-        args.iteration = int(160e3 * 16)
-        args.step_size = int(120e3)
-    else:
-        raise ValueError
+    # 0.00125 * 2 * 8 = 0.02  in original
+    args.batch_size = 1
+    args.n_node = comm.inter_size
+    args.n_gpu = comm.intra_size * args.n_node
+    args.lr = 0.00125 * args.batch_size * args.n_gpu
 
-    comm = chainermn.create_communicator('hierarchical')
-    device = comm.intra_rank
+    args.max_epoch = 19  # (160e3 * 16) / len(coco_trainval)
+    # lr / 10 at 120k iteration with
+    # 160k iteration * 16 batchsize in original
+    args.step_size = (120e3 / 160e3) * args.max_epoch
 
     if comm.mpi_comm.rank == 0:
         os.makedirs(args.out)
@@ -308,8 +304,6 @@ def main():
 
     random.seed(args.seed)
     np.random.seed(args.seed)
-    if args.gpu >= 0:
-        cupy.random.seed(args.seed)
 
     if args.dataset == 'voc':
         train_data = mrcnn.datasets.SBDInstanceSeg('train')
@@ -373,7 +367,7 @@ def main():
     train_data = chainermn.scatter_dataset(train_data, comm, shuffle=True)
     test_data = chainermn.scatter_dataset(test_data, comm)
 
-    multiprocessing.set_start_method('forkserver')
+    # multiprocessing.set_start_method('forkserver')
     train_iter = chainer.iterators.MultiprocessIterator(
         train_data, batch_size=1, n_processes=4, shared_mem=100000000)
     test_iter = chainer.iterators.MultiprocessIterator(
@@ -401,18 +395,17 @@ def main():
         return tuple(result)
 
     updater = chainer.training.StandardUpdater(
-        train_iter, optimizer, device=args.gpu,
-        converter=concat_examples)
+        train_iter, optimizer, device=device, converter=concat_examples)
 
     trainer = training.Trainer(
-        updater, (args.iteration, 'iteration'), out=args.out)
+        updater, (args.max_epoch, 'epoch'), out=args.out)
 
     trainer.extend(extensions.ExponentialShift('lr', 0.1),
-                   trigger=(args.step_size, 'iteration'))
+                   trigger=(args.step_size, 'epoch'))
 
-    eval_interval = len(train_data) // train_iter.batch_size, 'iteration'
+    eval_interval = 1, 'epoch'
     log_interval = 20, 'iteration'
-    plot_interval = eval_interval[0], 'iteration'
+    plot_interval = 0.1, 'epoch'
     print_interval = 20, 'iteration'
 
     checkpointer = chainermn.create_multi_node_checkpointer(
