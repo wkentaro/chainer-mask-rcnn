@@ -74,8 +74,8 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
                 for seg in ann['segmentation']:
                     mask = np.zeros((height, width), dtype=np.uint8)
                     mask = PIL.Image.fromarray(mask)
-                    xy = np.array(seg).reshape((len(seg) / 2, 2))
-                    xy = map(tuple, xy)
+                    xy = np.array(seg).reshape((-1, 2))
+                    xy = [tuple(xy_i) for xy_i in xy]
                     PIL.ImageDraw.Draw(mask).polygon(xy=xy, outline=1, fill=1)
                     mask = np.array(mask)
                     lbl_cls[mask == 1] = ann['category_id']
