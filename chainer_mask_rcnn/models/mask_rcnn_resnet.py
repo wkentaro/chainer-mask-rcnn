@@ -1,5 +1,3 @@
-import os.path as osp
-
 import numpy as np
 
 import chainer
@@ -16,9 +14,65 @@ from chainercv.utils import download_model
 from .. import functions
 from .faster_rcnn_resnet import _copy_persistent_chain
 from .faster_rcnn_resnet import _global_average_pooling_2d
-from .faster_rcnn_resnet import FasterRCNNResNet101
-from .faster_rcnn_resnet import FasterRCNNResNet50
 from .mask_rcnn import MaskRCNN
+
+
+class ResNet50Extractor(ResNet50Layers):
+
+    mode = 'all'
+
+    def __init__(self, *args, **kwargs):
+        super(ResNet50Extractor, self).__init__(*args, **kwargs)
+        # Remove no need layers to save memory
+        delattr(self, 'res5')
+        delattr(self, 'fc6')
+        self.res5 = self.fc6 = None
+
+    def __call__(self, x):
+        assert self.mode in ['head', 'res3+', 'res4+', 'all']
+        h = x
+        with chainer.using_config('train', False):
+            for key, funcs in self.functions.items():
+                for func in funcs:
+                    h = func(h)
+                if key == 'res2' and self.mode == 'res3+':
+                    h.unchain_backward()
+                if key == 'res3' and self.mode == 'res4+':
+                    h.unchain_backward()
+                if key == 'res4':
+                    if self.mode == 'head':
+                        h.unchain_backward()
+                    break
+        return h
+
+
+class ResNet101Extractor(ResNet101Layers):
+
+    mode = 'all'
+
+    def __init__(self, *args, **kwargs):
+        super(ResNet101Extractor, self).__init__(*args, **kwargs)
+        # Remove no need layers to save memory
+        delattr(self, 'res5')
+        delattr(self, 'fc6')
+        self.res5 = self.fc6 = None
+
+    def __call__(self, x):
+        assert self.mode in ['head', 'res3+', 'res4+', 'all']
+        h = x
+        with chainer.using_config('train', False):
+            for key, funcs in self.functions.items():
+                for func in funcs:
+                    h = func(h)
+                if key == 'res2' and self.mode == 'res3+':
+                    h.unchain_backward()
+                if key == 'res3' and self.mode == 'res4+':
+                    h.unchain_backward()
+                if key == 'res4':
+                    if self.mode == 'head':
+                        h.unchain_backward()
+                    break
+        return h
 
 
 class MaskRCNNResNet(MaskRCNN):
@@ -53,44 +107,13 @@ class MaskRCNNResNet(MaskRCNN):
             res_initialW = chainer.initializers.constant.Zero()
 
         if n_layers == 50:
-            self._ResNetLayers = ResNet50Layers
-            self._FasterRCNN = FasterRCNNResNet50
+            extractor = ResNet50Extractor(pretrained_model=None)
         elif n_layers == 101:
-            self._ResNetLayers = ResNet101Layers
-            self._FasterRCNN = FasterRCNNResNet101
+            extractor = ResNet101Extractor(pretrained_model=None)
         else:
             raise ValueError
         self._n_layers = n_layers
 
-        class Extractor(self._ResNetLayers):
-
-            mode = 'all'
-
-            def __init__(self, *args, **kwargs):
-                super(Extractor, self).__init__(*args, **kwargs)
-                # Remove no need layers to save memory
-                delattr(self, 'res5')
-                delattr(self, 'fc6')
-                self.res5 = self.fc6 = None
-
-            def __call__(self, x):
-                assert self.mode in ['head', 'res3+', 'res4+', 'all']
-                h = x
-                with chainer.using_config('train', False):
-                    for key, funcs in self.functions.items():
-                        for func in funcs:
-                            h = func(h)
-                        if key == 'res2' and self.mode == 'res3+':
-                            h.unchain_backward()
-                        if key == 'res3' and self.mode == 'res4+':
-                            h.unchain_backward()
-                        if key == 'res4':
-                            if self.mode == 'head':
-                                h.unchain_backward()
-                            break
-                return h
-
-        extractor = Extractor(pretrained_model=None)
         rpn = RegionProposalNetwork(
             1024, 512,
             ratios=ratios,
@@ -127,7 +150,12 @@ class MaskRCNNResNet(MaskRCNN):
             chainer.serializers.load_npz(pretrained_model, self)
 
     def _copy_imagenet_pretrained_resnet(self):
-        pretrained_model = self._ResNetLayers(pretrained_model='auto')
+        if self._n_layers == 50:
+            pretrained_model = ResNet50Layers(pretrained_model='auto')
+        elif self._n_layers == 101:
+            pretrained_model = ResNet101Layers(pretrained_model='auto')
+        else:
+            raise ValueError
 
         self.extractor.conv1.copyparams(pretrained_model.conv1)
         # The pretrained weights are trained to accept BGR images.
@@ -149,54 +177,6 @@ class MaskRCNNResNet(MaskRCNN):
 
         self.head.res5.copyparams(pretrained_model.res5)
         _copy_persistent_chain(self.head.res5, pretrained_model.res5)
-
-    def _copy_voc_pretrained_rpn(self, pretrained_model):
-        pretrained_model = self._FasterRCNN(
-            n_fg_class=n_fg_class, pretrained_model=pretrained_model)
-
-        self.extractor.conv1.copyparams(pretrained_model.extractor.conv1)
-        _copy_persistent_chain(self.extractor.conv1,
-                               pretrained_model.extractor.conv1)
-        self.extractor.bn1.copyparams(pretrained_model.extractor.bn1)
-        _copy_persistent_chain(self.extractor.bn1,
-                               pretrained_model.extractor.bn1)
-        self.extractor.res2.copyparams(pretrained_model.extractor.res2)
-        _copy_persistent_chain(self.extractor.res2,
-                               pretrained_model.extractor.res2)
-        self.extractor.res3.copyparams(pretrained_model.extractor.res3)
-        _copy_persistent_chain(self.extractor.res3,
-                               pretrained_model.extractor.res3)
-        self.extractor.res4.copyparams(pretrained_model.extractor.res4)
-        _copy_persistent_chain(self.extractor.res4,
-                               pretrained_model.extractor.res4)
-
-        self.rpn.copyparams(pretrained_model.rpn)
-        _copy_persistent_chain(self.rpn, pretrained_model.rpn)
-
-        pretrained_model = self._ResNetLayers(pretrained_model='auto')
-
-        self.head.res5.copyparams(pretrained_model.res5)
-        _copy_persistent_chain(self.head.res5, pretrained_model.res5)
-
-    def _copy_voc_pretrained_faster_rcnn(self, pretrained_model):
-        pretrained_model = self._FasterRCNN(
-            n_fg_class=n_fg_class, pretrained_model=pretrained_model)
-
-        self.extractor.copyparams(pretrained_model.extractor)
-        _copy_persistent_chain(self.extractor, pretrained_model.extractor)
-
-        self.rpn.copyparams(pretrained_model.rpn)
-        _copy_persistent_chain(self.rpn, pretrained_model.rpn)
-
-        self.head.res5.copyparams(pretrained_model.head.res5)
-        _copy_persistent_chain(self.head.res5, pretrained_model.head.res5)
-
-        self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
-        _copy_persistent_chain(self.head.cls_loc,
-                               pretrained_model.head.cls_loc)
-
-        self.head.score.copyparams(pretrained_model.head.score)
-        _copy_persistent_chain(self.head.score, pretrained_model.head.score)
 
 
 class ResNetRoIHead(chainer.Chain):
