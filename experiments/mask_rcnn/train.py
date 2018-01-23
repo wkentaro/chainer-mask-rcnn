@@ -16,6 +16,8 @@ import yaml
 
 os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
+import cv2  # FIXME: sometimes raises error after chainermn.
+
 import chainer
 from chainer.datasets import TransformDataset
 from chainer import reporter
@@ -25,7 +27,6 @@ from chainercv import transforms
 from chainercv.utils import apply_prediction_to_iterator
 import chainermn
 import cupy
-import cv2
 import numpy as np
 import six
 
