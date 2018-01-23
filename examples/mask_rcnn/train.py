@@ -44,9 +44,9 @@ def flip_image(image, x_flip=False, y_flip=False):
 
 class Transform(object):
 
-    def __init__(self, mask_rcnn, augmentation=True):
+    def __init__(self, mask_rcnn, train=True):
         self.mask_rcnn = mask_rcnn
-        self._augmentation = augmentation
+        self.train = train
 
     def __call__(self, in_data):
         img, bbox, label, mask = in_data
@@ -61,7 +61,7 @@ class Transform(object):
             mask = transforms.resize(
                 mask, size=(o_H, o_W), interpolation=0)
 
-        if self._augmentation:
+        if self.train:
             # horizontally flip
             img, params = transforms.random_flip(
                 img, x_random=True, return_param=True)
@@ -361,16 +361,10 @@ def main():
     mask_rcnn.extractor.res2.disable_update()
 
     if comm.rank == 0:
-        train_data = TransformDataset(train_data, Transform(mask_rcnn))
-
-        def transform_test_data(in_data):
-            img = in_data[0]
-            img = img.transpose(2, 0, 1)
-            out_data = list(in_data)
-            out_data[0] = img
-            return tuple(out_data)
-
-        test_data = TransformDataset(test_data, transform_test_data)
+        train_data = TransformDataset(
+            train_data, Transform(mask_rcnn))
+        test_data = TransformDataset(
+            test_data, Transform(mask_rcnn, train=False))
     else:
         train_data = None
         test_data = None
