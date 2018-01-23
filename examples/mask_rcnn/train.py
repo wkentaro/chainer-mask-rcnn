@@ -407,6 +407,8 @@ def main():
     trainer.extend(extensions.ExponentialShift('lr', 0.1),
                    trigger=(args.step_size, 'iteration'))
 
+    # XXX: this is better than the ExponentialShift,
+    #      (65 vs 66map) but complicated.
     # class EnableRes4PlusExtension(object):
     #
     #     name = 'EnableRes4PlusExtension'
