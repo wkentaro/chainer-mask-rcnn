@@ -13,10 +13,7 @@ import yaml
 
 import chainer_mask_rcnn as mrcnn
 
-from train import InstanceSegmentationVisReport
-from train import InstanceSegmentationVOCEvaluator
-from train import OverfitDataset
-from train import TransformDataset
+import contrib
 
 
 parser = argparse.ArgumentParser(
@@ -70,11 +67,11 @@ def transform_test_data(in_data):
 #     mrcnn.datasets.VOC2012InstanceSeg('val'))
 test_data = mrcnn.datasets.MaskRcnnDataset(
     mrcnn.datasets.SBDInstanceSeg('val'))
-test_data = TransformDataset(test_data, transform_test_data)
+test_data = chainer.datasets.TransformDataset(test_data, transform_test_data)
 test_iter = chainer.iterators.SerialIterator(
     test_data, batch_size=1, repeat=False, shuffle=False)
 
-test_vis_data = OverfitDataset(
+test_vis_data = contrib.datasets.IndexingDataset(
     test_data, indices=[196, 204, 216, 257, 326, 473, 566, 649, 1063])
 test_vis_iter = chainer.iterators.SerialIterator(
     test_vis_data, batch_size=1, repeat=False, shuffle=False)
@@ -91,7 +88,7 @@ class DummyTrainer(object):
 
 
 print('visualization:', osp.join(log_dir, 'iteration=best.jpg'))
-visualizer = InstanceSegmentationVisReport(
+visualizer = contrib.extensions.InstanceSegmentationVisReport(
     test_vis_iter, mask_rcnn,
     label_names=voc_bbox_label_names,
     file_name='iteration=%s.jpg',
@@ -101,7 +98,7 @@ visualizer(trainer=DummyTrainer())
 
 print('evaluation:')
 mask_rcnn.use_preset('evaluate')
-evaluator = InstanceSegmentationVOCEvaluator(
+evaluator = contrib.extensions.InstanceSegmentationVOCEvaluator(
     test_iter, mask_rcnn, use_07_metric=True,
     label_names=voc_bbox_label_names)
 result = evaluator()
