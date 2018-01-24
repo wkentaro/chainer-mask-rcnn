@@ -165,7 +165,7 @@ if __name__ == '__main__':
         # 'timestamp',
         'last_time',
         'dataset',
-        'git',
+        'git_hash',
         # 'git_branch',
         'hostname',
         'model',
