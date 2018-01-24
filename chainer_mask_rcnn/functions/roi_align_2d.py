@@ -65,9 +65,9 @@ class ROIAlign2D(function.Function):
 
         for i in six.moves.range(top_data.size):
             pw = i % pooled_width
-            ph = (i / pooled_width) % pooled_height
-            c = (i / pooled_width / pooled_height) % channels
-            n = i / pooled_width / pooled_height / channels
+            ph = int(i / pooled_width) % pooled_height
+            c = int(i / pooled_width / pooled_height) % channels
+            n = int(i / pooled_width / pooled_height / channels)
 
             roi_batch_ind = bottom_rois[n, 0]
 
@@ -292,9 +292,9 @@ class ROIAlign2D(function.Function):
 
         for i in six.moves.range(bottom_diff.size):
             w = i % width              # x coords of input feature
-            h = (i / width) % height   # y coords of input feature
-            c = (i / width / height) % channels
-            n = i / width / height / channels
+            h = int(i / width) % height   # y coords of input feature
+            c = int(i / width / height) % channels
+            n = int(i / width / height / channels)
 
             gradient = 0.
             # Accumulate gradient over all ROIs that pooled this element
