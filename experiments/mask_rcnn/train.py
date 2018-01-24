@@ -3,251 +3,26 @@
 from __future__ import division
 
 import argparse
-import copy
 import datetime
-import multiprocessing
 import os
 import os.path as osp
 import random
-import shutil
-import subprocess
-import sys
-import yaml
+import socket
 
 os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
-import cv2  # FIXME: sometimes raises error after chainermn.
-
 import chainer
 from chainer.datasets import TransformDataset
-from chainer import reporter
 from chainer import training
 from chainer.training import extensions
-from chainercv import transforms
-from chainercv.utils import apply_prediction_to_iterator
 import chainermn
-import cupy
+import fcn
 import numpy as np
 import six
 
 import chainer_mask_rcnn as mrcnn
-import mvtk
 
-
-def flip_image(image, x_flip=False, y_flip=False):
-    # image has tensor size of (C, H, W)
-    if y_flip:
-        image = image[:, ::-1, :]
-    if x_flip:
-        image = image[:, :, ::-1]
-    return image
-
-
-class Transform(object):
-
-    def __init__(self, mask_rcnn, train=True):
-        self.mask_rcnn = mask_rcnn
-        self.train = train
-
-    def __call__(self, in_data):
-        img, bbox, label, mask = in_data
-        img = img.transpose(2, 0, 1)  # H, W, C -> C, H, W
-
-        if not self.train:
-            return img, bbox, label, mask
-
-        _, H, W = img.shape
-        img = self.mask_rcnn.prepare(img)
-        _, o_H, o_W = img.shape
-        scale = o_H / H
-        if len(bbox) > 0:
-            bbox = transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
-        if len(mask) > 0:
-            mask = transforms.resize(
-                mask, size=(o_H, o_W), interpolation=0)
-
-        # horizontally flip
-        img, params = transforms.random_flip(
-            img, x_random=True, return_param=True)
-        bbox = transforms.flip_bbox(
-            bbox, (o_H, o_W), x_flip=params['x_flip'])
-        if mask.ndim == 2:
-            mask = flip_image(mask[None, :, :], x_flip=params['x_flip'])[0]
-        else:
-            mask = flip_image(mask, x_flip=params['x_flip'])
-
-        return img, bbox, label, mask, scale
-
-
-class OverfitDataset(chainer.dataset.DatasetMixin):
-
-    def __init__(self, dataset, indices=0):
-        self._dataset = dataset
-
-        if isinstance(indices, int):
-            indices = [indices]
-        self._indices = indices
-
-    def __len__(self):
-        return len(self._indices)
-
-    def get_example(self, i):
-        index = self._indices[i]
-        return self._dataset.get_example(index)
-
-
-class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
-
-    def __init__(self, iterator, target, label_names,
-                 file_name='visualizations/iteration=%08d.jpg',
-                 shape=(3, 3), copy_latest=True):
-        super(InstanceSegmentationVisReport, self).__init__(iterator, target)
-        self.label_names = np.asarray(label_names)
-        self.file_name = file_name
-        self._shape = shape
-        self._copy_latest = copy_latest
-
-    def __call__(self, trainer):
-        iterator = self._iterators['main']
-        target = self._targets['main']
-
-        target.use_preset('visualize')
-
-        if hasattr(iterator, 'reset'):
-            iterator.reset()
-            it = iterator
-        else:
-            it = copy.copy(iterator)
-
-        imgs, pred_values, gt_values = apply_prediction_to_iterator(
-            target.predict_masks, it)
-
-        pred_bboxes, pred_masks, pred_labels, pred_scores = pred_values
-
-        if len(gt_values) == 4:
-            gt_bboxes, gt_labels, gt_masks, _ = gt_values
-        elif len(gt_values) == 3:
-            gt_bboxes, gt_labels, gt_masks = gt_values
-
-        # visualize
-        vizs = []
-        for img, gt_bbox, gt_label, gt_mask, \
-            pred_bbox, pred_label, pred_mask, pred_score \
-                in six.moves.zip(imgs, gt_bboxes, gt_labels, gt_masks,
-                                 pred_bboxes, pred_labels, pred_masks,
-                                 pred_scores):
-            # organize input
-            img = img.transpose(1, 2, 0)  # CHW -> HWC
-            gt_mask = gt_mask.astype(bool)
-
-            n_fg_class = len(self.label_names)
-
-            gt_viz = mrcnn.utils.draw_instance_boxes(
-                img, gt_bbox, gt_label, n_class=n_fg_class,
-                masks=gt_mask, captions=self.label_names[gt_label],
-                bg_class=-1)
-
-            captions = []
-            for p_score, l_name in zip(pred_score,
-                                       self.label_names[pred_label]):
-                caption = '{:s} {:.1%}'.format(l_name, p_score)
-                captions.append(caption)
-            pred_viz = mrcnn.utils.draw_instance_boxes(
-                img, pred_bbox, pred_label, n_class=n_fg_class,
-                masks=pred_mask, captions=captions, bg_class=-1)
-
-            viz = np.vstack([gt_viz, pred_viz])
-            vizs.append(viz)
-            if len(vizs) >= (self._shape[0] * self._shape[1]):
-                break
-
-        viz = mvtk.image.tile(vizs, shape=self._shape)
-        file_name = osp.join(
-            trainer.out, self.file_name % trainer.updater.iteration)
-        try:
-            os.makedirs(osp.dirname(file_name))
-        except OSError:
-            pass
-        cv2.imwrite(file_name, viz[:, :, ::-1])
-
-        if self._copy_latest:
-            shutil.copy(file_name,
-                        osp.join(osp.dirname(file_name), 'latest.jpg'))
-
-        target.use_preset('evaluate')
-
-
-class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
-
-    name = 'validation'
-
-    def __init__(self, iterator, target, device=None,
-                 use_07_metric=False, label_names=None):
-        super(InstanceSegmentationVOCEvaluator, self).__init__(
-            iterator=iterator, target=target, device=device)
-        self.use_07_metric = use_07_metric
-        self.label_names = label_names
-
-    def evaluate(self):
-        iterator = self._iterators['main']
-        target = self._targets['main']
-
-        if hasattr(iterator, 'reset'):
-            iterator.reset()
-            it = iterator
-        else:
-            it = copy.copy(iterator)
-
-        imgs, pred_values, gt_values = apply_prediction_to_iterator(
-            target.predict_masks, it)
-
-        pred_bboxes, pred_masks, pred_labels, pred_scores = pred_values
-
-        if len(gt_values) == 4:
-            gt_bboxes, gt_labels, gt_masks, gt_difficults = gt_values
-        elif len(gt_values) == 3:
-            gt_bboxes, gt_labels, gt_masks = gt_values
-            gt_difficults = None
-
-        # evaluate
-        result = mrcnn.utils.evaluations.eval_instseg_voc(
-            pred_masks, pred_labels, pred_scores,
-            gt_masks, gt_labels, gt_difficults,
-            use_07_metric=self.use_07_metric)
-
-        report = {'map': result['map']}
-
-        if self.label_names is not None:
-            for l, label_name in enumerate(self.label_names):
-                try:
-                    report['ap/{:s}'.format(label_name)] = result['ap'][l]
-                except IndexError:
-                    report['ap/{:s}'.format(label_name)] = np.nan
-
-        observation = dict()
-        with reporter.report_scope(observation):
-            reporter.report(report, target)
-        return observation
-
-
-def git_hash():
-    cmd = 'git log -1 --format="%h"'
-    return subprocess.check_output(cmd, shell=True).strip().decode()
-
-
-def git_info():
-    cmd = 'git log -1 --format="%d"'
-    output = subprocess.check_output(cmd, shell=True).strip()
-    output = output.decode()
-    branch = output.lstrip('(').rstrip(')').split(',')[-1].strip()
-
-    cmd = 'git log -1 --format="%h - ({}) %B"'.format(branch)
-    return subprocess.check_output(cmd, shell=True).strip().decode()
-
-
-def get_hostname():
-    cmd = 'hostname'
-    return subprocess.check_output(cmd, shell=True).strip().decode()
+import contrib
 
 
 here = osp.dirname(osp.abspath(__file__))
@@ -279,9 +54,6 @@ def main():
     comm = chainermn.create_communicator('hierarchical')
     device = comm.intra_rank
 
-    args.git = git_info()
-    args.git_hash = git_hash()
-    args.hostname = get_hostname()
     now = datetime.datetime.now()
     args.timestamp = now.isoformat()
     args.out = osp.join(here, 'logs', now.strftime('%Y%m%d_%H%M%S'))
@@ -296,14 +68,6 @@ def main():
     # lr / 10 at 120k iteration with
     # 160k iteration * 16 batchsize in original
     args.step_size = (120e3 / 160e3) * args.max_epoch
-
-    if comm.mpi_comm.rank == 0:
-        os.makedirs(args.out)
-        with open(osp.join(args.out, 'params.yaml'), 'w') as f:
-            yaml.safe_dump(args.__dict__, f, default_flow_style=False)
-        print('# ' + '-' * 77)
-        yaml.safe_dump(args.__dict__, sys.stdout, default_flow_style=False)
-        print('# ' + '-' * 77)
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -368,9 +132,11 @@ def main():
     mask_rcnn.extractor.res2.disable_update()
 
     if comm.rank == 0:
-        train_data = TransformDataset(train_data, Transform(mask_rcnn))
+        train_data = TransformDataset(
+            train_data, contrib.datasets.MaskRCNNTransform(mask_rcnn))
         test_data = TransformDataset(
-            test_data, Transform(mask_rcnn, train=False))
+            test_data,
+            contrib.datasets.MaskRCNNTransform(mask_rcnn, train=False))
     else:
         train_data = None
         test_data = None
@@ -424,15 +190,19 @@ def main():
     checkpointer.maybe_load(trainer, optimizer)
     trainer.extend(checkpointer, trigger=eval_interval)
 
-    evaluator = InstanceSegmentationVOCEvaluator(
+    evaluator = contrib.extensions.InstanceSegmentationVOCEvaluator(
         test_iter, model.mask_rcnn, device=device,
         use_07_metric=True, label_names=instance_class_names)
     evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
     trainer.extend(evaluator, trigger=eval_interval)
 
     if comm.rank == 0:
+        args.git_hash = contrib.utils.git_hash(__file__)
+        args.hostname = socket.gethostname()
+        trainer.extend(fcn.extensions.ParamsReport(args.__dict__))
+
         trainer.extend(
-            InstanceSegmentationVisReport(
+            contrib.extensions.InstanceSegmentationVisReport(
                 test_iter, model.mask_rcnn,
                 label_names=instance_class_names),
             trigger=eval_interval)
