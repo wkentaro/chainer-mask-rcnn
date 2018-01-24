@@ -18,7 +18,6 @@ from chainer.training import extensions
 import chainermn
 import fcn
 import numpy as np
-import six
 
 import chainer_mask_rcnn as mrcnn
 
@@ -31,21 +30,12 @@ here = osp.dirname(osp.abspath(__file__))
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # training parameters
     parser.add_argument('--dataset', '-d',
                         choices=['voc', 'coco'],
                         default='voc', help='The dataset.')
     parser.add_argument('--model', '-m',
                         choices=['vgg16', 'resnet50', 'resnet101'],
                         default='resnet101', help='Base model of Mask R-CNN.')
-    parser.add_argument(
-        '--pretrained-model', '-pm',
-        choices=['imagenet', 'voc12_train_rpn', 'voc12_train_faster_rcnn'],
-        default='imagenet', help='Pretrained model.')
-    parser.add_argument('--seed', '-s', type=int, default=0,
-                        help='Random seed.')
-    parser.add_argument('--weight_decay', type=float, default=0.0001,
-                        help='Weight decay.')
     parser.add_argument('--pooling-func', '-pf',
                         choices=['pooling', 'align', 'resize'],
                         default='pooling', help='Pooling function.')
@@ -54,6 +44,7 @@ def main():
     comm = chainermn.create_communicator('hierarchical')
     device = comm.intra_rank
 
+    args.seed = 0
     now = datetime.datetime.now()
     args.timestamp = now.isoformat()
     args.out = osp.join(here, 'logs', now.strftime('%Y%m%d_%H%M%S'))
@@ -63,6 +54,7 @@ def main():
     args.n_node = comm.inter_size
     args.n_gpu = comm.intra_size * args.n_node
     args.lr = 0.00125 * args.batch_size * args.n_gpu
+    args.weight_decay = 0.0001
 
     args.max_epoch = 19  # (160e3 * 16) / len(coco_trainval)
     # lr / 10 at 120k iteration with
@@ -104,14 +96,14 @@ def main():
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(instance_class_names),
-            pretrained_model=args.pretrained_model,
+            pretrained_model='imagenet',
             pooling_func=pooling_func)
     elif args.model in ['resnet50', 'resnet101']:
         n_layers = int(args.model.lstrip('resnet'))
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             n_layers=n_layers,
             n_fg_class=len(instance_class_names),
-            pretrained_model=args.pretrained_model,
+            pretrained_model='imagenet',
             pooling_func=pooling_func)
     else:
         raise ValueError
@@ -126,10 +118,11 @@ def main():
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
 
-    model.mask_rcnn.extractor.mode = 'res3+'
-    mask_rcnn.extractor.conv1.disable_update()
-    mask_rcnn.extractor.bn1.disable_update()
-    mask_rcnn.extractor.res2.disable_update()
+    if args.model in ['resnet50', 'resnet101']:
+        model.mask_rcnn.extractor.mode = 'res3+'
+        mask_rcnn.extractor.conv1.disable_update()
+        mask_rcnn.extractor.bn1.disable_update()
+        mask_rcnn.extractor.res2.disable_update()
 
     if comm.rank == 0:
         train_data = TransformDataset(
@@ -151,28 +144,9 @@ def main():
         test_data, batch_size=1, n_processes=4, shared_mem=100000000,
         repeat=False, shuffle=False)
 
-    def concat_examples(batch, device=None, padding=None):
-        from chainer.dataset.convert import _concat_arrays
-        from chainer.dataset.convert import to_device
-        if len(batch) == 0:
-            raise ValueError('batch is empty')
-
-        first_elem = batch[0]
-
-        result = []
-        if not isinstance(padding, tuple):
-            padding = [padding] * len(first_elem)
-
-        for i in six.moves.range(len(first_elem)):
-            res = _concat_arrays([example[i] for example in batch], padding[i])
-            if i in [0, 1]:  # img, bbox
-                res = to_device(device, res)
-            result.append(res)
-
-        return tuple(result)
-
     updater = chainer.training.StandardUpdater(
-        train_iter, optimizer, device=device, converter=concat_examples)
+        train_iter, optimizer, device=device,
+        converter=contrib.datasets.concat_examples)
 
     trainer = training.Trainer(
         updater, (args.max_epoch, 'epoch'), out=args.out)
