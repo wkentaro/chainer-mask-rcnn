@@ -59,7 +59,9 @@ class SBDInstanceSeg(VOCInstanceSegBase):
 
 
 if __name__ == '__main__':
-    import mvtk
+    from ..view_dataset import view_dataset
+    import fcn
+
     split = 'val'
     dataset = SBDInstanceSeg(split)
     dataset.split = split
@@ -68,6 +70,6 @@ if __name__ == '__main__':
         img, lbl_cls, lbl_ins = dataset[index]
         viz = utils.visualize_instance_segmentation(
             lbl_ins, lbl_cls, img, dataset.class_names)
-        return mvtk.image.tile([img, viz])
+        return fcn.utils.get_tile_image([img, viz])
 
-    mvtk.datasets.view_dataset(dataset, visualize_func)
+    view_dataset(dataset, visualize_func)
