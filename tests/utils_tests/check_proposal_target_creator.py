@@ -23,7 +23,7 @@ def _validate_bboxes(bboxes, H, W):
 
 def _augment_bboxes(bboxes, H, W):
     bboxes_aug = []
-    for _ in xrange(100):
+    for _ in range(100):
         for box in bboxes:
             y1, x1, y2, x2 = box
             h = y2 - y1
@@ -133,7 +133,7 @@ def visualize_func(dataset, index):
 def main():
     dataset = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
     dataset.split = 'train'
-    mrcnn.datasets.view_dataset(dataset, visualize_func)
+    mask_rcnn.datasets.view_dataset(dataset, visualize_func)
 
 
 if __name__ == '__main__':

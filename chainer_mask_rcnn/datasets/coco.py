@@ -7,9 +7,9 @@ import PIL.Image
 import PIL.ImageDraw
 import skimage.io
 
+from .. import utils
 from ..external import pycocotools
 from ..external.pycocotools.coco import COCO
-from .. import utils
 
 
 class CocoInstanceSeg(chainer.dataset.DatasetMixin):

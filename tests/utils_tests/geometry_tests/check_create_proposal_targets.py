@@ -25,7 +25,7 @@ def _validate_bboxes(bboxes, H, W):
 
 def _augment_bboxes(bboxes, H, W):
     bboxes_aug = []
-    for _ in xrange(100):
+    for _ in range(100):
         for box in bboxes:
             y1, x1, y2, x2 = box
             h = y2 - y1
