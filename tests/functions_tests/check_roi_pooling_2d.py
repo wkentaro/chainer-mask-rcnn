@@ -41,8 +41,8 @@ input_viz = (input_viz * 255).astype(np.uint8)
 plt.subplot(121)
 plt.imshow(input_viz)
 plt.title('input')
-for j in xrange(input.shape[0]):
-    for i in xrange(input.shape[1]):
+for j in range(input.shape[0]):
+    for i in range(input.shape[1]):
         plt.text(i, j, str(input[j][i]), fontsize=8,
                  horizontalalignment='center', verticalalignment='center')
 
@@ -51,8 +51,8 @@ output_viz = (output_viz * 255).astype(np.uint8)
 plt.subplot(122)
 plt.imshow(output_viz)
 plt.title('output')
-for j in xrange(output.shape[0]):
-    for i in xrange(output.shape[1]):
+for j in range(output.shape[0]):
+    for i in range(output.shape[1]):
         plt.text(i, j, str(output[j][i]), fontsize=8,
                  horizontalalignment='center', verticalalignment='center')
 

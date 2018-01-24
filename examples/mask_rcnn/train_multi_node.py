@@ -80,9 +80,6 @@ def main():
     if comm.rank == 0:
         train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
         test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
-    else:
-        del train_data
-        del test_data
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
