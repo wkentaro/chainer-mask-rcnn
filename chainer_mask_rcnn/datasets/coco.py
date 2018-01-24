@@ -7,9 +7,8 @@ import PIL.Image
 import PIL.ImageDraw
 import skimage.io
 
-from mvtk.external import pycocotools
-from mvtk.external.pycocotools.coco import COCO
-
+from ..external import pycocotools
+from ..external.pycocotools.coco import COCO
 from .. import utils
 
 
