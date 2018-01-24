@@ -10,10 +10,10 @@ import chainer
 from chainer import cuda
 import chainercv
 import cv2
+import fcn
 import numpy as np
 
 import chainer_mask_rcnn as mask_rcnn
-import mvtk
 
 
 here = osp.dirname(osp.abspath(__file__))
@@ -66,7 +66,7 @@ def main():
         os.makedirs(out)
 
     # training loop
-    for i in xrange(5000 * 20):
+    for i in range(5000 * 20):
         if overfit_test:
             idx = np.random.randint(0, 1)
         else:
@@ -134,7 +134,8 @@ def main():
             viz_pred = mask_rcnn.utils.draw_instance_boxes(
                 img, bbox_pred, label_pred, n_class=21,
                 masks=mask_pred, captions=captions, bg_class=0)
-            viz = mvtk.image.tile([viz_true, viz_pred], shape=(2, 1))
+            viz = fcn.utils.get_tile_image(
+                [viz_true, viz_pred], tile_shape=(2, 1))
             cv2.imwrite(osp.join(out, '%08d.map=%.1f.jpg' % (i, mean_ap)),
                         viz[:, :, ::-1])
             cv2.imwrite(osp.join(out, 'latest.jpg'), viz[:, :, ::-1])

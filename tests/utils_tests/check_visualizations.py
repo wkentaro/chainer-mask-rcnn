@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import chainer_mask_rcnn as mrcnn
-import mvtk
 
 
 def visualize(dataset, index):
@@ -20,7 +19,7 @@ def main():
     dataset = mrcnn.datasets.MaskRcnnDataset(
         mrcnn.datasets.VOC2012InstanceSeg('train'))
     dataset.split = 'train'
-    mvtk.datasets.view_dataset(dataset, visualize)
+    mrcnn.datasets.view_dataset(dataset, visualize)
 
 
 if __name__ == '__main__':
