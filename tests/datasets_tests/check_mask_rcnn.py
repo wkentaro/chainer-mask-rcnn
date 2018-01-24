@@ -1,7 +1,7 @@
 import math
 
 import cv2
-import mvtk
+import fcn
 import numpy as np
 
 import chainer_mask_rcnn as mrcnn
@@ -15,7 +15,7 @@ def visualize_func(dataset, index):
     viz = mrcnn.utils.draw_instance_boxes(
         img, bboxes, labels, n_class=dataset.n_fg_class)
 
-    viz1 = mvtk.image.tile([img, viz])
+    viz1 = fcn.utils.get_tile_image([img, viz])
 
     print('[%06d] %s' %
           (index, dataset.fg_class_names[labels]))
@@ -34,9 +34,9 @@ def visualize_func(dataset, index):
             viz, [(0, 0, H, W)], [label],
             captions=[caption], n_class=dataset.n_fg_class, thickness=10)
         vizs.append(viz)
-    viz2 = mvtk.image.tile(vizs)
+    viz2 = fcn.utils.get_tile_image(vizs)
 
-    return mvtk.image.tile([viz1, viz2], (2, 1))
+    return fcn.utils.get_tile_image([viz1, viz2], (2, 1))
 
 
 def main():
@@ -44,7 +44,7 @@ def main():
     dataset = mrcnn.datasets.MaskRcnnDataset(instance_dataset)
     dataset.split = 'train'
     dataset.n_class = len(instance_dataset.class_names)
-    mvtk.datasets.view_dataset(dataset, visualize_func)
+    mrcnn.datasets.view_dataset(dataset, visualize_func)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 from chainercv.links.model.faster_rcnn.utils.proposal_target_creator import\
     ProposalTargetCreator
 import cv2
-import mvtk
+import fcn
 import numpy as np
 
 import chainer_mask_rcnn as mask_rcnn
@@ -85,7 +85,7 @@ def visualize_func(dataset, index):
         captions=captions, masks=masks, bg_class=0)
     vizs.append(viz)
 
-    return mvtk.image.tile(vizs)
+    return fcn.utils.get_tile_image(vizs)
 
     #
     # vizs = []
@@ -106,7 +106,7 @@ def visualize_func(dataset, index):
     #     viz = mask_rcnn.utils.draw_instance_boxes(
     #         viz, [roi], [id_cls], n_class=21, bg_class=0, thickness=2)
     #     vizs.append(viz)
-    # viz2 = mvtk.image.tile(vizs)
+    # viz2 = fcn.utils.get_tile_image(vizs)
     # scale = 1. * viz1.shape[1] / viz2.shape[1]
     # viz2 = cv2.resize(viz2, None, None, fx=scale, fy=scale)
     #
@@ -116,7 +116,7 @@ def visualize_func(dataset, index):
 def main():
     dataset = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
     dataset.split = 'train'
-    mvtk.datasets.view_dataset(dataset, visualize_func)
+    mask_rcnn.datasets.view_dataset(dataset, visualize_func)
 
 
 if __name__ == '__main__':
