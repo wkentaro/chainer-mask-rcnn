@@ -26,8 +26,25 @@ cd openmpi-3.0.0
 make -j4
 sudo make install
 sudo ldconfig
+```
 
+- Install [NCCL](https://developer.nvidia.com/nccl)
+
+```bash
+dpkg -i nccl-repo-ubuntu1404-2.1.4-ga-cuda8.0_1-1_amd64.deb
+sudo apt update
+sudo apt install libnccl2 libnccl-dev
+```
+
+- Install ChainerMN
+
+```bash
 pip install chainermn
+```
+
+- Install chainer-mask-rcnn
+
+```bash
 conda install -c conda-forge -y opencv
 pip install .
 ```
