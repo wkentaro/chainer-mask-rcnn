@@ -37,7 +37,7 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
         labels = self.coco.loadCats(self.coco.getCatIds())
         max_label = max(labels, key=lambda x: x['id'])['id']
         n_label = max_label + 1
-        class_names = [None] * n_label
+        class_names = ['__none__'] * n_label
         for label in labels:
             class_names[label['id']] = label['name']
         class_names[0] = '__background__'
