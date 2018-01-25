@@ -13,7 +13,10 @@ import tabulate
 
 
 def summarize_log(logs_dir, name, keys, target_key, objective, show_active):
-    params = yaml.load(open(osp.join(logs_dir, name, 'params.yaml')))
+    try:
+        params = yaml.load(open(osp.join(logs_dir, name, 'params.yaml')))
+    except Exception:
+        return None, None, osp.join(logs_dir, name)
 
     log_file = osp.join(logs_dir, name, 'log')
     try:
