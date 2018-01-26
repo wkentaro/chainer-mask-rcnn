@@ -52,7 +52,7 @@ def main():
     # 0.00125 * 2 * 8 = 0.02  in original
     args.batch_size = 1
     args.n_node = comm.inter_size
-    args.n_gpu = comm.intra_size * args.n_node
+    args.n_gpu = comm.size
     args.lr = 0.00125 * args.batch_size * args.n_gpu
     args.weight_decay = 0.0001
 
