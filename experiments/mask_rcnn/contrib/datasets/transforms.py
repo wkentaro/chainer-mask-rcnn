@@ -1,15 +1,6 @@
 from chainercv import transforms
 
 
-def flip_image(image, x_flip=False, y_flip=False):
-    # image has tensor size of (C, H, W)
-    if y_flip:
-        image = image[:, ::-1, :]
-    if x_flip:
-        image = image[:, :, ::-1]
-    return image
-
-
 class MaskRCNNTransform(object):
 
     def __init__(self, mask_rcnn, train=True):
@@ -39,8 +30,9 @@ class MaskRCNNTransform(object):
         bbox = transforms.flip_bbox(
             bbox, (o_H, o_W), x_flip=params['x_flip'])
         if mask.ndim == 2:
-            mask = flip_image(mask[None, :, :], x_flip=params['x_flip'])[0]
+            mask = transforms.flip(
+                mask[None, :, :], x_flip=params['x_flip'])[0]
         else:
-            mask = flip_image(mask, x_flip=params['x_flip'])
+            mask = transforms.flip(mask, x_flip=params['x_flip'])
 
         return img, bbox, label, mask, scale
