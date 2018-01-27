@@ -31,7 +31,7 @@ def main():
                         default='voc', help='The dataset.')
     parser.add_argument('--model', '-m',
                         choices=['vgg16', 'resnet50', 'resnet101'],
-                        default='resnet101', help='Base model of Mask R-CNN.')
+                        default='resnet50', help='Base model of Mask R-CNN.')
     parser.add_argument('--pooling-func', '-pf',
                         choices=['pooling', 'align', 'resize'],
                         default='pooling', help='Pooling function.')
@@ -43,22 +43,35 @@ def main():
     args.timestamp = now.isoformat()
     args.out = osp.join(here, 'logs', now.strftime('%Y%m%d_%H%M%S'))
 
-    # 0.00125 * 2 * 8 = 0.02  in original
+    # 0.00125 * 8 = 0.01  in original
     args.batch_size = 1
     args.lr = 0.00125 * args.batch_size
     args.weight_decay = 0.0001
 
-    args.max_epoch = 19  # (160e3 * 16) / len(coco_trainval)
+    args.max_epoch = (180e3 * 8) / 118287  # (180e3 * 8) / len(coco_trainval)
     # lr / 10 at 120k iteration with
     # 160k iteration * 16 batchsize in original
-    args.step_size = (120e3 / 160e3) * args.max_epoch
+    args.step_size = [(120e3 / 180e3) * args.max_epoch,
+                      (160e3 / 180e3) * args.max_epoch]
 
     random.seed(args.seed)
     np.random.seed(args.seed)
 
+    # Default Config
+    min_size = 600
+    max_size = 1000
+    proposal_creator_params = dict(
+        n_train_pre_nms=12000,
+        n_train_post_nms=2000,
+        n_test_pre_nms=6000,
+        n_test_post_nms=1000,
+        min_size=0,
+    )
+
     if args.dataset == 'voc':
         train_data = mrcnn.datasets.SBDInstanceSeg('train')
         test_data = mrcnn.datasets.VOC2012InstanceSeg('val')
+        anchor_scales = [8, 16, 32]
     elif args.dataset == 'coco':
         train_data = chainer.datasets.ConcatenatedDataset(
             mrcnn.datasets.CocoInstanceSeg('train'),
@@ -66,6 +79,9 @@ def main():
         )
         test_data = mrcnn.datasets.CocoInstanceSeg('minival')
         train_data.class_names = test_data.class_names
+        min_size = 800
+        max_size = 1333
+        anchor_scales = [4, 8, 16, 32]
     else:
         raise ValueError
     instance_class_names = train_data.class_names[1:]
@@ -85,18 +101,30 @@ def main():
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(instance_class_names),
             pretrained_model='imagenet',
-            pooling_func=pooling_func)
+            pooling_func=pooling_func,
+            anchor_scales=anchor_scales,
+            proposal_creator_params=proposal_creator_params,
+            min_size=min_size,
+            max_size=max_size)
     elif args.model in ['resnet50', 'resnet101']:
         n_layers = int(args.model.lstrip('resnet'))
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             n_layers=n_layers,
             n_fg_class=len(instance_class_names),
             pretrained_model='imagenet',
-            pooling_func=pooling_func)
+            pooling_func=pooling_func,
+            anchor_scales=anchor_scales,
+            proposal_creator_params=proposal_creator_params,
+            min_size=min_size,
+            max_size=max_size)
     else:
         raise ValueError
     mask_rcnn.use_preset('evaluate')
-    model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
+    model = mrcnn.models.MaskRCNNTrainChain(
+        mask_rcnn,
+        proposal_target_creator=\
+            mrcnn.utils.ProposalTargetCreator(n_sample=512),
+    )
 
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
@@ -130,7 +158,8 @@ def main():
         updater, (args.max_epoch, 'epoch'), out=args.out)
 
     trainer.extend(extensions.ExponentialShift('lr', 0.1),
-                   trigger=(args.step_size, 'epoch'))
+                   trigger=training.triggers.ManualScheduleTrigger(
+                        args.step_size, 'epoch'))
 
     eval_interval = 1, 'epoch'
     log_interval = 20, 'iteration'
