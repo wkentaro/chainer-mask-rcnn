@@ -1,4 +1,5 @@
 # flake8: noqa
+from .commands import git_hash
 from .evaluations import calc_instseg_voc_prec_rec
 # from .geometry import create_proposal_targets
 from .geometry import get_bbox_overlap
