@@ -19,8 +19,6 @@ import numpy as np
 
 import chainer_mask_rcnn as mrcnn
 
-import contrib
-
 
 here = osp.dirname(osp.abspath(__file__))
 
@@ -115,9 +113,9 @@ def main():
         mask_rcnn.extractor.res2.disable_update()
 
     train_data = chainer.datasets.TransformDataset(
-        train_data, contrib.datasets.MaskRCNNTransform(mask_rcnn))
+        train_data, mrcnn.datasets.MaskRCNNTransform(mask_rcnn))
     test_data = chainer.datasets.TransformDataset(
-        test_data, contrib.datasets.MaskRCNNTransform(mask_rcnn, train=False))
+        test_data, mrcnn.datasets.MaskRCNNTransform(mask_rcnn, train=False))
 
     train_iter = chainer.iterators.SerialIterator(
         train_data, batch_size=1)
@@ -126,7 +124,7 @@ def main():
 
     updater = chainer.training.updater.StandardUpdater(
         train_iter, optimizer, device=args.gpu,
-        converter=contrib.datasets.concat_examples)
+        converter=mrcnn.datasets.concat_examples)
 
     trainer = training.Trainer(
         updater, (args.max_epoch, 'epoch'), out=args.out)
@@ -145,17 +143,17 @@ def main():
             'validation/main/map', eval_interval))
 
     trainer.extend(
-        contrib.extensions.InstanceSegmentationVOCEvaluator(
+        mrcnn.extensions.InstanceSegmentationVOCEvaluator(
             test_iter, model.mask_rcnn, use_07_metric=True,
             label_names=instance_class_names),
         trigger=eval_interval)
 
-    args.git_hash = contrib.utils.git_hash()
+    args.git_hash = mrcnn.utils.git_hash()
     args.hostname = socket.gethostname()
     trainer.extend(fcn.extensions.ParamsReport(args.__dict__))
 
     trainer.extend(
-        contrib.extensions.InstanceSegmentationVisReport(
+        mrcnn.extensions.InstanceSegmentationVisReport(
             test_iter, model.mask_rcnn,
             label_names=instance_class_names),
         trigger=eval_interval)
