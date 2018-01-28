@@ -11,6 +11,8 @@ import socket
 
 os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
+import cv2  # FIXME: cv2 should be imported first to avoid segfault.
+
 import chainer
 from chainer import training
 from chainer.training import extensions
