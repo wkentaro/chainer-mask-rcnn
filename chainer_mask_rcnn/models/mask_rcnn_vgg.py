@@ -151,7 +151,10 @@ class VGG16RoIHead(chainer.Chain):
         self.spatial_scale = spatial_scale
         self._pooling_func = pooling_func
 
-    def __call__(self, x, rois, roi_indices, pred_bbox=True, pred_mask=True):
+    def __call__(self, x, rois, roi_indices, pred_bbox=True, pred_mask=True,
+                 res5=None, return_res5=False):
+        assert res5 is None
+
         roi_indices = roi_indices.astype(np.float32)
         indices_and_rois = self.xp.concatenate(
             (roi_indices[:, None], rois), axis=1)
@@ -173,7 +176,10 @@ class VGG16RoIHead(chainer.Chain):
             deconv6 = F.relu(self.deconv6(pool))
             roi_masks = self.mask(deconv6)
 
-        return roi_cls_locs, roi_scores, roi_masks
+        if return_res5:
+            return roi_cls_locs, roi_scores, roi_masks, res5
+        else:
+            return roi_cls_locs, roi_scores, roi_masks
 
 
 def _roi_align_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,
