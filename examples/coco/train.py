@@ -90,7 +90,8 @@ def main():
         mrcnn.datasets.CocoInstanceSeg('valminusminival'),
     )
     test_data = mrcnn.datasets.CocoInstanceSeg('minival')
-    instance_class_names = test_data.class_names[1:]
+    train_data.class_names = test_data.class_names
+    instance_class_names = train_data.class_names[1:]
 
     train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
     test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
