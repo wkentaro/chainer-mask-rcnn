@@ -1,4 +1,5 @@
 import os.path as osp
+import sys
 
 import chainer
 import cv2
@@ -28,7 +29,12 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
         dataset_dir = osp.expanduser('~/data/datasets/COCO')
         ann_file = osp.join(
             dataset_dir, 'annotations/instances_%s.json' % split)
+
+        # suppress loading message of annotations
+        sys.stdout = None
         self.coco = COCO(ann_file)
+        sys.stdout = sys.__stdout__
+
         self.img_fname = osp.join(
             dataset_dir, data_type, 'COCO_%s_{:012}.jpg' % data_type)
 
