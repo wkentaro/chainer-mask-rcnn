@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import argparse
 import datetime
 import json
 import os
@@ -12,7 +11,7 @@ import pandas
 import tabulate
 
 
-def summarize_log(logs_dir, name, keys, target_key, objective, show_active):
+def summarize_log(logs_dir, name, keys, target_key, objective):
     try:
         params = yaml.load(open(osp.join(logs_dir, name, 'params.yaml')))
     except Exception:
@@ -113,7 +112,7 @@ def _summarize_log(args):
     return summarize_log(*args)
 
 
-def summarize_logs(logs_dir, keys, target_key, objective, show_active):
+def summarize_logs(logs_dir, keys, target_key, objective):
     assert objective in ['min', 'max']
     assert target_key in keys
 
@@ -125,7 +124,6 @@ def summarize_logs(logs_dir, keys, target_key, objective, show_active):
             keys,
             target_key,
             objective,
-            show_active,
         ))
 
     from concurrent.futures import ProcessPoolExecutor
@@ -138,11 +136,7 @@ def summarize_logs(logs_dir, keys, target_key, objective, show_active):
         if log_dir_ignored:
             ignored.append(log_dir_ignored)
             continue
-        if show_active:
-            if is_active:
-                rows.append(row)
-        else:
-            rows.append(row)
+        rows.append(row)
 
     rows = sorted(rows, key=lambda x: x[0], reverse=True)
     print(tabulate.tabulate(rows, headers=keys,
@@ -159,10 +153,6 @@ def summarize_logs(logs_dir, keys, target_key, objective, show_active):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--active', action='store_true')
-    args = parser.parse_args()
-
     keys = [
         'name',
         # 'timestamp',
@@ -178,5 +168,4 @@ if __name__ == '__main__':
         'validation/main/map',
     ]
     objective = 'max'
-    summarize_logs('logs', keys, target_key=keys[-1],
-                   objective=objective, show_active=args.active)
+    summarize_logs('logs', keys, target_key=keys[-1], objective=objective)
