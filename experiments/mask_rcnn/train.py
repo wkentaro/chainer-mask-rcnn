@@ -78,6 +78,7 @@ def main():
     # Default Config
     min_size = 600
     max_size = 1000
+    anchor_scales = [8, 16, 32]
     proposal_creator_params = dict(
         n_train_pre_nms=12000,
         n_train_post_nms=2000,
@@ -89,7 +90,6 @@ def main():
     if args.dataset == 'voc':
         train_data = mrcnn.datasets.SBDInstanceSeg('train')
         test_data = mrcnn.datasets.VOC2012InstanceSeg('val')
-        anchor_scales = [8, 16, 32]
     elif args.dataset == 'coco':
         train_data = chainer.datasets.ConcatenatedDataset(
             mrcnn.datasets.CocoInstanceSeg('train'),
