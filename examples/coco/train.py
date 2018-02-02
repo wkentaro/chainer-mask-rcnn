@@ -85,6 +85,7 @@ def main():
         min_size=0,
     )
 
+    args.dataset = 'coco'
     train_data = chainer.datasets.ConcatenatedDataset(
         mrcnn.datasets.CocoInstanceSeg('train'),
         mrcnn.datasets.CocoInstanceSeg('valminusminival'),
