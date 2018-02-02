@@ -11,7 +11,7 @@ import socket
 
 os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
-import cv2  # FIXME: cv2 should be imported first to avoid segfault.
+import cv2  # NOQA
 
 import chainer
 from chainer import training
@@ -140,8 +140,8 @@ def main():
     mask_rcnn.use_preset('evaluate')
     model = mrcnn.models.MaskRCNNTrainChain(
         mask_rcnn,
-        proposal_target_creator=\
-            mrcnn.utils.ProposalTargetCreator(n_sample=512),
+        proposal_target_creator=mrcnn.utils.ProposalTargetCreator(
+            n_sample=512),
     )
     if args.multi_node or args.gpu >= 0:
         model.to_gpu()
@@ -181,9 +181,10 @@ def main():
     trainer = training.Trainer(
         updater, (args.max_epoch, 'epoch'), out=args.out)
 
-    trainer.extend(extensions.ExponentialShift('lr', 0.1),
-                   trigger=training.triggers.ManualScheduleTrigger(
-                        args.step_size, 'epoch'))
+    trainer.extend(
+        extensions.ExponentialShift('lr', 0.1),
+        trigger=training.triggers.ManualScheduleTrigger(
+            args.step_size, 'epoch'))
 
     eval_interval = 1, 'epoch'
     log_interval = 20, 'iteration'
@@ -211,18 +212,17 @@ def main():
                 label_names=instance_class_names),
             trigger=eval_interval)
         trainer.extend(chainer.training.extensions.observe_lr(),
-                    trigger=log_interval)
+                       trigger=log_interval)
         trainer.extend(extensions.LogReport(trigger=log_interval))
         trainer.extend(extensions.PrintReport(
             ['iteration', 'epoch', 'elapsed_time', 'lr',
-            'main/loss',
-            'main/roi_loc_loss',
-            'main/roi_cls_loss',
-            'main/roi_mask_loss',
-            'main/rpn_loc_loss',
-            'main/rpn_cls_loss',
-            'validation/main/map',
-            ]), trigger=print_interval)
+             'main/loss',
+             'main/roi_loc_loss',
+             'main/roi_cls_loss',
+             'main/roi_mask_loss',
+             'main/rpn_loc_loss',
+             'main/rpn_cls_loss',
+             'validation/main/map']), trigger=print_interval)
         trainer.extend(extensions.ProgressBar(update_interval=10))
 
         # plot
