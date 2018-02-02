@@ -7,7 +7,7 @@ from chainercv.evaluations import calc_detection_voc_ap
 import numpy as np
 import six
 
-from .geometry import get_mask_overlap
+from ..geometry import get_mask_overlap
 
 
 def mask_iou(mask_a, mask_b):
