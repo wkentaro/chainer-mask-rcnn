@@ -33,15 +33,16 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
             dataset_dir, data_type, 'COCO_%s_{:012}.jpg' % data_type)
 
         # set class_names
-        labels = self.coco.loadCats(self.coco.getCatIds())
-        max_label = max(labels, key=lambda x: x['id'])['id']
-        n_label = max_label + 1
-        class_names = ['__none__'] * n_label
-        for label in labels:
-            class_names[label['id']] = label['name']
-        class_names[0] = '__background__'
+        cats = self.coco.loadCats(self.coco.getCatIds())
+        cat_id_to_class_id = {}
+        class_names = ['__background__']
+        for cat in sorted(cats, key=lambda x: x['id']):
+            class_id = len(class_names)
+            cat_id_to_class_id[cat['id']] = class_id
+            class_names.append(cat['name'])
         class_names = np.asarray(class_names)
         class_names.setflags(write=0)
+        self.cat_id_to_class_id = cat_id_to_class_id
         self.class_names = class_names
 
         self.img_ids = self.coco.getImgIds()
@@ -61,13 +62,13 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
 
         return img, lbl_cls, lbl_ins
 
-    @staticmethod
-    def _annotations_to_label(anns, height, width):
+    def _annotations_to_label(self, anns, height, width):
         lbl_cls = np.zeros((height, width), dtype=np.int32)
         lbl_ins = - np.ones((height, width), dtype=np.int32)
         for ins_id, ann in enumerate(anns):
             if 'segmentation' not in ann:
                 continue
+            class_id = self.cat_id_to_class_id[ann['category_id']]
             if isinstance(ann['segmentation'], list):
                 # polygon
                 for seg in ann['segmentation']:
@@ -77,7 +78,7 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
                     xy = [tuple(xy_i) for xy_i in xy]
                     PIL.ImageDraw.Draw(mask).polygon(xy=xy, outline=1, fill=1)
                     mask = np.array(mask)
-                    lbl_cls[mask == 1] = ann['category_id']
+                    lbl_cls[mask == 1] = class_id
                     lbl_ins[mask == 1] = ins_id
             else:
                 # mask
@@ -90,7 +91,7 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
                 # FIXME: some of minival annotations are malformed.
                 if mask.shape != (height, width):
                     continue
-                lbl_cls[mask == 1] = ann['category_id']
+                lbl_cls[mask == 1] = class_id
                 lbl_ins[mask == 1] = ins_id
         return lbl_cls, lbl_ins
 
@@ -105,6 +106,8 @@ if __name__ == '__main__':
     split = 'val'
     dataset = CocoInstanceSeg(split)
     dataset.split = split
+    print(dataset.class_names)
+    print(len(dataset.class_names))
 
     def visualize_func(dataset, index):
         img, lbl_cls, lbl_ins = dataset[index]
