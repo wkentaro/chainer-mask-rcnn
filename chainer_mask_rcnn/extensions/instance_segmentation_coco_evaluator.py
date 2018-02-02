@@ -4,6 +4,7 @@ import chainer
 from chainer import reporter
 from chainercv.utils import apply_prediction_to_iterator
 import numpy as np
+import tqdm
 
 import chainer_mask_rcnn as mrcnn
 
@@ -12,10 +13,12 @@ class InstanceSegmentationCOCOEvaluator(chainer.training.extensions.Evaluator):
 
     name = 'validation'
 
-    def __init__(self, iterator, target, device=None, label_names=None):
+    def __init__(self, iterator, target, device=None, label_names=None,
+                 show_progress=False):
         super(InstanceSegmentationCOCOEvaluator, self).__init__(
             iterator=iterator, target=target, device=device)
         self.label_names = label_names
+        self._show_progress = show_progress
 
     def evaluate(self):
         iterator = self._iterators['main']
@@ -26,6 +29,9 @@ class InstanceSegmentationCOCOEvaluator(chainer.training.extensions.Evaluator):
             it = iterator
         else:
             it = copy.copy(iterator)
+
+        if self._show_progress:
+            it = tqdm.tqdm(it, total=len(it.dataset))
 
         imgs, pred_values, gt_values = apply_prediction_to_iterator(
             target.predict_masks, it)
