@@ -95,7 +95,7 @@ class MaskRCNN(chainer.Chain):
             max_size=1000,
             loc_normalize_mean=(0., 0., 0., 0.),
             loc_normalize_std=(0.1, 0.1, 0.2, 0.2),
-    ):
+            detections_per_im=100):
         super(MaskRCNN, self).__init__()
         with self.init_scope():
             self.extractor = extractor
@@ -107,6 +107,8 @@ class MaskRCNN(chainer.Chain):
         self.max_size = max_size
         self.loc_normalize_mean = loc_normalize_mean
         self.loc_normalize_std = loc_normalize_std
+
+        self._detections_per_im = detections_per_im
 
         self.use_preset('visualize')
 
@@ -321,6 +323,13 @@ class MaskRCNN(chainer.Chain):
             raw_prob = cuda.to_cpu(prob)
 
             bbox, label, score = self._suppress(raw_cls_bbox, raw_prob)
+
+            if self._detections_per_im > 0:
+                indices = np.argsort(score)
+                keep = indices >= (len(indices) - self._detections_per_im)
+                bbox = bbox[keep]
+                label = label[keep]
+                score = score[keep]
 
             bboxes.append(bbox)
             labels.append(label)
