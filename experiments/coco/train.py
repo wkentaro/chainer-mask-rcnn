@@ -35,7 +35,7 @@ def main():
                         choices=['pooling', 'align', 'resize'],
                         default='pooling', help='Pooling function.')
     parser.add_argument('--gpu', '-g', type=int, help='GPU id.')
-    parser.add_argument('--multi-node', action='store_true',
+    parser.add_argument('--multi-node', '-mn', action='store_true',
                         help='use multi node')
     args = parser.parse_args()
 
