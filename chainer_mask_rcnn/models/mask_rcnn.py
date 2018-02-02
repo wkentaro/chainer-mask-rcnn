@@ -223,25 +223,19 @@ class MaskRCNN(chainer.Chain):
         img = (img - self.mean).astype(np.float32, copy=False)
         return img
 
-    def _suppress(self, raw_cls_bbox, raw_prob, raw_roi_index, raw_roi):
+    def _suppress(self, raw_cls_bbox, raw_prob):
         bbox = list()
         label = list()
         score = list()
-        roi_index = list()
-        roi = list()
         # skip cls_id = 0 because it is the background class
         for l in range(1, self.n_class):
             cls_bbox_l = raw_cls_bbox.reshape((-1, self.n_class, 4))[:, l, :]
             prob_l = raw_prob[:, l]
-            roi_index_l = raw_roi_index[:, l]
-            roi_l = raw_roi
 
             # thresholding by score
             keep = prob_l > self.score_thresh
             cls_bbox_l = cls_bbox_l[keep]
             prob_l = prob_l[keep]
-            roi_index_l = roi_index_l[keep]
-            roi_l = roi_l[keep]
 
             # thresholding by nms
             keep = non_maximum_suppression(
@@ -250,14 +244,10 @@ class MaskRCNN(chainer.Chain):
             # The labels are in [0, self.n_class - 2].
             label.append((l - 1) * np.ones((len(keep),)))
             score.append(prob_l[keep])
-            roi_index.append(roi_index_l[keep])
-            roi.append(roi_l[keep])
         bbox = np.concatenate(bbox, axis=0).astype(np.float32)
         label = np.concatenate(label, axis=0).astype(np.int32)
         score = np.concatenate(score, axis=0).astype(np.float32)
-        roi_index = np.concatenate(roi_index, axis=0).astype(np.int32)
-        roi = np.concatenate(roi, axis=0).astype(np.float32)
-        return bbox, label, score, roi_index, roi
+        return bbox, label, score
 
     def predict_masks(self, imgs):
         """Detect objects from images.
@@ -329,11 +319,9 @@ class MaskRCNN(chainer.Chain):
                 roi_index[:, None], roi_cls_loc.shape[:2])
             raw_cls_bbox = cuda.to_cpu(cls_bbox)
             raw_prob = cuda.to_cpu(prob)
-            raw_roi_index = cuda.to_cpu(roi_index)
-            raw_roi = cuda.to_cpu(roi)
 
-            bbox, label, score, roi_index, roi = self._suppress(
-                raw_cls_bbox, raw_prob, raw_roi_index, raw_roi)
+            bbox, label, score = self._suppress(raw_cls_bbox, raw_prob)
+
             bboxes.append(bbox)
             labels.append(label)
             scores.append(score)
