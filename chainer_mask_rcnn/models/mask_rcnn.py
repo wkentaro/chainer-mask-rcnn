@@ -324,6 +324,14 @@ class MaskRCNN(chainer.Chain):
 
             bbox, label, score = self._suppress(raw_cls_bbox, raw_prob)
 
+            bbox_int = np.round(bbox).astype(np.int32)
+            bbox_sizes = ((bbox_int[:, 2] - bbox_int[:, 0]) *
+                          (bbox_int[:, 3] - bbox_int[:, 1]))
+            keep = bbox_sizes > 0
+            bbox = bbox[keep]
+            label = label[keep]
+            score = score[keep]
+
             if self._detections_per_im > 0:
                 indices = np.argsort(score)
                 keep = indices >= (len(indices) - self._detections_per_im)
@@ -351,13 +359,13 @@ class MaskRCNN(chainer.Chain):
             roi_mask = cuda.to_cpu(roi_masks.data)
             roi_mask = roi_mask[np.arange(len(label)), label]
 
-            roi = np.round(bbox).astype(int)
+            roi = np.round(bbox).astype(np.int32)
             n_roi = len(roi)
             mask = np.zeros((n_roi, size[0], size[1]), dtype=bool)
             for i in six.moves.range(n_roi):
                 y1, x1, y2, x2 = roi[i]
-                roi_H = max(y2 - y1, 1)
-                roi_W = max(x2 - x1, 1)
+                roi_H = y2 - y1
+                roi_W = x2 - x1
                 roi_mask_i = cv2.resize(roi_mask[i], (roi_W, roi_H))
                 roi_mask_i = roi_mask_i > 0.5  # float -> bool
                 mask[i, y1:y2, x1:x2][roi_mask_i] = True
