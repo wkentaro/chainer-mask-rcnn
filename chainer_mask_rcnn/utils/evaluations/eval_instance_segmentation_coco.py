@@ -13,7 +13,7 @@ import chainer_mask_rcnn.external.pycocotools.mask as mask_tools
 
 def eval_instseg_coco(
         pred_masks, pred_labels, pred_scores,
-        gt_masks, gt_labels, gt_crowdeds, gt_areas):
+        gt_masks, gt_labels, gt_crowdeds=None, gt_areas=None):
     """Evaluate instance segmentation based on evaluation code of MS COCO.
 
     Args:
@@ -60,6 +60,11 @@ def eval_instseg_coco(
     """
     gt_coco = pycocotools_coco.COCO()
     pred_coco = pycocotools_coco.COCO()
+
+    if gt_crowdeds is None:
+        gt_crowdeds = itertools.repeat(None)
+    if gt_areas is None:
+        gt_areas = itertools.repeat(None)
 
     images = list()
     pred_anns = list()
