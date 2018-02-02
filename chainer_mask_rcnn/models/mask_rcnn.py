@@ -335,6 +335,10 @@ class MaskRCNN(chainer.Chain):
             labels.append(label)
             scores.append(score)
 
+            if len(bbox) == 0:
+                masks.append(np.zeros((0, size[0], size[1]), dtype=bool))
+                continue
+
             # use predicted bbox as rois
             with chainer.using_config('train', False), \
                     chainer.function.no_backprop_mode():
