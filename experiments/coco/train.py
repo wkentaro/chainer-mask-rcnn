@@ -159,9 +159,9 @@ def main():
         test_data = chainermn.scatter_dataset(test_data, comm)
 
     train_iter = chainer.iterators.MultiprocessIterator(
-        train_data, batch_size=1, n_prefetch=4, shared_mem=10 ** 8)
+        train_data, batch_size=1, n_prefetch=4, shared_mem=10 ** 9)
     test_iter = chainer.iterators.MultiprocessIterator(
-        test_data, batch_size=1, n_prefetch=4, shared_mem=10 ** 8,
+        test_data, batch_size=1, n_prefetch=4, shared_mem=10 ** 9,
         repeat=False, shuffle=False)
 
     updater = chainer.training.updater.StandardUpdater(
