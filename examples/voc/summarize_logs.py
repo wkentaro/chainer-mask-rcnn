@@ -37,6 +37,9 @@ def summarize_log(logs_dir, name, keys, target_key, objective):
     for key in keys:
         if key == 'name':
             row.append(name)
+        elif key == 'elapsed_time':
+            value = datetime.timedelta(seconds=df[key].max())
+            row.append(value)
         elif key in ['epoch', 'iteration']:
             if dfi is None:
                 value = '<none>'
@@ -156,6 +159,7 @@ if __name__ == '__main__':
     keys = [
         'name',
         # 'timestamp',
+        'elapsed_time',
         'last_time',
         'dataset',
         'git_hash',
