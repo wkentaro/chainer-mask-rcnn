@@ -11,6 +11,7 @@ from summarize_logs import summarize_logs
 if __name__ == '__main__':
     keys = [
         'name',
+        'elapsed_time',
         # 'timestamp',
         'last_time',
         'dataset',
