@@ -28,9 +28,6 @@ here = osp.dirname(osp.abspath(__file__))
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--dataset', '-d',
-                        choices=['voc', 'coco'],
-                        default='voc', help='The dataset.')
     parser.add_argument('--model', '-m',
                         choices=['vgg16', 'resnet50', 'resnet101'],
                         default='resnet50', help='Base model of Mask R-CNN.')
@@ -66,7 +63,8 @@ def main():
     args.lr = 0.00125 * args.batch_size
     args.weight_decay = 0.0001
 
-    args.max_epoch = (180e3 * 8) / 118287  # (180e3 * 8) / len(coco_trainval)
+    # (180e3 * 8) / len(coco_trainval)
+    args.max_epoch = (180e3 * 8) / 118287
     # lr / 10 at 120k iteration with
     # 160k iteration * 16 batchsize in original
     args.step_size = [(120e3 / 180e3) * args.max_epoch,
@@ -87,21 +85,9 @@ def main():
         min_size=0,
     )
 
-    if args.dataset == 'voc':
-        train_data = mrcnn.datasets.SBDInstanceSeg('train')
-        test_data = mrcnn.datasets.VOC2012InstanceSeg('val')
-    elif args.dataset == 'coco':
-        train_data = chainer.datasets.ConcatenatedDataset(
-            mrcnn.datasets.CocoInstanceSeg('train'),
-            mrcnn.datasets.CocoInstanceSeg('valminusminival'),
-        )
-        test_data = mrcnn.datasets.CocoInstanceSeg('minival')
-        train_data.class_names = test_data.class_names
-        min_size = 800
-        max_size = 1333
-        anchor_scales = [4, 8, 16, 32]
-    else:
-        raise ValueError
+    train_data = mrcnn.datasets.SBDInstanceSeg('train')
+    test_data = mrcnn.datasets.VOC2012InstanceSeg('val')
+
     instance_class_names = train_data.class_names[1:]
     train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
     test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
