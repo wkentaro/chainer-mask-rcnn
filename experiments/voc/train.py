@@ -85,6 +85,7 @@ def main():
         min_size=0,
     )
 
+    args.dataset = 'voc'
     train_data = mrcnn.datasets.SBDInstanceSeg('train')
     test_data = mrcnn.datasets.VOC2012InstanceSeg('val')
 
