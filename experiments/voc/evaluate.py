@@ -24,6 +24,7 @@ def main():
 
     # param
     params = yaml.load(open(osp.join(log_dir, 'params.yaml')))
+    print('Training config:')
     print('# ' + '-' * 77)
     pprint.pprint(params)
     print('# ' + '-' * 77)
