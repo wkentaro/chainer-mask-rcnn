@@ -40,7 +40,7 @@ class InstanceSegmentationCOCOEvaluator(chainer.training.extensions.Evaluator):
             gt_areas = None
 
         # evaluate
-        result = mrcnn.utils.evaluations.eval_instseg_coco(
+        result = mrcnn.utils.eval_instseg_coco(
             pred_masks, pred_labels, pred_scores,
             gt_masks, gt_labels, gt_crowdeds, gt_areas)
 
