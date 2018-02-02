@@ -13,7 +13,7 @@ if __name__ == '__main__':
         'name',
         # 'timestamp',
         'last_time',
-        # 'dataset',
+        'dataset',
         'git_hash',
         # 'git_branch',
         'hostname',
