@@ -11,9 +11,6 @@ class IndexingDataset(chainer.dataset.DatasetMixin):
         self._indices = indices
         self._size = len(indices)
 
-    def __getattr__(self, key):
-        return self._dataset.__getattr__(key)
-
     def __len__(self):
         return self._size
 
