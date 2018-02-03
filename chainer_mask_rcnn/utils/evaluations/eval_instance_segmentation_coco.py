@@ -1,3 +1,9 @@
+# Modified work:
+# Copyright (c) 2018 Kentaro Wada
+
+# Original work:
+# https://github.com/knorth55/chainer-fcis/blob/master/fcis/evaluations/eval_instance_segmentation_coco.py  # NOQA
+
 import contextlib
 import itertools
 import numpy as np
