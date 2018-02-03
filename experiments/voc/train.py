@@ -87,11 +87,14 @@ def main():
 
     args.dataset = 'voc'
     train_data = mrcnn.datasets.SBDInstanceSeg('train')
-    test_data = mrcnn.datasets.VOC2012InstanceSeg('val')
+    test_data = mrcnn.datasets.SBDInstanceSeg('val')
 
     instance_class_names = train_data.class_names[1:]
     train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
     test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
+
+    test_data = mrcnn.datasets.IndexingDataset(
+        test_data, indices=np.arange(0, 1000))  # small validation dataset
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
