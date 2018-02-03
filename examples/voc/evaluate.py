@@ -6,6 +6,8 @@ import argparse
 import os.path as osp
 import pprint
 
+import cv2  # NOQA
+
 import chainer
 import numpy as np
 import yaml
