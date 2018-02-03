@@ -146,10 +146,12 @@ class ProposalTargetCreator(object):
             roi = np.round(sample_roi[i]).astype(np.int32)
             gt_mask = mask[gt_assignment[pos_ind]]
             gt_roi_mask_i = gt_mask[roi[0]:roi[2], roi[1]:roi[3]]
-            gt_roi_mask_i = gt_roi_mask_i.astype(np.float32)
-            gt_roi_mask_i = cv2.resize(
-                gt_roi_mask_i, (self.mask_size, self.mask_size))
-            gt_roi_mask_i = gt_roi_mask_i >= self.binary_thresh
+            gt_roi_mask_i_score = (
+                np.arange(gt_roi_mask_i.max() + 1) ==
+                gt_roi_mask_i[..., None]).astype(np.float32)  # label -> onehot
+            gt_roi_mask_i_score = cv2.resize(
+                gt_roi_mask_i_score, (self.mask_size, self.mask_size))
+            gt_roi_mask_i = np.argmax(gt_roi_mask_i_score, axis=2)
             gt_roi_mask[i] = gt_roi_mask_i.astype(np.int32)
 
         if xp != np:
