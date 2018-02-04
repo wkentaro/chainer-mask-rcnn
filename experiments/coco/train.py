@@ -186,9 +186,13 @@ def main():
     plot_interval = 0.1, 'epoch'
     print_interval = 20, 'iteration'
 
-    evaluator = mrcnn.extensions.InstanceSegmentationCOCOEvaluator(
+    evaluator = mrcnn.extensions.InstanceSegmentationVOCEvaluator(
         test_iter, model.mask_rcnn, device=device,
         label_names=instance_class_names)
+    # FIXME: not work on MPI mode.
+    # evaluator = mrcnn.extensions.InstanceSegmentationCOCOEvaluator(
+    #     test_iter, model.mask_rcnn, device=device,
+    #     label_names=instance_class_names)
     if args.multi_node:
         evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
     trainer.extend(evaluator, trigger=eval_interval)
