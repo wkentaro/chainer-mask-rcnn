@@ -151,6 +151,9 @@ class ProposalTargetCreator(object):
                 gt_roi_mask_i[..., None]).astype(np.float32)  # label -> onehot
             gt_roi_mask_i_score = cv2.resize(
                 gt_roi_mask_i_score, (self.mask_size, self.mask_size))
+            if gt_roi_mask_i_score.ndim == 2:
+                gt_roi_mask_i_score = gt_roi_mask_i_score.reshape(
+                    gt_roi_mask_i_score.shape[:2] + (1,))
             gt_roi_mask_i = np.argmax(gt_roi_mask_i_score, axis=2)
             gt_roi_mask[i] = gt_roi_mask_i.astype(np.int32)
 
