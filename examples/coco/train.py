@@ -196,7 +196,8 @@ def main():
 
     if not args.multi_node or comm.rank == 0:
         # trainer.extend(
-        #     extensions.snapshot_object(model.mask_rcnn, 'snapshot_model.npz'),
+        #     extensions.snapshot_object(
+        #         model.mask_rcnn, 'snapshot_model.npz'),
         #     trigger=training.triggers.MaxValueTrigger(
         #         'validation/main/map', eval_interval))
         trainer.extend(
