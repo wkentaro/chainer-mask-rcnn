@@ -201,7 +201,8 @@ def main():
         #         'validation/main/map', eval_interval))
         trainer.extend(
             extensions.snapshot_object(
-                model.mask_rcnn, 'snapshot_model_epoch_{.updater.epoch}.npz'),
+                model.mask_rcnn,
+                'snapshot_model_epoch_{.updater.epoch:02}.npz'),
             trigger=eval_interval)
 
         args.git_hash = mrcnn.utils.git_hash()
