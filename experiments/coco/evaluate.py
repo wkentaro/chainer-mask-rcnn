@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse
+import glob
 import os.path as osp
 import pprint
 
@@ -68,11 +69,15 @@ def main():
         min_size=0,
     )
 
+    pretrained_model = sorted(
+        glob.glob(osp.join(log_dir, 'snapshot_model_*.npz')))[-1]
+    print('Using pretrained_model: %s' % pretrained_model)
+
     model = params['model']
     mask_rcnn = mrcnn.models.MaskRCNNResNet(
         n_layers=int(model.lstrip('resnet')),
         n_fg_class=len(fg_class_names),
-        pretrained_model=osp.join(log_dir, 'snapshot_model.npz'),
+        pretrained_model=pretrained_model,
         pooling_func=pooling_func,
         anchor_scales=anchor_scales,
         proposal_creator_params=proposal_creator_params,
@@ -128,7 +133,7 @@ def main():
             assert isinstance(result[k], float), \
                 'Unsupported type: {}, key: {}'.format(type(result[k]), k)
 
-    yaml_file = osp.join(log_dir, 'result_evaluate.yaml')
+    yaml_file = pretrained_model + '.eval_result.yaml'
     with open(yaml_file, 'w') as f:
         yaml.safe_dump(result, f, default_flow_style=False)
 
