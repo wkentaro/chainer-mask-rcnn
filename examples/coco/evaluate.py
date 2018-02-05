@@ -56,8 +56,10 @@ def main():
         pooling_func = mrcnn.functions.crop_and_resize
     else:
         raise ValueError
+
     min_size = 800
     max_size = 1333
+    anchor_scales = [4, 8, 16, 32]
     proposal_creator_params = dict(
         n_train_pre_nms=12000,
         n_train_post_nms=2000,
@@ -65,7 +67,6 @@ def main():
         n_test_post_nms=1000,
         min_size=0,
     )
-    anchor_scales = [8, 16, 32]
 
     model = params['model']
     mask_rcnn = mrcnn.models.MaskRCNNResNet(
@@ -73,11 +74,10 @@ def main():
         n_fg_class=len(fg_class_names),
         pretrained_model=osp.join(log_dir, 'snapshot_model.npz'),
         pooling_func=pooling_func,
-        min_size=min_size,
-        max_size=max_size,
-        proposal_creator_params=proposal_creator_params,
         anchor_scales=anchor_scales,
-    )
+        proposal_creator_params=proposal_creator_params,
+        min_size=min_size,
+        max_size=max_size)
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
         mask_rcnn.to_gpu()
