@@ -17,8 +17,9 @@ import chainer_mask_rcnn as mrcnn
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('log_dir', help='Log dir.')
-    parser.add_argument('-g', '--gpu', type=int, default=0, help='GPU id.')
+    parser.add_argument('log_dir', help='log dir')
+    parser.add_argument('--epoch', '-e', type=int, help='epoch to eval')
+    parser.add_argument('--gpu', '-g', type=int, default=0, help='gpu id')
     args = parser.parse_args()
 
     log_dir = args.log_dir
@@ -69,8 +70,12 @@ def main():
         min_size=0,
     )
 
-    pretrained_model = sorted(
-        glob.glob(osp.join(log_dir, 'snapshot_model_*.npz')))[-1]
+    if args.epoch:
+        pretrained_model = osp.join(
+            log_dir, 'snapshot_model_epoch_%d.npz' % args.epoch)
+    else:
+        pretrained_model = sorted(
+            glob.glob(osp.join(log_dir, 'snapshot_model_*.npz')))[-1]
     print('Using pretrained_model: %s' % pretrained_model)
 
     model = params['model']
