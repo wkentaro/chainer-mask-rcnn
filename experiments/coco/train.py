@@ -12,6 +12,7 @@ import socket
 os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
 import cv2  # NOQA
+cv2.setNumThreads(0)  # NOQA
 
 import chainer
 from chainer import training
