@@ -97,8 +97,8 @@ def main():
     train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
     test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
 
-    # test_data = mrcnn.datasets.IndexingDataset(
-    #     test_data, indices=np.arange(0, 1000))  # small validation dataset
+    test_data = mrcnn.datasets.IndexingDataset(
+        test_data, indices=np.arange(0, 1000))  # small validation dataset
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
@@ -186,25 +186,19 @@ def main():
     plot_interval = 0.1, 'epoch'
     print_interval = 20, 'iteration'
 
-    # FIXME: coco minival evaluation can stop while training.
-    # evaluator = mrcnn.extensions.InstanceSegmentationCOCOEvaluator(
-    #     test_iter, model.mask_rcnn, device=device,
-    #     label_names=instance_class_names)
-    # if args.multi_node:
-    #     evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
-    # trainer.extend(evaluator, trigger=eval_interval)
+    evaluator = mrcnn.extensions.InstanceSegmentationCOCOEvaluator(
+        test_iter, model.mask_rcnn, device=device,
+        label_names=instance_class_names)
+    if args.multi_node:
+        evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
+    trainer.extend(evaluator, trigger=eval_interval)
 
     if not args.multi_node or comm.rank == 0:
-        # trainer.extend(
-        #     extensions.snapshot_object(
-        #         model.mask_rcnn, 'snapshot_model.npz'),
-        #     trigger=training.triggers.MaxValueTrigger(
-        #         'validation/main/map', eval_interval))
         trainer.extend(
             extensions.snapshot_object(
-                model.mask_rcnn,
-                'snapshot_model_epoch_{.updater.epoch:02}.npz'),
-            trigger=eval_interval)
+                model.mask_rcnn, 'snapshot_model.npz'),
+            trigger=training.triggers.MaxValueTrigger(
+                'validation/main/map', eval_interval))
 
         args.git_hash = mrcnn.utils.git_hash()
         args.hostname = socket.gethostname()
