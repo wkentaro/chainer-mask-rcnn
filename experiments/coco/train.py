@@ -82,7 +82,7 @@ def main():
     # Default Config
     min_size = 800
     max_size = 1333
-    anchor_scales = [4, 8, 16, 32]
+    anchor_scales = [2, 4, 8, 16, 32]
     proposal_creator_params = dict(
         n_train_pre_nms=12000,
         n_train_post_nms=2000,

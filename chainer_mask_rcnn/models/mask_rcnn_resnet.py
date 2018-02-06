@@ -115,7 +115,7 @@ class MaskRCNNResNet(MaskRCNN):
         self._n_layers = n_layers
 
         rpn = RegionProposalNetwork(
-            1024, 512,
+            1024, 1024,
             ratios=ratios,
             anchor_scales=anchor_scales,
             feat_stride=self.feat_stride,
