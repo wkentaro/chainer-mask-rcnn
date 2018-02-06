@@ -12,7 +12,6 @@ import socket
 os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
 import cv2  # NOQA
-cv2.setNumThreads(0)  # NOQA
 
 import chainer
 from chainer import training
@@ -164,11 +163,11 @@ def main():
         train_data = chainermn.scatter_dataset(train_data, comm, shuffle=True)
         test_data = chainermn.scatter_dataset(test_data, comm)
 
-    train_iter = chainer.iterators.MultiprocessIterator(
-        train_data, batch_size=1, n_prefetch=4, shared_mem=10 ** 9)
-    test_iter = chainer.iterators.MultiprocessIterator(
-        test_data, batch_size=1, n_prefetch=4, shared_mem=10 ** 9,
-        repeat=False, shuffle=False)
+    # FIXME: MultiProcessIterator sometimes hangs
+    train_iter = chainer.iterators.SerialIterator(
+        train_data, batch_size=1)
+    test_iter = chainer.iterators.SerialIterator(
+        test_data, batch_size=1, repeat=False, shuffle=False)
 
     updater = chainer.training.updater.StandardUpdater(
         train_iter, optimizer, device=device,
