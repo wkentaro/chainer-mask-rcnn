@@ -72,7 +72,7 @@ def main():
 
     if args.epoch:
         pretrained_model = osp.join(
-            log_dir, 'snapshot_model_epoch_%d.npz' % args.epoch)
+            log_dir, 'snapshot_model_epoch_%02d.npz' % args.epoch)
     else:
         pretrained_model = sorted(
             glob.glob(osp.join(log_dir, 'snapshot_model_*.npz')))[-1]
