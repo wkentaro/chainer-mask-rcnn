@@ -8,11 +8,15 @@ class MaskRCNNTransform(object):
         self.train = train
 
     def __call__(self, in_data):
-        img, bbox, label, mask = in_data
+        if self.train:
+            img, bbox, label, mask = in_data
+        else:
+            img, bbox, label, mask, crowd, area = in_data
+
         img = img.transpose(2, 0, 1)  # H, W, C -> C, H, W
 
         if not self.train:
-            return img, bbox, label, mask
+            return img, bbox, label, mask, crowd, area
 
         _, H, W = img.shape
         img = self.mask_rcnn.prepare(img)

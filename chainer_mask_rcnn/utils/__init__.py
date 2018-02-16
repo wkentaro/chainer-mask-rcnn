@@ -7,8 +7,9 @@ from .evaluations import eval_instseg_coco
 
 from .geometry import get_bbox_overlap
 from .geometry import get_mask_overlap
-from .geometry import label2instance_boxes
 from .geometry import instance_boxes2label
+from .geometry import label2instance_boxes
+from .geometry import mask_to_bbox
 
 from .proposal_target_creator import ProposalTargetCreator
 
