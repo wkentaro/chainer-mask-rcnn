@@ -126,8 +126,8 @@ def main():
     train_data = MaskRcnnDataset(train_data)
     test_data = MaskRcnnDataset(test_data)
 
-    test_data = mrcnn.datasets.IndexingDataset(
-        test_data, indices=np.arange(0, 1000))  # small validation dataset
+    # test_data = mrcnn.datasets.IndexingDataset(
+    #     test_data, indices=np.arange(0, 1000))  # small validation dataset
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
