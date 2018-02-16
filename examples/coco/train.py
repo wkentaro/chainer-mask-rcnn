@@ -27,6 +27,28 @@ import chainer_mask_rcnn as mrcnn
 here = osp.dirname(osp.abspath(__file__))
 
 
+class MaskRcnnDataset(chainer.dataset.DatasetMixin):
+
+    def __init__(self, instance_dataset):
+        self._instance_dataset = instance_dataset
+
+    def __len__(self):
+        return len(self._instance_dataset)
+
+    def get_example(self, i):
+        example = self._instance_dataset.get_example(i)
+        img, bboxes, labels, masks = example[:4]
+
+        masks = masks.astype(np.int32, copy=False)
+        labels = labels.astype(np.int32, copy=False)
+        labels -= 1  # background: 0 -> -1
+        bboxes = bboxes.astype(np.float32, copy=False)
+
+        example = list(example)
+        example[:4] = img, bboxes, labels, masks
+        return tuple(example)
+
+
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -96,12 +118,13 @@ def main():
         mrcnn.datasets.CocoInstanceSeg('train'),
         mrcnn.datasets.CocoInstanceSeg('valminusminival'),
     )
-    test_data = mrcnn.datasets.CocoInstanceSeg('minival')
+    test_data = mrcnn.datasets.CocoInstanceSeg(
+        'minival', use_crowd=True, return_crowd=True, return_area=True)
     train_data.class_names = test_data.class_names
     instance_class_names = train_data.class_names[1:]
 
-    train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
-    test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
+    train_data = MaskRcnnDataset(train_data)
+    test_data = MaskRcnnDataset(test_data)
 
     test_data = mrcnn.datasets.IndexingDataset(
         test_data, indices=np.arange(0, 1000))  # small validation dataset
