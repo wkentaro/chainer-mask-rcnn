@@ -3,20 +3,24 @@ from chainercv import transforms
 
 class MaskRCNNTransform(object):
 
-    def __init__(self, mask_rcnn, train=True):
+    def __init__(self, mask_rcnn, train=True, is_coco=False):
         self.mask_rcnn = mask_rcnn
         self.train = train
+        self._is_coco = is_coco
 
     def __call__(self, in_data):
-        if self.train:
-            img, bbox, label, mask = in_data
-        else:
+        if not self.train and self._is_coco:
             img, bbox, label, mask, crowd, area = in_data
+        else:
+            img, bbox, label, mask = in_data
 
         img = img.transpose(2, 0, 1)  # H, W, C -> C, H, W
 
         if not self.train:
-            return img, bbox, label, mask, crowd, area
+            if self._is_coco:
+                return img, bbox, label, mask, crowd, area
+            else:
+                return img, bbox, label, mask
 
         _, H, W = img.shape
         img = self.mask_rcnn.prepare(img)
