@@ -184,7 +184,8 @@ def main():
     train_data = chainer.datasets.TransformDataset(
         train_data, mrcnn.datasets.MaskRCNNTransform(mask_rcnn))
     test_data = chainer.datasets.TransformDataset(
-        test_data, mrcnn.datasets.MaskRCNNTransform(mask_rcnn, train=False))
+        test_data,
+        mrcnn.datasets.MaskRCNNTransform(mask_rcnn, train=False, is_coco=True))
     if args.multi_node:
         if comm.rank != 0:
             train_data = None
