@@ -113,7 +113,7 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
             masks.append(mask)
             labels.append(class_id)
             if self._return_crowd:
-                crowdeds.append(ann['is_crowd'])
+                crowds.append(ann['is_crowd'])
             if self._return_area:
                 areas.append(ann['area'])
         bboxes = np.asarray(bboxes, dtype=np.float32)
@@ -123,7 +123,7 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
         masks = masks.reshape((-1, height, width))
         example = [bboxes, labels, masks]
         if self._return_crowd:
-            crowdeds = np.asarray(crowdeds, dtype=np.int32)
+            crowds = np.asarray(crowds, dtype=np.int32)
             example.append(crowds)
         if self._return_area:
             areas = np.asarray(areas, dtype=np.float32)
