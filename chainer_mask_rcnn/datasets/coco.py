@@ -68,12 +68,16 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
         if img.ndim == 2:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
-        bboxes, labels, masks = self._annotations_to_label(
+        example = self._annotations_to_example(
             anns, img.shape[0], img.shape[1])
 
-        return img, bboxes, labels, masks
+        # img, bboxes, labels, masks
+        # or img, bboxes, labels, masks, crowds
+        # or img, bboxes, labels, masks, areas
+        # or img, bboxes, labels, masks, crowds, areas
+        return tuple([img] + example)
 
-    def _annotations_to_label(self, anns, height, width):
+    def _annotations_to_example(self, anns, height, width):
         bboxes = []
         labels = []
         masks = []
@@ -113,7 +117,7 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
             masks.append(mask)
             labels.append(class_id)
             if self._return_crowd:
-                crowds.append(ann['is_crowd'])
+                crowds.append(ann['iscrowd'])
             if self._return_area:
                 areas.append(ann['area'])
         bboxes = np.asarray(bboxes, dtype=np.float32)
@@ -128,7 +132,7 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
         if self._return_area:
             areas = np.asarray(areas, dtype=np.float32)
             example.append(areas)
-        return tuple(example)
+        return example
 
     def __len__(self):
         return len(self.img_ids)
