@@ -41,10 +41,7 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
 
         pred_bboxes, pred_masks, pred_labels, pred_scores = pred_values
 
-        if len(gt_values) == 4:
-            gt_bboxes, gt_labels, gt_masks, _ = gt_values
-        elif len(gt_values) == 3:
-            gt_bboxes, gt_labels, gt_masks = gt_values
+        gt_bboxes, gt_labels, gt_masks = gt_values[:3]
 
         # visualize
         vizs = []
