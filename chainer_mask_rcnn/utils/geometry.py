@@ -15,12 +15,12 @@ def get_bbox_overlap(bbox1, bbox2):
     return 1.0 * intersect / union
 
 
-def get_mask_overlap(mask1, mask2, one_if_nounion=False):
+def get_mask_overlap(mask1, mask2, half_if_nounion=False):
     intersect = np.bitwise_and(mask1, mask2).sum()
     union = np.bitwise_or(mask1, mask2).sum()
     if union == 0:
-        if one_if_nounion:
-            return 1.
+        if half_if_nounion:
+            return 0.5
         else:
             return 0.
     else:
