@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 import argparse
-import glob
 import os.path as osp
 import pprint
 
@@ -13,12 +12,13 @@ import yaml
 
 import chainer_mask_rcnn as mrcnn
 
+from train import MaskRcnnDataset
+
 
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('log_dir', help='log dir')
-    parser.add_argument('--epoch', '-e', type=int, help='epoch to eval')
     parser.add_argument('--gpu', '-g', type=int, default=0, help='gpu id')
     args = parser.parse_args()
 
@@ -34,17 +34,7 @@ def main():
     # dataset
     test_data = mrcnn.datasets.CocoInstanceSeg('minival')
     fg_class_names = test_data.class_names[1:]
-    test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
-
-    def transform_test_data(in_data):
-        img = in_data[0]
-        img = img.transpose(2, 0, 1)
-        out_data = list(in_data)
-        out_data[0] = img
-        return tuple(out_data)
-
-    test_data = chainer.datasets.TransformDataset(
-        test_data, transform_test_data)
+    test_data = MaskRcnnDataset(test_data)
 
     # model
     chainer.global_config.train = False
@@ -61,7 +51,7 @@ def main():
 
     min_size = 800
     max_size = 1333
-    anchor_scales = [4, 8, 16, 32]
+    anchor_scales = [2, 4, 8, 16, 32]
     proposal_creator_params = dict(
         n_train_pre_nms=12000,
         n_train_post_nms=2000,
@@ -70,12 +60,7 @@ def main():
         min_size=0,
     )
 
-    if args.epoch:
-        pretrained_model = osp.join(
-            log_dir, 'snapshot_model_epoch_%02d.npz' % args.epoch)
-    else:
-        pretrained_model = sorted(
-            glob.glob(osp.join(log_dir, 'snapshot_model_*.npz')))[-1]
+    pretrained_model = osp.join(log_dir, 'snapshot_model.npz')
     print('Using pretrained_model: %s' % pretrained_model)
 
     model = params['model']
@@ -91,6 +76,9 @@ def main():
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
         mask_rcnn.to_gpu()
+
+    test_data = chainer.datasets.TransformDataset(
+        test_data, mrcnn.datasets.MaskRCNNTransform(mask_rcnn, train=False))
 
     # visualization
     # -------------------------------------------------------------------------
