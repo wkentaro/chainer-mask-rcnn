@@ -90,6 +90,7 @@ class MaskRCNNResNet(MaskRCNN):
                  loc_initialW=None, score_initialW=None,
                  proposal_creator_params=dict(),
                  pooling_func=functions.roi_align_2d,
+                 rpn_hidden=1024,
                  ):
         if n_fg_class is None:
             if pretrained_model not in self._models:
@@ -115,7 +116,7 @@ class MaskRCNNResNet(MaskRCNN):
         self._n_layers = n_layers
 
         rpn = RegionProposalNetwork(
-            1024, 1024,
+            1024, rpn_hidden,
             ratios=ratios,
             anchor_scales=anchor_scales,
             feat_stride=self.feat_stride,
