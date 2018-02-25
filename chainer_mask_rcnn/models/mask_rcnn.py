@@ -182,10 +182,10 @@ class MaskRCNN(chainer.Chain):
 
         """
         if preset == 'visualize':
-            self.nms_thresh = 0.3
+            self.nms_thresh = 0.5
             self.score_thresh = 0.7
         elif preset == 'evaluate':
-            self.nms_thresh = 0.3
+            self.nms_thresh = 0.5
             self.score_thresh = 0.05
         else:
             raise ValueError('preset must be visualize or evaluate')
