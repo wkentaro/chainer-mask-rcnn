@@ -8,7 +8,8 @@ from .geometry import label2instance_boxes
 
 
 def draw_instance_boxes(img, boxes, instance_classes, n_class,
-                        masks=None, captions=None, bg_class=0, thickness=2):
+                        masks=None, captions=None, bg_class=0, thickness=2,
+                        draw=None):
     # validation
     assert isinstance(img, np.ndarray)
     assert img.shape == (img.shape[0], img.shape[1], 3)
@@ -19,6 +20,10 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
     instance_classes = np.asarray(instance_classes)
     assert isinstance(instance_classes, np.ndarray)
     assert instance_classes.shape == (instance_classes.shape[0],)
+    if draw is None:
+        draw = [True] * boxes.shape[0]
+    else:
+        assert len(draw) == boxes.shape[0]
 
     if masks is not None:
         assert len(masks) == len(boxes)
@@ -34,6 +39,9 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
 
     if masks is not None:
         for i_box in range(boxes.shape[0]):
+            if not draw[i_box]:
+                continue
+
             box = boxes[i_box]
             y1, x1, y2, x2 = box.astype(int).tolist()
 
@@ -56,6 +64,9 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
 
     CV_AA = 16
     for i_box in range(boxes.shape[0]):
+        if not draw[i_box]:
+            continue
+
         box = boxes[i_box]
         y1, x1, y2, x2 = box.astype(int).tolist()
 
