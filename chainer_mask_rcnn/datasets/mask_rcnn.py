@@ -1,3 +1,5 @@
+import warnings
+
 import chainer
 import numpy as np
 
@@ -7,6 +9,7 @@ from ..utils import label2instance_boxes
 class MaskRcnnDataset(chainer.dataset.DatasetMixin):
 
     def __init__(self, instance_dataset):
+        warnings.warn('MaskRcnnDataset is deprecated, please stop using it.')
         self._instance_dataset = instance_dataset
         self.fg_class_names = instance_dataset.class_names[1:]  # remove bg
         self.n_fg_class = len(self.fg_class_names)

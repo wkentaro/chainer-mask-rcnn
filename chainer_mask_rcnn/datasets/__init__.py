@@ -13,4 +13,6 @@ from .transforms import MaskRCNNTransform
 from .view_dataset import view_dataset
 
 from .voc import SBDInstanceSeg
+from .voc import SBDInstanceSegmentationDataset
 from .voc import VOC2012InstanceSeg
+from .voc import VOC2012InstanceSegmentationDataset

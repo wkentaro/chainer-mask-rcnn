@@ -1,4 +1,5 @@
 import os.path as osp
+import warnings
 
 import chainer
 import fcn.datasets.voc
@@ -9,13 +10,13 @@ import scipy
 from ... import utils
 
 
-class VOCInstanceSegBase(chainer.dataset.DatasetMixin):
+class VOCInstanceSegmentationDatasetBase(chainer.dataset.DatasetMixin):
 
-    class_names = fcn.datasets.voc.VOCClassSegBase.class_names
+    class_names = fcn.datasets.voc.VOCClassSegBase.class_names[1:]
     class_names.setflags(write=0)
 
 
-class VOC2012InstanceSeg(VOCInstanceSegBase):
+class VOC2012InstanceSegmentationDataset(VOCInstanceSegmentationDatasetBase):
 
     def __init__(self, split):
         assert split in ('train', 'val')
@@ -80,7 +81,32 @@ class VOC2012InstanceSeg(VOCInstanceSegBase):
         lbl_ins = np.array(lbl_ins, dtype=np.int32)
         lbl_ins[lbl_ins == 255] = -1
         lbl_ins[np.isin(lbl_cls, [-1, 0])] = -1
-        return img, lbl_cls, lbl_ins
+
+        # lbl_ins, lbl_cls -> bboxes, labels, masks
+        labels, bboxes, masks = utils.label2instance_boxes(
+            lbl_ins, lbl_cls, return_masks=True)
+        masks = masks.astype(np.int32, copy=False)
+        labels = labels.astype(np.int32, copy=False)
+        labels -= 1  # background: 0 -> -1
+        bboxes = bboxes.astype(np.float32, copy=False)
+
+        return img, bboxes, labels, masks
+
+
+class VOCInstanceSegBase(VOCInstanceSegmentationDatasetBase):
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn('VOCInstanceSegBase is renamed to '
+                      'VOC2012InstanceSegmentationDatasetBase.')
+        super(VOCInstanceSegBase, self).__init__(*args, **kwarg)
+
+
+class VOC2012InstanceSeg(VOC2012InstanceSegmentationDataset):
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn('VOC2012InstanceSeg is renamed to '
+                      'VOC2012InstanceSegmentationDataset.')
+        super(VOC2012InstanceSeg, self).__init__(*args, **kwarg)
 
 
 if __name__ == '__main__':
@@ -88,14 +114,16 @@ if __name__ == '__main__':
     import fcn
 
     split = 'val'
-    dataset = VOC2012InstanceSeg(split)
-    dataset.split = split
+    dataset = VOC2012InstanceSegmentationDataset(split)
 
     def visualize_func(dataset, index):
-        print(index)
-        img, lbl_cls, lbl_ins = dataset[index]
-        viz = utils.visualize_instance_segmentation(
-            lbl_ins, lbl_cls, img, dataset.class_names)
+        img, bboxes, labels, masks = dataset[index]
+        print('[%08d] labels: %s' % (index, labels))
+        masks = masks.astype(bool, copy=False)
+        captions = [dataset.class_names[l] for l in labels]
+        viz = utils.draw_instance_boxes(
+            img, bboxes, labels, n_class=len(dataset.class_names),
+            masks=masks, captions=captions, bg_class=-1)
         return fcn.utils.get_tile_image([img, viz])
 
     view_dataset(dataset, visualize_func)
