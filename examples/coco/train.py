@@ -101,18 +101,6 @@ def main():
     random.seed(args.seed)
     np.random.seed(args.seed)
 
-    # Default Config
-    min_size = 800
-    max_size = 1333
-    anchor_scales = [2, 4, 8, 16, 32]
-    proposal_creator_params = dict(
-        n_train_pre_nms=12000,
-        n_train_post_nms=2000,
-        n_test_pre_nms=6000,
-        n_test_post_nms=1000,
-        min_size=0,
-    )
-
     args.dataset = 'coco'
     train_data = chainer.datasets.ConcatenatedDataset(
         mrcnn.datasets.CocoInstanceSeg('train'),
@@ -126,9 +114,6 @@ def main():
     train_data = MaskRcnnDataset(train_data)
     test_data = MaskRcnnDataset(test_data)
 
-    # test_data = mrcnn.datasets.IndexingDataset(
-    #     test_data, indices=np.arange(0, 1000))  # small validation dataset
-
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
     elif args.pooling_func == 'pooling':
@@ -138,15 +123,19 @@ def main():
     else:
         raise ValueError
 
+    min_size = 800
+    max_size = 1333
+    anchor_scales = (2, 4, 8, 16, 32)
+
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(instance_class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
             anchor_scales=anchor_scales,
-            proposal_creator_params=proposal_creator_params,
             min_size=min_size,
-            max_size=max_size)
+            max_size=max_size,
+        )
     elif args.model in ['resnet50', 'resnet101']:
         n_layers = int(args.model.lstrip('resnet'))
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
@@ -155,9 +144,9 @@ def main():
             pretrained_model='imagenet',
             pooling_func=pooling_func,
             anchor_scales=anchor_scales,
-            proposal_creator_params=proposal_creator_params,
             min_size=min_size,
-            max_size=max_size)
+            max_size=max_size,
+        )
     else:
         raise ValueError
     mask_rcnn.use_preset('evaluate')

@@ -73,18 +73,6 @@ def main():
     random.seed(args.seed)
     np.random.seed(args.seed)
 
-    # Default Config
-    min_size = 600
-    max_size = 1000
-    anchor_scales = [8, 16, 32]
-    proposal_creator_params = dict(
-        n_train_pre_nms=12000,
-        n_train_post_nms=2000,
-        n_test_pre_nms=6000,
-        n_test_post_nms=1000,
-        min_size=0,
-    )
-
     args.dataset = 'voc'
     train_data = mrcnn.datasets.SBDInstanceSeg('train')
     test_data = mrcnn.datasets.SBDInstanceSeg('val')
@@ -92,9 +80,6 @@ def main():
     instance_class_names = train_data.class_names[1:]
     train_data = mrcnn.datasets.MaskRcnnDataset(train_data)
     test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
-
-    test_data = mrcnn.datasets.IndexingDataset(
-        test_data, indices=np.arange(0, 1000))  # small validation dataset
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d

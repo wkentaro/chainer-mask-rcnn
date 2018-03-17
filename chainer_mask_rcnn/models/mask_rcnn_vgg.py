@@ -24,11 +24,15 @@ class MaskRCNNVGG16(MaskRCNN):
     def __init__(self,
                  n_fg_class=None,
                  pretrained_model=None,
-                 min_size=600, max_size=1000,
-                 ratios=[0.5, 1, 2], anchor_scales=[8, 16, 32],
-                 vgg_initialW=None, rpn_initialW=None,
-                 loc_initialW=None, score_initialW=None,
-                 proposal_creator_params=dict(),
+                 min_size=600,
+                 max_size=1000,
+                 ratios=(0.5, 1, 2),
+                 anchor_scales=(8, 16, 32),
+                 vgg_initialW=None,
+                 rpn_initialW=None,
+                 loc_initialW=None,
+                 score_initialW=None,
+                 proposal_creator_params=None,
                  pooling_func=functions.roi_align_2d,
                  ):
         if n_fg_class is None:
@@ -45,6 +49,15 @@ class MaskRCNNVGG16(MaskRCNN):
             rpn_initialW = chainer.initializers.Normal(0.01)
         if vgg_initialW is None and pretrained_model:
             vgg_initialW = chainer.initializers.constant.Zero()
+
+        if proposal_creator_params is None:
+            proposal_creator_params = dict(
+                n_train_pre_nms=12000,
+                n_train_post_nms=2000,
+                n_test_pre_nms=6000,
+                n_test_post_nms=1000,
+                min_size=0,
+            )
 
         extractor = VGG16(initialW=vgg_initialW)
         extractor.pick = 'conv5_3'
