@@ -12,13 +12,15 @@ def visualize_func(dataset, index):
     bboxes = bboxes.astype(np.int32)
     masks = masks.astype(bool)
 
+    n_class = len(dataset.class_names) + 1  # n_class = n_fg_class + 1
+
     viz = mrcnn.utils.draw_instance_boxes(
-        img, bboxes, labels, n_class=dataset.n_fg_class)
+        img, bboxes, labels + 1, n_class=n_class)
 
     viz1 = fcn.utils.get_tile_image([img, viz])
 
     print('[%06d] %s' %
-          (index, dataset.fg_class_names[labels]))
+          (index, dataset.class_names[labels]))
 
     vizs = []
     for label, bbox, mask in zip(labels, bboxes, masks):
@@ -29,10 +31,10 @@ def visualize_func(dataset, index):
         scale = math.sqrt((400. * 400.) / (viz.shape[0] * viz.shape[1]))
         viz = cv2.resize(viz, None, None, fx=scale, fy=scale)
         H, W = viz.shape[:2]
-        caption = dataset.fg_class_names[label]
+        caption = dataset.class_names[label]
         viz = mrcnn.utils.draw_instance_boxes(
-            viz, [(0, 0, H, W)], [label],
-            captions=[caption], n_class=dataset.n_fg_class, thickness=10)
+            viz, [(0, 0, H, W)], [label + 1], captions=[caption],
+            n_class=n_class, thickness=10)
         vizs.append(viz)
     viz2 = fcn.utils.get_tile_image(vizs)
 
@@ -40,10 +42,7 @@ def visualize_func(dataset, index):
 
 
 def main():
-    instance_dataset = mrcnn.datasets.VOC2012InstanceSeg(split='train')
-    dataset = mrcnn.datasets.MaskRcnnDataset(instance_dataset)
-    dataset.split = 'train'
-    dataset.n_class = len(instance_dataset.class_names)
+    dataset = mrcnn.datasets.VOC2012InstanceSeg(split='train')
     mrcnn.datasets.view_dataset(dataset, visualize_func)
 
 
