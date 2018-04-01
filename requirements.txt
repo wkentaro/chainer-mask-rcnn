@@ -1,6 +1,8 @@
 chainer
 chainercv
+fcn
 matplotlib
 pandas
 PyYAML
+scikit-image
 tabulate
