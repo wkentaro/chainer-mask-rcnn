@@ -98,7 +98,7 @@ class VOCInstanceSegBase(VOCInstanceSegmentationDatasetBase):
     def __init__(self, *args, **kwargs):
         warnings.warn('VOCInstanceSegBase is renamed to '
                       'VOC2012InstanceSegmentationDatasetBase.')
-        super(VOCInstanceSegBase, self).__init__(*args, **kwarg)
+        super(VOCInstanceSegBase, self).__init__(*args, **kwargs)
 
 
 class VOC2012InstanceSeg(VOC2012InstanceSegmentationDataset):
@@ -106,7 +106,7 @@ class VOC2012InstanceSeg(VOC2012InstanceSegmentationDataset):
     def __init__(self, *args, **kwargs):
         warnings.warn('VOC2012InstanceSeg is renamed to '
                       'VOC2012InstanceSegmentationDataset.')
-        super(VOC2012InstanceSeg, self).__init__(*args, **kwarg)
+        super(VOC2012InstanceSeg, self).__init__(*args, **kwargs)
 
 
 if __name__ == '__main__':

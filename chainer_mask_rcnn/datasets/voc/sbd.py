@@ -1,4 +1,5 @@
 import os.path as osp
+import warnings
 
 import fcn.datasets.voc
 import numpy as np
@@ -72,7 +73,7 @@ class SBDInstanceSeg(SBDInstanceSegmentationDataset):
     def __init__(self, *args, **kwargs):
         warnings.warn('SBDInstanceSeg is renamed to '
                       'SBDInstanceSegmentationDataset.')
-        super(SBDInstanceSeg, self).__init__(*args, **kwarg)
+        super(SBDInstanceSeg, self).__init__(*args, **kwargs)
 
 
 if __name__ == '__main__':
