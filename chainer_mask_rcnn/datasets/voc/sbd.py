@@ -18,6 +18,8 @@ class SBDInstanceSegmentationDataset(VOCInstanceSegmentationDatasetBase):
     def __init__(self, split='train'):
         dataset_dir = osp.expanduser(
             '~/data/datasets/VOC/benchmark_RELEASE/dataset')
+        if not osp.exists(dataset_dir):
+            self.download()
         imgsets_file = osp.join(
             here, 'data/VOCdevkit/VOCSDS/ImageSets/Main/%s.txt' % split)
         self.files = []
