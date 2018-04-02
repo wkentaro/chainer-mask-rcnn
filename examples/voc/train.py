@@ -31,7 +31,7 @@ def main():
     parser.add_argument('--model', '-m',
                         choices=['vgg16', 'resnet50', 'resnet101'],
                         default='resnet50', help='base model')
-    parser.add_argument('--pooling-func', '-p',
+    parser.add_argument('--pooling-func', '-pf',
                         choices=['pooling', 'align', 'resize'],
                         default='align', help='pooling function')
     parser.add_argument('--gpu', '-g', type=int, help='gpu id')
