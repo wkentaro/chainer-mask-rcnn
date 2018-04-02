@@ -30,11 +30,11 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--model', '-m',
                         choices=['vgg16', 'resnet50', 'resnet101'],
-                        default='resnet50', help='Base model of Mask R-CNN.')
-    parser.add_argument('--pooling-func', '-pf',
+                        default='resnet50', help='base model')
+    parser.add_argument('--pooling-func', '-p',
                         choices=['pooling', 'align', 'resize'],
-                        default='pooling', help='Pooling function.')
-    parser.add_argument('--gpu', '-g', type=int, help='GPU id.')
+                        default='align', help='pooling function')
+    parser.add_argument('--gpu', '-g', type=int, help='gpu id')
     parser.add_argument('--multi-node', '-mn', action='store_true',
                         help='use multi node')
     args = parser.parse_args()
