@@ -3,6 +3,7 @@ import fcn
 import numpy as np
 import skimage.color
 import skimage.segmentation
+import warnings
 
 from .geometry import label2instance_boxes
 
@@ -10,42 +11,52 @@ from .geometry import label2instance_boxes
 def draw_instance_boxes(img, boxes, instance_classes, n_class,
                         masks=None, captions=None, bg_class=0, thickness=2,
                         draw=None):
+    warnings.warn('draw_instance_boxes is deprecated, '
+                  'please use draw_instance_bboxes')
+    return draw_instance_bboxes(
+        img, boxes, instance_classes, n_class,
+        masks=masks, captions=captions, bg_class=bg_class,
+        thickness=thickness, draw=draw)
+
+
+def draw_instance_bboxes(img, bboxes, labels, n_class, masks=None,
+                         captions=None, bg_class=0, thickness=2, draw=None):
     # validation
     assert isinstance(img, np.ndarray)
     assert img.shape == (img.shape[0], img.shape[1], 3)
     assert img.dtype == np.uint8
-    boxes = np.asarray(boxes)
-    assert isinstance(boxes, np.ndarray)
-    assert boxes.shape == (boxes.shape[0], 4)
-    instance_classes = np.asarray(instance_classes)
-    assert isinstance(instance_classes, np.ndarray)
-    assert instance_classes.shape == (instance_classes.shape[0],)
+    bboxes = np.asarray(bboxes)
+    assert isinstance(bboxes, np.ndarray)
+    assert bboxes.shape == (bboxes.shape[0], 4)
+    labels = np.asarray(labels)
+    assert isinstance(labels, np.ndarray)
+    assert labels.shape == (labels.shape[0],)
     if draw is None:
-        draw = [True] * boxes.shape[0]
+        draw = [True] * bboxes.shape[0]
     else:
-        assert len(draw) == boxes.shape[0]
+        assert len(draw) == bboxes.shape[0]
 
     if masks is not None:
-        assert len(masks) == len(boxes)
+        assert len(masks) == len(bboxes)
 
     if captions is not None:
         captions = np.asarray(captions)
         assert isinstance(captions, np.ndarray)
-        assert captions.shape[0] == boxes.shape[0]
+        assert captions.shape[0] == bboxes.shape[0]
 
     img_viz = img.copy()
     cmap = fcn.utils.labelcolormap(n_class)
-    cmap_inst = fcn.utils.labelcolormap(len(boxes) + 1)[1:]  # skip black
+    cmap_inst = fcn.utils.labelcolormap(len(bboxes) + 1)[1:]  # skip black
 
     if masks is not None:
-        for i_box in range(boxes.shape[0]):
+        for i_box in range(bboxes.shape[0]):
             if not draw[i_box]:
                 continue
 
-            box = boxes[i_box]
+            box = bboxes[i_box]
             y1, x1, y2, x2 = box.astype(int).tolist()
 
-            inst_class = instance_classes[i_box]
+            inst_class = labels[i_box]
             if inst_class == bg_class:
                 continue
 
@@ -63,14 +74,14 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
             assert img_viz.dtype == np.uint8
 
     CV_AA = 16
-    for i_box in range(boxes.shape[0]):
+    for i_box in range(bboxes.shape[0]):
         if not draw[i_box]:
             continue
 
-        box = boxes[i_box]
+        box = bboxes[i_box]
         y1, x1, y2, x2 = box.astype(int).tolist()
 
-        inst_class = instance_classes[i_box]
+        inst_class = labels[i_box]
         if inst_class == bg_class:
             continue
 
