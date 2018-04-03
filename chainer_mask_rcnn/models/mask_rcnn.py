@@ -18,6 +18,7 @@
 # --------------------------------------------------------
 
 from __future__ import division
+import warnings
 
 import cv2
 import numpy as np
@@ -29,8 +30,6 @@ from chainercv.links.model.faster_rcnn.utils.loc2bbox import loc2bbox
 from chainercv.transforms.image.resize import resize
 from chainercv.utils import non_maximum_suppression
 import six
-
-from ..utils import instance_boxes2label
 
 
 class MaskRCNN(chainer.Chain):
@@ -252,19 +251,10 @@ class MaskRCNN(chainer.Chain):
         return bbox, label, score
 
     def predict_masks(self, imgs):
-        """Detect objects from images.
+        warnings.warn('predict_masks is deprecated, please use predict.')
+        return self.predict(imgs)
 
-        This method predicts objects for each image.
-
-        Args:
-            imgs (iterable of numpy.ndarray): Arrays holding images.
-                All images are in CHW and RGB format
-                and the range of their value is :math:`[0, 255]`.
-
-        Returns:
-            TODO(wkentaro): write doc.
-
-        """
+    def predict(self, imgs):
         prepared_imgs = list()
         sizes = list()
         for img in imgs:
@@ -372,14 +362,3 @@ class MaskRCNN(chainer.Chain):
             masks.append(mask)
 
         return bboxes, masks, labels, scores
-
-    def predict(self, imgs):
-        lbl_inss = list()
-        lbl_clss = list()
-        bboxes, masks, labels, scores = self.predict_masks(imgs)
-        for bbox, mask, label, score in zip(bboxes, masks, labels, scores):
-            label += 1  # background: -1 -> 0
-            lbl_ins, lbl_cls = instance_boxes2label(label, bbox, mask, score)
-            lbl_inss.append(lbl_ins)
-            lbl_clss.append(lbl_cls)
-        return lbl_inss, lbl_clss

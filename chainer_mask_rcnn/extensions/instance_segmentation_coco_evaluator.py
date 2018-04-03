@@ -34,7 +34,7 @@ class InstanceSegmentationCOCOEvaluator(chainer.training.extensions.Evaluator):
             it = tqdm.tqdm(it, total=len(it.dataset))
 
         imgs, pred_values, gt_values = apply_prediction_to_iterator(
-            target.predict_masks, it)
+            target.predict, it)
 
         pred_bboxes, pred_masks, pred_labels, pred_scores = pred_values
 
