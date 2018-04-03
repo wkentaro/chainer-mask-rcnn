@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 from setuptools import Extension
 from setuptools import find_packages
 from setuptools import setup
@@ -27,9 +30,23 @@ ext_modules = [
 ]
 
 
+version = '0.1'
+
+
+if sys.argv[-1] == 'release':
+    commands = [
+        'python setup.py sdist upload',
+        'git tag v{0}'.format(version),
+        'git push origin master --tags',
+    ]
+    for cmd in commands:
+        subprocess.call(cmd, shell=True)
+    sys.exit(0)
+
+
 setup(
     name='chainer_mask_rcnn',
-    version='0.1',
+    version=version,
     packages=find_packages(),
     package_data={
         'chainer_mask_rcnn.datasets.voc': ['data/*'],
