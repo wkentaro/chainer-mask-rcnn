@@ -33,7 +33,7 @@ def main():
 
     # dataset
     test_data = mrcnn.datasets.SBDInstanceSeg('val')
-    fg_class_names = test_data.class_names[1:]
+    fg_class_names = test_data.class_names
     test_data = mrcnn.datasets.MaskRcnnDataset(test_data)
 
     def transform_test_data(in_data):
