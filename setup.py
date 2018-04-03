@@ -45,7 +45,7 @@ if sys.argv[-1] == 'release':
 
 
 setup(
-    name='chainer_mask_rcnn',
+    name='chainer-mask-rcnn',
     version=version,
     packages=find_packages(),
     package_data={
