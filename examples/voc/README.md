@@ -16,7 +16,8 @@ mpiexec -n 4 ./train.py --multi-node
 
 ## Result
 
-| Model                          | mAP  |
-|--------------------------------|------|
-| Mask R-CNN, ResNet50-C4 [Ours] | 65.3 |
-| FCIS, ResNet-v1-101, [[msracver/FCIS]](https://github.com/msracver/FCIS) | 66.0 |
+| Model               | Implementation | N gpu training | mAP  |
+|---------------------|----------------|----------------|------|
+| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 4 | 65.3 |
+| Mask R-CNN, ResNet101 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 4 | |
+| FCIS, ResNet101 | [msracver/FCIS](https://github.com/msracver/FCIS) | 8 | 66.0 |
