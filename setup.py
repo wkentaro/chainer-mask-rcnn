@@ -30,7 +30,7 @@ ext_modules = [
 
 setup(
     name='chainer_mask_rcnn',
-    version='0.0.1',
+    version='0.1',
     packages=find_packages(),
     package_data={
         'chainer_mask_rcnn.datasets.voc': ['data/*'],
