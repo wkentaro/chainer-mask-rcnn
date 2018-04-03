@@ -1,0 +1,2 @@
+include requirements.txt
+recursive-include chainer_mask_rcnn *.pyx
