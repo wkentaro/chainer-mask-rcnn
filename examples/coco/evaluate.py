@@ -32,7 +32,7 @@ def main():
     print('# ' + '-' * 77)
 
     # dataset
-    test_data = mrcnn.datasets.CocoInstanceSeg('minival')
+    test_data = mrcnn.datasets.COCOInstanceSegmentationDataset('minival')
     fg_class_names = test_data.class_names[1:]
     test_data = MaskRcnnDataset(test_data)
 

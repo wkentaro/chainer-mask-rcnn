@@ -1,8 +1,10 @@
 import os.path as osp
 import sys
+import warnings
 
 import chainer
 import cv2
+import fcn
 import numpy as np
 import PIL.Image
 import PIL.ImageDraw
@@ -13,9 +15,31 @@ from ..external import pycocotools
 from ..external.pycocotools.coco import COCO
 
 
-class CocoInstanceSeg(chainer.dataset.DatasetMixin):
+class COCOInstanceSegmentationDataset(chainer.dataset.DatasetMixin):
 
     class_names = None  # initialized by __init__
+    root_dir = osp.expanduser('~/data/datasets/COCO')
+
+    @classmethod
+    def download(cls):
+        data = [
+            (None,  # '0da8c0bd3d6becc4dcb32757491aca88',
+             'http://msvocds.blob.core.windows.net/coco2014/train2014.zip',
+             'train2014.zip'),
+            (None,  # 'a3d79f5ed8d289b7a7554ce06a5782b3',
+             'http://msvocds.blob.core.windows.net/coco2014/val2014.zip',
+             'val2014.zip'),
+            ('395a089042d356d97017bf416e4e99fb',
+             'https://dl.dropboxusercontent.com/s/o43o90bna78omob/instances_minival2014.json.zip',  # NOQA
+             'annotations/instances_minival2014.json.zip'),
+            ('59582776b8dd745d649cd249ada5acf7',
+             'http://msvocds.blob.core.windows.net/annotations-1-0-3/instances_train-val2014.zip',  # NOQA
+             'instances_train-val2014.zip'),
+        ]
+        for md5, url, basename in data:
+            path = osp.join(cls.root_dir, basename)
+            fcn.data.cached_download(url=url, path=path, md5=md5)
+            fcn.data.extract_file(path, to_directory=cls.root_dir)
 
     def __init__(self, split,
                  use_crowd=False, return_crowd=False, return_area=False):
@@ -27,9 +51,11 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
             data_type = 'val2014'
         else:
             raise ValueError
-        dataset_dir = osp.expanduser('~/data/datasets/COCO')
         ann_file = osp.join(
-            dataset_dir, 'annotations/instances_%s.json' % split)
+            self.root_dir, 'annotations/instances_%s.json' % split)
+
+        if not osp.exists(ann_file):
+            self.download()
 
         self._use_crowd = use_crowd
         self._return_crowd = return_crowd
@@ -41,7 +67,7 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
         sys.stdout = sys.__stdout__
 
         self.img_fname = osp.join(
-            dataset_dir, data_type, 'COCO_%s_{:012}.jpg' % data_type)
+            self.root_dir, data_type, 'COCO_%s_{:012}.jpg' % data_type)
 
         # set class_names
         cats = self.coco.loadCats(self.coco.getCatIds())
@@ -138,12 +164,18 @@ class CocoInstanceSeg(chainer.dataset.DatasetMixin):
         return len(self.img_ids)
 
 
+class CocoInstanceSeg(COCOInstanceSegmentationDataset):
+
+    def __init__(self):
+        warnings.warn('CocoInstanceSeg is renamed to '
+                      'COCOInstanceSegmentationDataset.')
+
+
 if __name__ == '__main__':
     from .view_dataset import view_dataset
-    import fcn
 
     split = 'val'
-    dataset = CocoInstanceSeg(split)
+    dataset = COCOInstanceSegmentationDataset(split)
     dataset.split = split
     print(dataset.class_names)
     print(len(dataset.class_names))

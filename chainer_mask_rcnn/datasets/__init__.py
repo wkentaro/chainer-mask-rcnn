@@ -1,6 +1,7 @@
 # flake8: noqa
 
 from .coco import CocoInstanceSeg
+from .coco import COCOInstanceSegmentationDataset
 
 from .concat_examples import concat_examples
 

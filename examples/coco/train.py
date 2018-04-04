@@ -103,10 +103,10 @@ def main():
 
     args.dataset = 'coco'
     train_data = chainer.datasets.ConcatenatedDataset(
-        mrcnn.datasets.CocoInstanceSeg('train'),
-        mrcnn.datasets.CocoInstanceSeg('valminusminival'),
+        mrcnn.datasets.COCOInstanceSegmentationDataset('train'),
+        mrcnn.datasets.COCOInstanceSegmentationDataset('valminusminival'),
     )
-    test_data = mrcnn.datasets.CocoInstanceSeg(
+    test_data = mrcnn.datasets.COCOInstanceSegmentationDataset(
         'minival', use_crowd=True, return_crowd=True, return_area=True)
     train_data.class_names = test_data.class_names
     instance_class_names = train_data.class_names[1:]
