@@ -1,9 +1,14 @@
-# Mofidied work:
+# Modified works:
+# --------------------------------------------------------
+# Copyright (c) 2017 - 2018 Kentaro Wada.
+# Licensed under The MIT License [see LICENSE for details]
+# --------------------------------------------------------
+
+# Original works:
 # --------------------------------------------------------
 # Copyright (c) 2017 Preferred Networks, Inc.
-# --------------------------------------------------------
-#
-# Original works by:
+# Licensed under The MIT License [see LICENSE for details]
+# https://github.com/chainer/chainercv
 # --------------------------------------------------------
 # Faster R-CNN implementation by Chainer
 # Copyright (c) 2016 Shunta Saito

@@ -1,12 +1,15 @@
-# -----------------------------------------------------------------------------
-# Copyright (c) 2017 Kentaro Wada <www.kentaro.wada@gmail.com>
-# -----------------------------------------------------------------------------
+# Modified works:
+# --------------------------------------------------------
+# Copyright (c) 2017 - 2018 Kentaro Wada.
+# Licensed under The MIT License [see LICENSE for details]
+# --------------------------------------------------------
 
-# Original work of FasterRCNN, _copy_persistent_link, _copy_persistent_chain
-# -----------------------------------------------------------------------------
-# Copyright (c) 2017 Yusuke Niitani, The MIT License
-# https://github.com/chainer/chainercv.git
-# -----------------------------------------------------------------------------
+# Original work of FasterRCNN, _copy_persistent_link, _copy_persistent_chain:
+# --------------------------------------------------------
+# Copyright (c) 2017 Preferred Networks, Inc.
+# Licensed under The MIT License [see LICENSE for details]
+# https://github.com/chainer/chainercv
+# --------------------------------------------------------
 
 import chainer
 import chainer.functions as F

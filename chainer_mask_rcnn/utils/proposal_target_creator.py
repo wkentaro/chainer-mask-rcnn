@@ -1,3 +1,20 @@
+# Modified works:
+# --------------------------------------------------------
+# Copyright (c) 2017 - 2018 Kentaro Wada.
+# Licensed under The MIT License [see LICENSE for details]
+# --------------------------------------------------------
+
+# Original works:
+# --------------------------------------------------------
+# Copyright (c) 2017 Shingo Kitagawa.
+# Licensed under The MIT License [see LICENSE for details]
+# https://github.com/knorth55/chainer-fcis
+# --------------------------------------------------------
+# Copyright (c) 2017 Preferred Networks, Inc.
+# Licensed under The MIT License [see LICENSE for details]
+# https://github.com/chainer/chainercv
+# --------------------------------------------------------
+
 from chainer import cuda
 from chainercv.links.model.faster_rcnn.utils.bbox2loc import bbox2loc
 from chainercv.utils.bbox.bbox_iou import bbox_iou
