@@ -11,8 +11,6 @@ from .geometry import instance_boxes2label
 from .geometry import label2instance_boxes
 from .geometry import mask_to_bbox
 
-from .proposal_target_creator import ProposalTargetCreator
-
 from .visualizations import draw_instance_boxes
 from .visualizations import draw_instance_bboxes
 from .visualizations import visualize_instance_segmentation
