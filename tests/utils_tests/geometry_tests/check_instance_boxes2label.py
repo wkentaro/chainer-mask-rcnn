@@ -7,30 +7,34 @@ import chainer_mask_rcnn as mask_rcnn
 
 def main():
     dataset = mask_rcnn.datasets.VOC2012InstanceSeg('train')
-    class_names = dataset.class_names
+    fg_class_names = dataset.class_names
+    n_fg_class = len(fg_class_names)
 
-    img, lbl_cls, lbl_ins = dataset[0]
+    img, bboxes, labels, masks = dataset[0]
 
     print('img:', img.shape)
-    print('lbl_cls:', lbl_cls.shape)
-    print('lbl_ins:', lbl_ins.shape)
+    print('bboxes:', bboxes.shape)
+    print('labels:', labels.shape)
+    print('masks:', masks.shape)
 
-    viz1 = mask_rcnn.utils.visualize_instance_segmentation(
-        lbl_ins, lbl_cls, img, class_names)
+    # viz1
+    captions = fg_class_names[labels]
+    viz1 = mask_rcnn.utils.draw_instance_bboxes(
+        img, bboxes, labels, n_class=n_fg_class + 1,
+        captions=captions, masks=masks.astype(bool))
     plt.subplot(121)
     plt.imshow(viz1)
 
+    # viz2
+    lbl_ins, lbl_cls = mask_rcnn.utils.instance_boxes2label(
+        labels + 1, bboxes, masks.astype(bool))
     labels, bboxes, masks = mask_rcnn.utils.label2instance_boxes(
         lbl_ins, lbl_cls, return_masks=True)
-
-    print('labels:', labels.shape)
-    print('bboxes:', bboxes.shape)
-    print('masks:', masks.shape)
-
-    lbl_ins2, lbl_cls2 = mask_rcnn.utils.instance_boxes2label(
-        labels, bboxes, masks)
-    viz2 = mask_rcnn.utils.visualize_instance_segmentation(
-        lbl_ins2, lbl_cls2, img, class_names)
+    labels -= 1
+    captions = fg_class_names[labels]
+    viz2 = mask_rcnn.utils.draw_instance_bboxes(
+        img, bboxes, labels, n_class=n_fg_class + 1,
+        captions=captions, masks=masks)
 
     plt.subplot(122)
     plt.imshow(viz2)
