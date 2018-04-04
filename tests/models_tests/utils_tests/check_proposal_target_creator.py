@@ -43,19 +43,25 @@ def _augment_bboxes(bboxes, H, W):
 
 def visualize_func(dataset, index):
     vizs = []
-    img, lbl_cls, lbl_ins = dataset[index]
-    viz = mask_rcnn.utils.visualize_instance_segmentation(
-        lbl_ins, lbl_cls, img, dataset.class_names)
+    img, bboxes, labels, masks = dataset[index]
+    fg_class_names = dataset.class_names
+    n_fg_class = len(fg_class_names)
+    captions = [fg_class_names[l] for l in labels]
+    viz = mask_rcnn.utils.draw_instance_bboxes(
+        img, bboxes, labels + 1, n_class=n_fg_class + 1,
+        captions=captions, masks=masks)
     vizs.append(viz)
 
-    mrcnn_dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset)
-    img, boxes, labels, masks = mrcnn_dataset[index]
     H, W = img.shape[:2]
 
     if False:
-        rois = _augment_bboxes(boxes, H, W).astype(np.float32)
+        rois = _augment_bboxes(bboxes, H, W).astype(np.float32)
     else:
-        import selectivesearch
+        try:
+            import selectivesearch
+        except ImportError:
+            print('Please install selectivesearch')
+            quit(1)
         img_lbl, regions = selectivesearch.selective_search(
             img, scale=500, sigma=0.9, min_size=10)
         rois = []
@@ -74,7 +80,7 @@ def visualize_func(dataset, index):
         proposal_target_creator = ProposalTargetCreator()
 
         sample_rois, gt_roi_locs, gt_roi_labels = proposal_target_creator(
-            rois, boxes, labels,
+            rois, bboxes, labels,
             loc_normalize_mean=(0., 0., 0., 0.),
             loc_normalize_std=(0.1, 0.1, 0.2, 0.2))
         gt_roi_masks = [None] * len(sample_rois)
@@ -84,7 +90,7 @@ def visualize_func(dataset, index):
         proposal_target_creator = ProposalTargetCreator()
         sample_rois, gt_roi_locs, gt_roi_labels, gt_roi_masks = \
             proposal_target_creator(
-                rois, boxes, labels, masks,
+                rois, bboxes, labels, masks,
                 loc_normalize_mean=(0., 0., 0., 0.),
                 loc_normalize_std=(0.1, 0.1, 0.2, 0.2))
 
@@ -101,13 +107,13 @@ def visualize_func(dataset, index):
     masks = np.asarray(masks)
 
     keep = gt_roi_labels != 0
-    viz = mask_rcnn.utils.draw_instance_boxes(
+    viz = mask_rcnn.utils.draw_instance_bboxes(
         img, sample_rois[keep], gt_roi_labels[keep], n_class=21,
         captions=captions[keep], masks=masks[keep], bg_class=-1)
     vizs.append(viz)
 
     keep = gt_roi_labels == 0
-    viz = mask_rcnn.utils.draw_instance_boxes(
+    viz = mask_rcnn.utils.draw_instance_bboxes(
         img, sample_rois[keep], gt_roi_labels[keep], n_class=21,
         captions=captions[keep], masks=masks[keep], bg_class=-1)
     vizs.append(viz)
@@ -140,8 +146,8 @@ def visualize_func(dataset, index):
 
 
 def main():
-    dataset = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
-    dataset.split = 'train'
+    dataset = mask_rcnn.datasets.VOC2012InstanceSegmentationDataset(
+        split='train')
     mask_rcnn.datasets.view_dataset(dataset, visualize_func)
 
 
