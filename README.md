@@ -74,7 +74,7 @@ pytest tests
 
 ## ROS integration (real-time demo)
 
-It runs in around 10fps.
+It runs in around 10fps with Titan X Pascal.  
 See https://github.com/jsk-ros-pkg/jsk_recognition/pull/2257.
 
 <img src="https://user-images.githubusercontent.com/4310419/38289831-39bc0534-3813-11e8-9ab4-d774ab4289b4.gif" width="66%" />
