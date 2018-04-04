@@ -86,7 +86,8 @@ def main():
     bboxes, masks, labels, scores = mask_rcnn.predict([img_chw])
     bboxes, masks, labels, scores = bboxes[0], masks[0], labels[0], scores[0]
 
-    captions = [fg_class_names[l] for l in labels]
+    captions = ['{}: {:.1%}'.format(fg_class_names[l], s)
+                for l, s in zip(labels, scores)]
     viz = mrcnn.utils.draw_instance_bboxes(
         img, bboxes, labels + 1, n_class=n_fg_class + 1,
         captions=captions, masks=masks)
