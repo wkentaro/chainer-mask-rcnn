@@ -9,10 +9,7 @@ from chainer_mask_rcnn.utils.evaluations import eval_instseg_voc
 
 def check_eval_instseg_voc():
     dataset = mask_rcnn.datasets.VOC2012InstanceSeg('train')
-    img, lbl_cls_true, lbl_ins_true = dataset.get_example(0)
-
-    gt_label, gt_bbox, gt_mask = mask_rcnn.utils.label2instance_boxes(
-        lbl_ins_true, lbl_cls_true, return_masks=True)
+    img, gt_bbox, gt_label, gt_mask = dataset.get_example(0)
 
     pred_mask = []
     for m in gt_mask:
@@ -27,13 +24,15 @@ def check_eval_instseg_voc():
     pred_label = gt_label
     pred_score = np.random.uniform(0.6, 0.99, (len(pred_mask),))
 
-    lbl_ins_pred, lbl_cls_pred = mask_rcnn.utils.instance_boxes2label(
-        gt_label, gt_bbox, pred_mask)
-
-    viz_true = mask_rcnn.utils.visualize_instance_segmentation(
-        lbl_ins_true, lbl_cls_true, img, dataset.class_names)
-    viz_pred = mask_rcnn.utils.visualize_instance_segmentation(
-        lbl_ins_pred, lbl_cls_pred, img, dataset.class_names)
+    fg_class_names = dataset.class_names
+    n_fg_class = len(fg_class_names)
+    captions = [fg_class_names[l] for l in gt_label]
+    viz_true = mask_rcnn.utils.draw_instance_bboxes(
+        img, gt_bbox, gt_label + 1, n_class=n_fg_class + 1,
+        captions=captions, masks=gt_mask.astype(bool))
+    viz_pred = mask_rcnn.utils.draw_instance_bboxes(
+        img, gt_bbox, pred_label + 1, n_class=n_fg_class + 1,
+        captions=captions, masks=pred_mask.astype(bool))
     viz = np.vstack([viz_true, viz_pred])
 
     gt_label -= 1  # background: 0 -> -1
