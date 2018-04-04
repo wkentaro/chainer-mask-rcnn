@@ -15,12 +15,12 @@ mpiexec -n 4 ./train.py --multi-node
 
 ## Result
 
-| Model               | Implementation | N gpu training | mAP  |
-|---------------------|----------------|----------------|------|
-| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 4 | 66.0 |
-| Mask R-CNN, ResNet101 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 4 | `TODO(wkentaro)` |
+| Model               | Implementation | N gpu training | mAP@50  |
+|---------------------|----------------|----------------|---------|
+| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 4 | 65.7 |
+| Mask R-CNN, ResNet101 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 4 | 67.1 |
 | Mask R-CNN, ResNet101 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 8 | `TODO(wkentaro)` |
 | FCIS, ResNet101 | [msracver/FCIS](https://github.com/msracver/FCIS) | 8 | 66.0 |
 
-![](.readme/resnet50.jpg)
-Fig 1. Mask R-CNN, ResNet50, Ours.
+![](.readme/resnet101_ngpu4_voc_20180404_093821.jpg)
+Fig 1. Mask R-CNN, ResNet101, Ours, 67.1 mAP@50.
