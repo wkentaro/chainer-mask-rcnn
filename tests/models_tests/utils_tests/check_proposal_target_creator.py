@@ -103,19 +103,22 @@ def visualize_func(dataset, index):
         mask = np.round(mask).astype(bool)
         masks.append(mask)
 
-    captions = dataset.class_names[gt_roi_labels]
+    class_names = np.hstack((['__background__'], fg_class_names))
+    captions = class_names[gt_roi_labels]
     masks = np.asarray(masks)
 
     keep = gt_roi_labels != 0
     viz = mask_rcnn.utils.draw_instance_bboxes(
-        img, sample_rois[keep], gt_roi_labels[keep], n_class=21,
-        captions=captions[keep], masks=masks[keep], bg_class=-1)
+        img, sample_rois[keep], gt_roi_labels[keep],
+        n_class=n_fg_class + 1, captions=captions[keep],
+        masks=masks[keep], bg_class=-1)
     vizs.append(viz)
 
     keep = gt_roi_labels == 0
     viz = mask_rcnn.utils.draw_instance_bboxes(
-        img, sample_rois[keep], gt_roi_labels[keep], n_class=21,
-        captions=captions[keep], masks=masks[keep], bg_class=-1)
+        img, sample_rois[keep], gt_roi_labels[keep],
+        n_class=n_fg_class + 1, captions=captions[keep],
+        masks=masks[keep], bg_class=-1)
     vizs.append(viz)
 
     return fcn.utils.get_tile_image(vizs)
