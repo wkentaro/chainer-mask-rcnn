@@ -4,10 +4,10 @@ Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 It includes:
 
 - ResNet50, ResNet101 backbone (FPN not included)
-- VOC, COCO training [examples](examples).
+- [VOC and COCO training examples](examples).
 
 <img src=".readme/resnet50_ngpu4_coco_20180225_a.jpg" width="44.3%" /> <img src=".readme/resnet50_ngpu4_coco_20180225_b.jpg" width="52%" />  
-*Fig 1. Mask R-CNN, ResNet50, 4GPU, 20180225, COCO 28.3 mAP@50:95*
+*Fig 1. Mask R-CNN, ResNet50, 4GPU, 20180225, COCO 28.3 mAP@50:95 (31.4 in original work with 8GPU)*
 
 
 ## Training
