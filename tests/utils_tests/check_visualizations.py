@@ -4,20 +4,19 @@ import chainer_mask_rcnn as mrcnn
 
 
 def visualize(dataset, index):
-    class_names = dataset._instance_dataset.class_names
-    n_class = len(class_names)
+    fg_class_names = dataset.class_names
+    n_fg_class = len(fg_class_names)
 
     img, bboxes, labels, masks = dataset[index]
-    labels += 1
     masks = masks.astype(bool)
-    captions = class_names[labels]
+    captions = fg_class_names[labels]
     return mrcnn.utils.draw_instance_boxes(
-        img, bboxes, labels, n_class, masks=masks, captions=captions)
+        img, bboxes, labels + 1, n_fg_class + 1,
+        masks=masks, captions=captions)
 
 
 def main():
-    dataset = mrcnn.datasets.MaskRcnnDataset(
-        mrcnn.datasets.VOC2012InstanceSeg('train'))
+    dataset = mrcnn.datasets.VOC2012InstanceSeg('train')
     dataset.split = 'train'
     mrcnn.datasets.view_dataset(dataset, visualize)
 
