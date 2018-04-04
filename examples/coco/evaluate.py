@@ -22,10 +22,8 @@ def main():
     parser.add_argument('--gpu', '-g', type=int, default=0, help='gpu id')
     args = parser.parse_args()
 
-    log_dir = args.log_dir
-
     # param
-    params = yaml.load(open(osp.join(log_dir, 'params.yaml')))
+    params = yaml.load(open(osp.join(args.log_dir, 'params.yaml')))
     print('Training config:')
     print('# ' + '-' * 77)
     pprint.pprint(params)
@@ -60,7 +58,7 @@ def main():
         min_size=0,
     )
 
-    pretrained_model = osp.join(log_dir, 'snapshot_model.npz')
+    pretrained_model = osp.join(args.log_dir, 'snapshot_model.npz')
     print('Using pretrained_model: %s' % pretrained_model)
 
     model = params['model']
@@ -95,7 +93,7 @@ def main():
             iteration = 'best'
 
         updater = DummyUpdater()
-        out = log_dir
+        out = args.log_dir
 
     print('Visualizing...')
     visualizer = mrcnn.extensions.InstanceSegmentationVisReport(
@@ -105,7 +103,7 @@ def main():
         copy_latest=False,
     )
     visualizer(trainer=DummyTrainer())
-    print('Saved visualization:', osp.join(log_dir, 'iteration=best.jpg'))
+    print('Saved visualization:', osp.join(args.log_dir, 'iteration=best.jpg'))
 
     # evaluation
     # -------------------------------------------------------------------------
