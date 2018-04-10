@@ -47,6 +47,7 @@ class MaskRCNNVGG16(MaskRCNN):
                  score_initialW=None,
                  proposal_creator_params=None,
                  pooling_func=functions.roi_align_2d,
+                 roi_size=7,
                  ):
         if n_fg_class is None:
             if pretrained_model not in self._models:
@@ -86,7 +87,8 @@ class MaskRCNNVGG16(MaskRCNN):
         )
         head = VGG16RoIHead(
             n_fg_class + 1,
-            roi_size=7, spatial_scale=1. / self.feat_stride,
+            roi_size=roi_size,
+            spatial_scale=1. / self.feat_stride,
             vgg_initialW=vgg_initialW,
             loc_initialW=loc_initialW,
             score_initialW=score_initialW,

@@ -61,6 +61,8 @@ def main():
     parser.add_argument('--gpu', '-g', type=int, help='GPU id.')
     parser.add_argument('--multi-node', '-n', action='store_true',
                         help='use multi node')
+    parser.add_argument('--roi-size', '-r', type=int, default=7,
+                        help='roi size')
     args = parser.parse_args()
 
     if args.multi_node:
@@ -135,6 +137,7 @@ def main():
             anchor_scales=anchor_scales,
             min_size=min_size,
             max_size=max_size,
+            roi_size=args.roi_size,
         )
     elif args.model in ['resnet50', 'resnet101']:
         n_layers = int(args.model.lstrip('resnet'))
@@ -146,6 +149,7 @@ def main():
             anchor_scales=anchor_scales,
             min_size=min_size,
             max_size=max_size,
+            roi_size=args.roi_size,
         )
     else:
         raise ValueError
