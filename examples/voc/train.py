@@ -37,6 +37,8 @@ def main():
     parser.add_argument('--gpu', '-g', type=int, help='gpu id')
     parser.add_argument('--multi-node', '-n', action='store_true',
                         help='use multi node')
+    parser.add_argument('--roi-size', '-r', type=int, default=7,
+                        help='roi size')
     args = parser.parse_args()
 
     if args.multi_node:
@@ -92,6 +94,7 @@ def main():
             n_fg_class=len(fg_class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
+            roi_size=args.roi_size,
         )
     elif args.model in ['resnet50', 'resnet101']:
         n_layers = int(args.model.lstrip('resnet'))
@@ -100,6 +103,7 @@ def main():
             n_fg_class=len(fg_class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
+            roi_size=args.roi_size,
         )
     else:
         raise ValueError

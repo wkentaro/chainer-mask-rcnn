@@ -103,7 +103,7 @@ class MaskRCNNResNet(MaskRCNN):
                  loc_initialW=None, score_initialW=None,
                  proposal_creator_params=dict(),
                  pooling_func=functions.roi_align_2d,
-                 rpn_hidden=1024,
+                 rpn_hidden=1024, roi_size=7,
                  ):
         if n_fg_class is None:
             if pretrained_model not in self._models:
@@ -138,7 +138,8 @@ class MaskRCNNResNet(MaskRCNN):
         )
         head = ResNetRoIHead(
             n_fg_class + 1,
-            roi_size=7, spatial_scale=1. / self.feat_stride,
+            roi_size=roi_size,
+            spatial_scale=1. / self.feat_stride,
             res_initialW=res_initialW,
             loc_initialW=loc_initialW,
             score_initialW=score_initialW,
@@ -202,7 +203,8 @@ class ResNetRoIHead(chainer.Chain):
         super(ResNetRoIHead, self).__init__()
         with self.init_scope():
             self.res5 = BuildingBlock(
-                3, 1024, 512, 2048, stride=1, initialW=res_initialW)
+                3, 1024, 512, 2048, stride=roi_size // 7,
+                initialW=res_initialW)
             self.cls_loc = L.Linear(2048, n_class * 4, initialW=loc_initialW)
             self.score = L.Linear(2048, n_class, initialW=score_initialW)
 
