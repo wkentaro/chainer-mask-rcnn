@@ -24,3 +24,5 @@ mpiexec -n 4 ./train.py --multi-node
 
 ![](.readme/resnet101_ngpu4_voc_20180404_093821.jpg)
 Fig 1. Mask R-CNN, ResNet101, Ours, 67.1 mAP@50.
+
+See [here](https://drive.google.com/open?id=1-aqbWUgjs3E7xQgXTpSSBKSpPhcUa4V_) for training logs.
