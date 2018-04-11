@@ -166,6 +166,7 @@ if __name__ == '__main__':
         # 'git_branch',
         'hostname',
         'model',
+        'roi_size',
         'lr', 'pooling_func',
         'epoch', 'iteration',
         # 'main/loss',
