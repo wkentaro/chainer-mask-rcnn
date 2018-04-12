@@ -138,7 +138,7 @@ def visualize_func(dataset, index):
     #         gt_roi_mask = np.round(gt_roi_mask).astype(bool)
     #         mask_ins[y1:y2, x1:x2] = gt_roi_mask
     #         viz[~mask_ins] = 255
-    #     viz = mask_rcnn.utils.draw_instance_boxes(
+    #     viz = mask_rcnn.utils.draw_instance_bboxes(
     #         viz, [roi], [id_cls], n_class=21, bg_class=0, thickness=2)
     #     vizs.append(viz)
     # viz2 = fcn.utils.get_tile_image(vizs)

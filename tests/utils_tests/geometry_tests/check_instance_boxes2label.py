@@ -6,7 +6,7 @@ import chainer_mask_rcnn as mask_rcnn
 
 
 def main():
-    dataset = mask_rcnn.datasets.VOC2012InstanceSeg('train')
+    dataset = mask_rcnn.datasets.VOC2012InstanceSegmentationDataset('train')
     fg_class_names = dataset.class_names
     n_fg_class = len(fg_class_names)
 
@@ -20,7 +20,7 @@ def main():
     # viz1
     captions = fg_class_names[labels]
     viz1 = mask_rcnn.utils.draw_instance_bboxes(
-        img, bboxes, labels, n_class=n_fg_class + 1,
+        img, bboxes, labels + 1, n_class=n_fg_class + 1,
         captions=captions, masks=masks.astype(bool))
     plt.subplot(121)
     plt.imshow(viz1)
@@ -33,7 +33,7 @@ def main():
     labels -= 1
     captions = fg_class_names[labels]
     viz2 = mask_rcnn.utils.draw_instance_bboxes(
-        img, bboxes, labels, n_class=n_fg_class + 1,
+        img, bboxes, labels + 1, n_class=n_fg_class + 1,
         captions=captions, masks=masks)
 
     plt.subplot(122)

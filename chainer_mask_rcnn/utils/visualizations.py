@@ -114,7 +114,7 @@ def visualize_instance_segmentation(lbl_ins, lbl_cls, img, class_names):
     # visualize classes
     ins_clss, boxes = label2instance_boxes(lbl_ins, lbl_cls)
     if ins_clss.size > 0:
-        viz = draw_instance_boxes(
+        viz = draw_instance_bboxes(
             viz, boxes, ins_clss,
             n_class=len(class_names),
             captions=class_names[ins_clss])

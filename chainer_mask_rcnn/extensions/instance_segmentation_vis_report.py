@@ -56,7 +56,7 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
 
             n_fg_class = len(self.label_names)
 
-            gt_viz = mrcnn.utils.draw_instance_boxes(
+            gt_viz = mrcnn.utils.draw_instance_bboxes(
                 img, gt_bbox, gt_label, n_class=n_fg_class,
                 masks=gt_mask, captions=self.label_names[gt_label],
                 bg_class=-1)
@@ -66,7 +66,7 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
                                        self.label_names[pred_label]):
                 caption = '{:s} {:.1%}'.format(l_name, p_score)
                 captions.append(caption)
-            pred_viz = mrcnn.utils.draw_instance_boxes(
+            pred_viz = mrcnn.utils.draw_instance_bboxes(
                 img, pred_bbox, pred_label, n_class=n_fg_class,
                 masks=pred_mask, captions=captions, bg_class=-1)
 

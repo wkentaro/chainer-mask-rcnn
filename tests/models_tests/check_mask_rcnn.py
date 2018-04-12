@@ -15,8 +15,7 @@ cuda.get_device(gpu).use()
 model = mask_rcnn.models.MaskRCNNVGG16(n_fg_class=20)
 model.to_gpu()
 
-dataset_ins = mask_rcnn.datasets.VOC2012InstanceSeg(split='train')
-dataset = mask_rcnn.datasets.MaskRcnnDataset(dataset_ins)
+dataset = mask_rcnn.datasets.VOC2012InstanceSegmentationDataset(split='train')
 
 img, bbox, label, mask = dataset[0]
 img = img.transpose(2, 0, 1)

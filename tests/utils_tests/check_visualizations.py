@@ -10,13 +10,13 @@ def visualize(dataset, index):
     img, bboxes, labels, masks = dataset[index]
     masks = masks.astype(bool)
     captions = fg_class_names[labels]
-    return mrcnn.utils.draw_instance_boxes(
+    return mrcnn.utils.draw_instance_bboxes(
         img, bboxes, labels + 1, n_fg_class + 1,
         masks=masks, captions=captions)
 
 
 def main():
-    dataset = mrcnn.datasets.VOC2012InstanceSeg('train')
+    dataset = mrcnn.datasets.VOC2012InstanceSegmentationDataset('train')
     dataset.split = 'train'
     mrcnn.datasets.view_dataset(dataset, visualize)
 

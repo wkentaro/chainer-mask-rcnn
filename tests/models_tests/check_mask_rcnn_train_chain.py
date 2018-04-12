@@ -131,7 +131,7 @@ def main():
                 lbl_ins_true, lbl_cls_true, img, dataset_ins.class_names)
             label_pred += 1
             captions = dataset_ins.class_names[label_pred]
-            viz_pred = mask_rcnn.utils.draw_instance_boxes(
+            viz_pred = mask_rcnn.utils.draw_instance_bboxes(
                 img, bbox_pred, label_pred, n_class=21,
                 masks=mask_pred, captions=captions, bg_class=0)
             viz = fcn.utils.get_tile_image(

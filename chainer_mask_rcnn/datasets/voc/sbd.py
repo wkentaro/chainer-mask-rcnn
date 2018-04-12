@@ -89,7 +89,7 @@ if __name__ == '__main__':
         print('[%08d] labels: %s' % (index, labels))
         masks = masks.astype(bool, copy=False)
         captions = [dataset.class_names[l] for l in labels]
-        viz = utils.draw_instance_boxes(
+        viz = utils.draw_instance_bboxes(
             img, bboxes, labels, n_class=len(dataset.class_names),
             masks=masks, captions=captions, bg_class=-1)
         return fcn.utils.get_tile_image([img, viz])
