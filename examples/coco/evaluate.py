@@ -12,7 +12,7 @@ import yaml
 
 import chainer_mask_rcnn as mrcnn
 
-from train import MaskRcnnDataset
+from train import MaskRCNNDataset
 
 
 def main():
@@ -32,8 +32,8 @@ def main():
     # dataset
     test_data = mrcnn.datasets.COCOInstanceSegmentationDataset(
         'minival', use_crowd=True, return_crowd=True, return_area=True)
-    fg_class_names = test_data.class_names[1:]
-    test_data = MaskRcnnDataset(test_data)
+    class_names = test_data.class_names
+    test_data = MaskRCNNDataset(test_data)
 
     # model
     chainer.global_config.train = False
@@ -65,13 +65,14 @@ def main():
     model = params['model']
     mask_rcnn = mrcnn.models.MaskRCNNResNet(
         n_layers=int(model.lstrip('resnet')),
-        n_fg_class=len(fg_class_names),
+        n_fg_class=len(class_names),
         pretrained_model=pretrained_model,
         pooling_func=pooling_func,
         anchor_scales=anchor_scales,
         proposal_creator_params=proposal_creator_params,
         min_size=min_size,
-        max_size=max_size)
+        max_size=max_size,
+    )
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
         mask_rcnn.to_gpu()
@@ -99,7 +100,7 @@ def main():
     print('Visualizing...')
     visualizer = mrcnn.extensions.InstanceSegmentationVisReport(
         test_vis_iter, mask_rcnn,
-        label_names=fg_class_names,
+        label_names=class_names,
         file_name='iteration=%s.jpg',
         copy_latest=False,
     )
@@ -115,7 +116,7 @@ def main():
     print('Evaluating...')
     mask_rcnn.use_preset('evaluate')
     evaluator = mrcnn.extensions.InstanceSegmentationCOCOEvaluator(
-        test_iter, mask_rcnn, label_names=fg_class_names, show_progress=True)
+        test_iter, mask_rcnn, label_names=class_names, show_progress=True)
     result = evaluator()
 
     for k in result:

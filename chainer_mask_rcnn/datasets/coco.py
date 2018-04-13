@@ -72,7 +72,7 @@ class COCOInstanceSegmentationDataset(chainer.dataset.DatasetMixin):
         # set class_names
         cats = self.coco.loadCats(self.coco.getCatIds())
         cat_id_to_class_id = {}
-        class_names = ['__background__']
+        class_names = []
         for cat in sorted(cats, key=lambda x: x['id']):
             class_id = len(class_names)
             cat_id_to_class_id[cat['id']] = class_id

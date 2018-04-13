@@ -27,21 +27,20 @@ import chainer_mask_rcnn as mrcnn
 here = osp.dirname(osp.abspath(__file__))
 
 
-class MaskRcnnDataset(chainer.dataset.DatasetMixin):
+class MaskRCNNDataset(chainer.dataset.DatasetMixin):
 
-    def __init__(self, instance_dataset):
-        self._instance_dataset = instance_dataset
+    def __init__(self, dataset):
+        self.dataset = dataset
 
     def __len__(self):
-        return len(self._instance_dataset)
+        return len(self.dataset)
 
     def get_example(self, i):
-        example = self._instance_dataset.get_example(i)
+        example = self.dataset.get_example(i)
         img, bboxes, labels, masks = example[:4]
 
         masks = masks.astype(np.int32, copy=False)
         labels = labels.astype(np.int32, copy=False)
-        labels -= 1  # background: 0 -> -1
         bboxes = bboxes.astype(np.float32, copy=False)
 
         example = list(example)
@@ -110,11 +109,10 @@ def main():
     )
     test_data = mrcnn.datasets.COCOInstanceSegmentationDataset(
         'minival', use_crowd=True, return_crowd=True, return_area=True)
-    train_data.class_names = test_data.class_names
-    instance_class_names = train_data.class_names[1:]
+    class_names = train_data.class_names
 
-    train_data = MaskRcnnDataset(train_data)
-    test_data = MaskRcnnDataset(test_data)
+    train_data = MaskRCNNDataset(train_data)
+    test_data = MaskRCNNDataset(test_data)
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
@@ -131,7 +129,7 @@ def main():
 
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
-            n_fg_class=len(instance_class_names),
+            n_fg_class=len(class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
             anchor_scales=anchor_scales,
@@ -143,7 +141,7 @@ def main():
         n_layers = int(args.model.lstrip('resnet'))
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             n_layers=n_layers,
-            n_fg_class=len(instance_class_names),
+            n_fg_class=len(class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
             anchor_scales=anchor_scales,
@@ -205,8 +203,7 @@ def main():
     print_interval = 20, 'iteration'
 
     evaluator = mrcnn.extensions.InstanceSegmentationCOCOEvaluator(
-        test_iter, model.mask_rcnn, device=device,
-        label_names=instance_class_names)
+        test_iter, model.mask_rcnn, device=device, label_names=class_names)
     if args.multi_node:
         evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
     trainer.extend(evaluator, trigger=eval_interval)
@@ -224,7 +221,7 @@ def main():
         trainer.extend(
             mrcnn.extensions.InstanceSegmentationVisReport(
                 test_iter, model.mask_rcnn,
-                label_names=instance_class_names),
+                label_names=class_names),
             trigger=eval_interval)
         trainer.extend(chainer.training.extensions.observe_lr(),
                        trigger=log_interval)

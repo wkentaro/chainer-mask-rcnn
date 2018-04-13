@@ -54,21 +54,22 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
             img = img.transpose(1, 2, 0)  # CHW -> HWC
             gt_mask = gt_mask.astype(bool)
 
-            n_fg_class = len(self.label_names)
+            label_names = np.hstack((['__background__'], self.label_names))
+            n_class = len(label_names)
 
             gt_viz = mrcnn.utils.draw_instance_bboxes(
-                img, gt_bbox, gt_label, n_class=n_fg_class,
-                masks=gt_mask, captions=self.label_names[gt_label],
-                bg_class=-1)
+                img, gt_bbox, gt_label + 1, n_class=n_class,
+                masks=gt_mask, captions=label_names[gt_label + 1],
+                bg_class=0)
 
             captions = []
             for p_score, l_name in zip(pred_score,
-                                       self.label_names[pred_label]):
+                                       label_names[pred_label + 1]):
                 caption = '{:s} {:.1%}'.format(l_name, p_score)
                 captions.append(caption)
             pred_viz = mrcnn.utils.draw_instance_bboxes(
-                img, pred_bbox, pred_label, n_class=n_fg_class,
-                masks=pred_mask, captions=captions, bg_class=-1)
+                img, pred_bbox, pred_label + 1, n_class=n_class,
+                masks=pred_mask, captions=captions, bg_class=0)
 
             viz = np.vstack([gt_viz, pred_viz])
             vizs.append(viz)
