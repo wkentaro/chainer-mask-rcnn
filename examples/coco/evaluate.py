@@ -72,6 +72,7 @@ def main():
         proposal_creator_params=proposal_creator_params,
         min_size=min_size,
         max_size=max_size,
+        roi_size=params.get('roi_size', 7)
     )
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()

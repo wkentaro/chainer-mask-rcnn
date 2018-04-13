@@ -64,6 +64,7 @@ def main():
         n_fg_class=len(fg_class_names),
         pretrained_model=osp.join(log_dir, 'snapshot_model.npz'),
         pooling_func=pooling_func,
+        roi_size=params.get('roi_size', 7)
     )
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
