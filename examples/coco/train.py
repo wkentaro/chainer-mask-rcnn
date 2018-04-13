@@ -109,7 +109,7 @@ def main():
     )
     test_data = mrcnn.datasets.COCOInstanceSegmentationDataset(
         'minival', use_crowd=True, return_crowd=True, return_area=True)
-    class_names = train_data.class_names
+    class_names = test_data.class_names
 
     train_data = MaskRCNNDataset(train_data)
     test_data = MaskRCNNDataset(test_data)
