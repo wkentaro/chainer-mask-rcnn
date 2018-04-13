@@ -31,6 +31,12 @@ def summarize_log(logs_dir, name, keys, target_key, objective):
     except Exception:
         idx = None
 
+    eval_result = None
+    eval_result_file = osp.join(
+        logs_dir, name, 'snapshot_model.npz.eval_result.yaml')
+    if osp.exists(eval_result_file):
+        eval_result = yaml.load(open(eval_result_file))
+
     dfi = df.ix[idx] if idx else None
     row = []
     is_active = True
@@ -102,6 +108,11 @@ def summarize_log(logs_dir, name, keys, target_key, objective):
                     value = max(datetime.timedelta(seconds=0), value)
                     value = '- %s' % value.__str__()
             row.append(value)
+        elif key == 'eval_result':
+            value = None
+            if eval_result is not None:
+                value = '%.3f' % eval_result['validation/main/map']
+            row.append(value)
         elif key in params:
             row.append(params[key])
         elif dfi is not None and key in dfi:
@@ -170,6 +181,7 @@ if __name__ == '__main__':
         'lr', 'pooling_func',
         'epoch', 'iteration',
         # 'main/loss',
+        'eval_result',
         'validation/main/map',
     ]
     objective = 'max'
