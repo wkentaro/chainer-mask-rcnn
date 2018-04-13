@@ -113,7 +113,7 @@ def main():
         if isinstance(result[k], np.float64):
             result[k] = float(result[k])
 
-    yaml_file = osp.join(log_dir, 'result_evaluate.yaml')
+    yaml_file = pretrained_model + '.eval_result.yaml'
     with open(yaml_file, 'w') as f:
         yaml.safe_dump(result, f, default_flow_style=False)
 
