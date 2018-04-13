@@ -59,10 +59,11 @@ def main():
         raise ValueError
 
     model = params['model']
+    pretrained_model = osp.join(log_dir, 'snapshot_model.npz')
     mask_rcnn = mrcnn.models.MaskRCNNResNet(
         n_layers=int(model.lstrip('resnet')),
         n_fg_class=len(fg_class_names),
-        pretrained_model=osp.join(log_dir, 'snapshot_model.npz'),
+        pretrained_model=pretrained_model,
         pooling_func=pooling_func,
         roi_size=params.get('roi_size', 7)
     )
