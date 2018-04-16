@@ -37,10 +37,13 @@ class ResNet50Extractor(ResNet50Layers):
     mode = 'all'
 
     def __init__(self, *args, **kwargs):
+        remove_layers = kwargs.pop('remove_layers', True)
         super(ResNet50Extractor, self).__init__(*args, **kwargs)
-        # Remove no need layers to save memory
-        delattr(self, 'res5')
-        delattr(self, 'fc6')
+        if remove_layers:
+            # Remove no need layers to save memory
+            delattr(self, 'res5')
+            delattr(self, 'fc6')
+        # BatchNormalization -> AffineChannel2D
         for name, link in self.namedlinks():
             if not isinstance(link, L.BatchNormalization):
                 continue
@@ -53,6 +56,8 @@ class ResNet50Extractor(ResNet50Layers):
             delattr(parent, key)
             channels = link.gamma.size
             link2 = links.AffineChannel2D(channels)
+            link2.W.data[:] = link.gamma.data[:]
+            link2.b.data[:] = link.beta.data[:]
             parent.add_link(key, link2)
 
     @property
@@ -88,11 +93,13 @@ class ResNet101Extractor(ResNet101Layers):
     mode = 'all'
 
     def __init__(self, *args, **kwargs):
+        remove_layers = kwargs.pop('remove_layers', True)
         super(ResNet101Extractor, self).__init__(*args, **kwargs)
-        # Remove no need layers to save memory
-        delattr(self, 'res5')
-        delattr(self, 'fc6')
-        self.res5 = self.fc6 = None
+        if remove_layers:
+            # Remove no need layers to save memory
+            delattr(self, 'res5')
+            delattr(self, 'fc6')
+        # BatchNormalization -> AffineChannel2D
         for name, link in self.namedlinks():
             if not isinstance(link, L.BatchNormalization):
                 continue
@@ -105,6 +112,8 @@ class ResNet101Extractor(ResNet101Layers):
             delattr(parent, key)
             channels = link.gamma.size
             link2 = links.AffineChannel2D(channels)
+            link2.W.data[:] = link.gamma.data[:]
+            link2.b.data[:] = link.beta.data[:]
             parent.add_link(key, link2)
 
     @property
@@ -217,9 +226,11 @@ class MaskRCNNResNet(MaskRCNN):
 
     def _copy_imagenet_pretrained_resnet(self):
         if self._n_layers == 50:
-            pretrained_model = ResNet50Layers(pretrained_model='auto')
+            pretrained_model = ResNet50Extractor(
+                pretrained_model='auto', remove_layers=False)
         elif self._n_layers == 101:
-            pretrained_model = ResNet101Layers(pretrained_model='auto')
+            pretrained_model = ResNet50Extractor(
+                pretrained_model='auto', remove_layers=False)
         else:
             raise ValueError
 
@@ -281,6 +292,8 @@ class ResNetRoIHead(chainer.Chain):
             delattr(parent, key)
             channels = link.gamma.size
             link2 = links.AffineChannel2D(channels)
+            link2.W.data[:] = link.gamma.data[:]
+            link2.b.data[:] = link.beta.data[:]
             parent.add_link(key, link2)
 
         self.n_class = n_class
