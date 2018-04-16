@@ -37,4 +37,6 @@ See [here](https://drive.google.com/open?id=1Dfpc2Dd7_hh9ZsgfbDnuVG4xUnQFBksa) f
 ./evaluate.py logs/R-50-C4_x1_caffe2_to_chainer
 ```
 
-![](.readme/R-50-C4_x1_caffe2_to_chainer.jpg)
+<img src=".readme/R-50-C4_x1_caffe2.jpg" width="48%" /> <img src=".readme/R-50-C4_x1_caffe2_to_chainer.jpg" width="48%" />
+
+Fig 1. Inference results: caffe2 (left), chainer (right).
