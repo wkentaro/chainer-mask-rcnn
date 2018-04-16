@@ -145,7 +145,7 @@ class MaskRCNNTrainChain(chainer.Chain):
             bbox, anchor, img_size)
         rpn_loc_loss = _fast_rcnn_loc_loss(
             rpn_loc, gt_rpn_loc, gt_rpn_label, self.rpn_sigma)
-        rpn_cls_loss = F.softmax_cross_entropy(rpn_score, gt_rpn_label)
+        rpn_cls_loss = F.sigmoid_cross_entropy(rpn_score, gt_rpn_label)
 
         # Losses for outputs of the head.
         n_sample = roi_cls_loc.shape[0]
