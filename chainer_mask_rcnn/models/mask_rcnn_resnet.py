@@ -32,6 +32,22 @@ from .mask_rcnn import MaskRCNN
 from .region_proposal_network import RegionProposalNetwork
 
 
+def _get_affine_from_bn(bn):
+    channels = bn.gamma.size
+    bn_mean = bn.avg_mean
+    bn_var = bn.avg_var
+    scale = bn.gamma.data
+    bias = bn.beta.data
+    xp = chainer.cuda.get_array_module(bn_var)
+    std = xp.sqrt(bn_var + 1e-5)
+    new_scale = scale / std
+    new_bias = bias - bn_mean * new_scale
+    affine = links.AffineChannel2D(channels)
+    affine.W.data[:] = new_scale[:]
+    affine.b.data[:] = new_bias[:]
+    return affine
+
+
 class ResNet50Extractor(ResNet50Layers):
 
     mode = 'all'
@@ -54,10 +70,7 @@ class ResNet50Extractor(ResNet50Layers):
                     parent = getattr(parent, key)
             key = name.split('/')[-1]
             delattr(parent, key)
-            channels = link.gamma.size
-            link2 = links.AffineChannel2D(channels)
-            link2.W.data[:] = link.gamma.data[:]
-            link2.b.data[:] = link.beta.data[:]
+            link2 = _get_affine_from_bn(link)
             parent.add_link(key, link2)
 
     @property
@@ -73,18 +86,17 @@ class ResNet50Extractor(ResNet50Layers):
     def __call__(self, x):
         assert self.mode in ['head', 'res3+', 'res4+', 'all']
         h = x
-        with chainer.using_config('train', False):
-            for key, funcs in self.functions.items():
-                for func in funcs:
-                    h = func(h)
-                if key == 'res2' and self.mode == 'res3+':
+        for key, funcs in self.functions.items():
+            for func in funcs:
+                h = func(h)
+            if key == 'res2' and self.mode == 'res3+':
+                h.unchain_backward()
+            if key == 'res3' and self.mode == 'res4+':
+                h.unchain_backward()
+            if key == 'res4':
+                if self.mode == 'head':
                     h.unchain_backward()
-                if key == 'res3' and self.mode == 'res4+':
-                    h.unchain_backward()
-                if key == 'res4':
-                    if self.mode == 'head':
-                        h.unchain_backward()
-                    break
+                break
         return h
 
 
@@ -110,10 +122,7 @@ class ResNet101Extractor(ResNet101Layers):
                     parent = getattr(parent, key)
             key = name.split('/')[-1]
             delattr(parent, key)
-            channels = link.gamma.size
-            link2 = links.AffineChannel2D(channels)
-            link2.W.data[:] = link.gamma.data[:]
-            link2.b.data[:] = link.beta.data[:]
+            link2 = _get_affine_from_bn(link)
             parent.add_link(key, link2)
 
     @property
@@ -129,18 +138,17 @@ class ResNet101Extractor(ResNet101Layers):
     def __call__(self, x):
         assert self.mode in ['head', 'res3+', 'res4+', 'all']
         h = x
-        with chainer.using_config('train', False):
-            for key, funcs in self.functions.items():
-                for func in funcs:
-                    h = func(h)
-                if key == 'res2' and self.mode == 'res3+':
+        for key, funcs in self.functions.items():
+            for func in funcs:
+                h = func(h)
+            if key == 'res2' and self.mode == 'res3+':
+                h.unchain_backward()
+            if key == 'res3' and self.mode == 'res4+':
+                h.unchain_backward()
+            if key == 'res4':
+                if self.mode == 'head':
                     h.unchain_backward()
-                if key == 'res3' and self.mode == 'res4+':
-                    h.unchain_backward()
-                if key == 'res4':
-                    if self.mode == 'head':
-                        h.unchain_backward()
-                    break
+                break
         return h
 
 
@@ -290,10 +298,7 @@ class ResNetRoIHead(chainer.Chain):
                     parent = getattr(parent, key)
             key = name.split('/')[-1]
             delattr(parent, key)
-            channels = link.gamma.size
-            link2 = links.AffineChannel2D(channels)
-            link2.W.data[:] = link.gamma.data[:]
-            link2.b.data[:] = link.beta.data[:]
+            link2 = _get_affine_from_bn(link)
             parent.add_link(key, link2)
 
         self.n_class = n_class
