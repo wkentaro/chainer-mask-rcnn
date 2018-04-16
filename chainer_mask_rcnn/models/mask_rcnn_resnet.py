@@ -11,6 +11,8 @@
 # https://github.com/chainer/chainercv
 # --------------------------------------------------------
 
+import collections
+
 import numpy as np
 
 import chainer
@@ -20,14 +22,14 @@ import chainer.links as L
 from chainer.links.model.vision.resnet import BuildingBlock
 from chainer.links.model.vision.resnet import ResNet101Layers
 from chainer.links.model.vision.resnet import ResNet50Layers
-from chainercv.links.model.faster_rcnn.region_proposal_network \
-    import RegionProposalNetwork
 from chainercv.utils import download_model
 
 from .. import functions
+from .. import links
 from .faster_rcnn_resnet import _copy_persistent_chain
 from .faster_rcnn_resnet import _global_average_pooling_2d
 from .mask_rcnn import MaskRCNN
+from .region_proposal_network import RegionProposalNetwork
 
 
 class ResNet50Extractor(ResNet50Layers):
@@ -39,7 +41,29 @@ class ResNet50Extractor(ResNet50Layers):
         # Remove no need layers to save memory
         delattr(self, 'res5')
         delattr(self, 'fc6')
-        self.res5 = self.fc6 = None
+        for name, link in self.namedlinks():
+            if not isinstance(link, L.BatchNormalization):
+                continue
+            for key in name.split('/')[:-1]:
+                if key == '':
+                    parent = self
+                else:
+                    parent = getattr(parent, key)
+            key = name.split('/')[-1]
+            delattr(parent, key)
+            channels = link.gamma.size
+            link2 = links.AffineChannel2D(channels)
+            parent.add_link(key, link2)
+
+    @property
+    def functions(self):
+        return collections.OrderedDict([
+            ('conv1', [self.conv1, self.bn1, F.relu]),
+            ('pool1', [lambda x: F.max_pooling_2d(x, ksize=3, stride=2)]),
+            ('res2', [self.res2]),
+            ('res3', [self.res3]),
+            ('res4', [self.res4]),
+        ])
 
     def __call__(self, x):
         assert self.mode in ['head', 'res3+', 'res4+', 'all']
@@ -69,6 +93,29 @@ class ResNet101Extractor(ResNet101Layers):
         delattr(self, 'res5')
         delattr(self, 'fc6')
         self.res5 = self.fc6 = None
+        for name, link in self.namedlinks():
+            if not isinstance(link, L.BatchNormalization):
+                continue
+            for key in name.split('/')[:-1]:
+                if key == '':
+                    parent = self
+                else:
+                    parent = getattr(parent, key)
+            key = name.split('/')[-1]
+            delattr(parent, key)
+            channels = link.gamma.size
+            link2 = links.AffineChannel2D(channels)
+            parent.add_link(key, link2)
+
+    @property
+    def functions(self):
+        return collections.OrderedDict([
+            ('conv1', [self.conv1, self.bn1, F.relu]),
+            ('pool1', [lambda x: F.max_pooling_2d(x, ksize=3, stride=2)]),
+            ('res2', [self.res2]),
+            ('res3', [self.res3]),
+            ('res4', [self.res4]),
+        ])
 
     def __call__(self, x):
         assert self.mode in ['head', 'res3+', 'res4+', 'all']
@@ -101,7 +148,11 @@ class MaskRCNNResNet(MaskRCNN):
                  ratios=[0.5, 1, 2], anchor_scales=[4, 8, 16, 32],
                  res_initialW=None, rpn_initialW=None,
                  loc_initialW=None, score_initialW=None,
-                 proposal_creator_params=dict(),
+                 proposal_creator_params=dict(
+                     min_size=0,
+                     n_test_pre_nms=6000,
+                     n_test_post_nms=1000,
+                 ),
                  pooling_func=functions.roi_align_2d,
                  rpn_hidden=1024, roi_size=7,
                  ):
@@ -215,7 +266,22 @@ class ResNetRoIHead(chainer.Chain):
             # 14 x 14 x 256 -> 14 x 14 x 20
             n_fg_class = n_class - 1
             self.mask = L.Convolution2D(
-                256, n_fg_class, 1, initialW=chainer.initializers.Normal(0.01))
+                256, n_fg_class, 1,
+                initialW=chainer.initializers.Normal(0.01))
+
+        for name, link in self.res5.namedlinks():
+            if not isinstance(link, L.BatchNormalization):
+                continue
+            for key in name.split('/')[:-1]:
+                if key == '':
+                    parent = self.res5
+                else:
+                    parent = getattr(parent, key)
+            key = name.split('/')[-1]
+            delattr(parent, key)
+            channels = link.gamma.size
+            link2 = links.AffineChannel2D(channels)
+            parent.add_link(key, link2)
 
         self.n_class = n_class
         self.roi_size = roi_size

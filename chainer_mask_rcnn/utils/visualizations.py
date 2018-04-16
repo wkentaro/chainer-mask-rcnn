@@ -9,7 +9,7 @@ from .geometry import label2instance_boxes
 
 
 def draw_instance_boxes(img, boxes, instance_classes, n_class,
-                        masks=None, captions=None, bg_class=0, thickness=2,
+                        masks=None, captions=None, bg_class=0, thickness=1,
                         draw=None):
     warnings.warn('draw_instance_boxes is deprecated, '
                   'please use draw_instance_bboxes')
@@ -20,7 +20,8 @@ def draw_instance_boxes(img, boxes, instance_classes, n_class,
 
 
 def draw_instance_bboxes(img, bboxes, labels, n_class, masks=None,
-                         captions=None, bg_class=0, thickness=2, draw=None):
+                         captions=None, bg_class=0, thickness=1, alpha=0.5,
+                         draw=None):
     # validation
     assert isinstance(img, np.ndarray)
     assert img.shape == (img.shape[0], img.shape[1], 3)
@@ -66,10 +67,11 @@ def draw_instance_bboxes(img, bboxes, labels, n_class, masks=None,
             color_inst = cmap_inst[i_box]
             color_inst = (color_inst * 255)
             img_viz[y1:y2, x1:x2][mask_inst] = (
-                img_viz[y1:y2, x1:x2][mask_inst] * 0.3 +
-                color_inst * 0.7
+                img_viz[y1:y2, x1:x2][mask_inst] * (1 - alpha) +
+                color_inst * alpha
             )
-            mask_boundary = skimage.segmentation.find_boundaries(mask_inst)
+            mask_boundary = skimage.segmentation.find_boundaries(
+                mask_inst, connectivity=2)
             img_viz[y1:y2, x1:x2][mask_boundary] = color_inst
             assert img_viz.dtype == np.uint8
 

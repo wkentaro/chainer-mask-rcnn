@@ -27,3 +27,12 @@ mpiexec -n 4 ./train.py --multi-node
 | FCIS, ResNet50 | [msracver/FCIS](https://github.com/msracver/FCIS) | 8 | 27.1 |
 
 See [here](https://drive.google.com/open?id=1Dfpc2Dd7_hh9ZsgfbDnuVG4xUnQFBksa) for training logs.
+
+
+## Caffe2 (Detectron) to Chainer
+
+```bash
+./convert_caffe2_to_chainer.py
+
+./evaluate.py logs/R-50-C4_x1_caffe2_to_chainer
+```

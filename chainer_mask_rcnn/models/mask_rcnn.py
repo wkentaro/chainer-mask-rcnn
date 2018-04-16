@@ -352,11 +352,11 @@ class MaskRCNN(chainer.Chain):
                     x=h, rois=rois, roi_indices=roi_indices,
                     pred_bbox=False, pred_mask=True)
             roi_mask = cuda.to_cpu(roi_masks.data)
-            roi_mask = roi_mask[np.arange(len(label)), label]
 
-            roi = np.round(bbox).astype(np.int32)
-            n_roi = len(roi)
+            n_roi = len(rois)
+            roi_mask = roi_mask[np.arange(n_roi), label, :, :]
             mask = np.zeros((n_roi, size[0], size[1]), dtype=bool)
+            roi = np.round(bbox).astype(np.int32)
             for i in six.moves.range(n_roi):
                 y1, x1, y2, x2 = roi[i]
                 roi_H = y2 - y1
