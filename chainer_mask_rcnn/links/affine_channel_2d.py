@@ -1,5 +1,6 @@
 import chainer
 from chainer import functions
+from chainer import initializers
 
 
 class AffineChannel2D(chainer.Link):
@@ -9,8 +10,10 @@ class AffineChannel2D(chainer.Link):
     def __init__(self, channels):
         super(AffineChannel2D, self).__init__()
         with self.init_scope():
-            self.W = chainer.variable.Parameter(shape=(channels,))
-            self.b = chainer.variable.Parameter(shape=(channels,))
+            W_initializer = initializers.One()
+            self.W = chainer.variable.Parameter(W_initializer, (channels,))
+            b_initializer = initializers.Zero()
+            self.b = chainer.variable.Parameter(b_initializer, (channels,))
 
     def __call__(self, x):
         W = functions.reshape(self.W, (1, -1, 1, 1))
