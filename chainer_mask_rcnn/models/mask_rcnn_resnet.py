@@ -237,7 +237,7 @@ class MaskRCNNResNet(MaskRCNN):
             pretrained_model = ResNet50Extractor(
                 pretrained_model='auto', remove_layers=False)
         elif self._n_layers == 101:
-            pretrained_model = ResNet50Extractor(
+            pretrained_model = ResNet101Extractor(
                 pretrained_model='auto', remove_layers=False)
         else:
             raise ValueError
