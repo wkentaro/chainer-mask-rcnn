@@ -18,6 +18,10 @@ class AffineChannel2D(chainer.Link):
     def __call__(self, x):
         W = functions.reshape(self.W, (1, -1, 1, 1))
         W = functions.broadcast_to(W, x.shape)
+        y = x * W
+        del W
         b = functions.reshape(self.b, (1, -1, 1, 1))
         b = functions.broadcast_to(b, x.shape)
-        return x * W + b
+        y += b
+        del b
+        return y
