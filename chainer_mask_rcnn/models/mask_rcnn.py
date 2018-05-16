@@ -34,7 +34,6 @@ import chainer.functions as F
 from chainercv.links.model.faster_rcnn.utils.loc2bbox import loc2bbox
 from chainercv.transforms.image.resize import resize
 from chainercv.utils import non_maximum_suppression
-import six
 
 
 def expand_boxes(boxes, scale):
@@ -60,7 +59,6 @@ def segm_results(bbox, label, roi_mask, im_h, im_w):
     ref_boxes = bbox[:, [1, 0, 3, 2]]
     masks = roi_mask
 
-    num_classes = 81
     all_masks = []
     mask_ind = 0
     M = 14
@@ -70,8 +68,8 @@ def segm_results(bbox, label, roi_mask, im_h, im_w):
     padded_mask = np.zeros((M + 2, M + 2), dtype=np.float32)
 
     for mask_ind in range(len(ref_boxes)):
-        l = label[mask_ind]
-        padded_mask[1:-1, 1:-1] = masks[mask_ind, l, :, :]
+        label_i = label[mask_ind]
+        padded_mask[1:-1, 1:-1] = masks[mask_ind, label_i, :, :]
 
         ref_box = ref_boxes[mask_ind, :]
         w = (ref_box[2] - ref_box[0] + 1)
