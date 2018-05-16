@@ -72,7 +72,7 @@ def draw_instance_bboxes(img, bboxes, labels, n_class, masks=None,
             )
             mask_boundary = skimage.segmentation.find_boundaries(
                 mask_inst, connectivity=2)
-            img_viz[y1:y2, x1:x2][mask_boundary] = color_inst
+            img_viz[y1:y2, x1:x2][mask_boundary] = [200, 200, 200]
             assert img_viz.dtype == np.uint8
 
     CV_AA = 16
