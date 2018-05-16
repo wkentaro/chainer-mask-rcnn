@@ -2,7 +2,11 @@ import copy
 
 import chainer
 from chainer import reporter
-from chainercv.utils import apply_prediction_to_iterator
+try:
+    from chainercv.utils \
+        import apply_prediction_to_iterator as apply_to_iterator
+except ImportError:
+    from chainercv.utils import apply_to_iterator
 import numpy as np
 import tqdm
 
@@ -34,8 +38,8 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
         if self._show_progress:
             it = tqdm.tqdm(it, total=len(it.dataset))
 
-        imgs, pred_values, gt_values = apply_prediction_to_iterator(
-            target.predict, it)
+        imgs, pred_values, gt_values = apply_to_iterator(target.predict, it)
+        del imgs
 
         pred_bboxes, pred_masks, pred_labels, pred_scores = pred_values
 
