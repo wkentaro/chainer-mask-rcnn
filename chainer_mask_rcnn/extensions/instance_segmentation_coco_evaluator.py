@@ -2,11 +2,7 @@ import copy
 
 import chainer
 from chainer import reporter
-try:
-    from chainercv.utils \
-        import apply_prediction_to_iterator as apply_to_iterator
-except ImportError:
-    from chainercv.utils import apply_to_iterator
+from chainercv.utils import apply_to_iterator
 import numpy as np
 import tqdm
 
@@ -37,15 +33,16 @@ class InstanceSegmentationCOCOEvaluator(chainer.training.extensions.Evaluator):
         if self._show_progress:
             it = tqdm.tqdm(it, total=len(it.dataset))
 
-        imgs, pred_values, gt_values = apply_to_iterator(target.predict, it)
-        del imgs
+        in_values, out_values, rest_values = apply_to_iterator(
+            target.predict, it)
+        del in_values
 
-        pred_bboxes, pred_masks, pred_labels, pred_scores = pred_values
+        pred_bboxes, pred_masks, pred_labels, pred_scores = out_values
 
-        if len(gt_values) == 5:
-            gt_bboxes, gt_labels, gt_masks, gt_crowdeds, gt_areas = gt_values
-        elif len(gt_values) == 3:
-            gt_bboxes, gt_labels, gt_masks = gt_values
+        if len(rest_values) == 5:
+            gt_bboxes, gt_labels, gt_masks, gt_crowdeds, gt_areas = rest_values
+        elif len(rest_values) == 3:
+            gt_bboxes, gt_labels, gt_masks = rest_values
             gt_crowdeds = None
             gt_areas = None
 

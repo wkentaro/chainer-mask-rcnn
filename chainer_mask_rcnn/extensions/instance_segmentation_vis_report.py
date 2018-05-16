@@ -4,11 +4,7 @@ import os.path as osp
 import shutil
 
 import chainer
-try:
-    from chainercv.utils \
-        import apply_prediction_to_iterator as apply_to_iterator
-except ImportError:
-    from chainercv.utils import apply_to_iterator
+from chainercv.utils import apply_to_iterator
 import cv2
 import fcn
 import numpy as np
@@ -38,11 +34,14 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
         else:
             it = copy.copy(iterator)
 
-        imgs, pred_values, gt_values = apply_to_iterator(target.predict, it)
+        in_values, out_values, rest_values = apply_to_iterator(
+            target.predict, it)
 
-        pred_bboxes, pred_masks, pred_labels, pred_scores = pred_values
+        imgs, = in_values
 
-        gt_bboxes, gt_labels, gt_masks = gt_values[:3]
+        pred_bboxes, pred_masks, pred_labels, pred_scores = out_values
+
+        gt_bboxes, gt_labels, gt_masks = rest_values[:3]
 
         score_thresh = 0.7
 
