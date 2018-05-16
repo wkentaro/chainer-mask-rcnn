@@ -1,5 +1,5 @@
 chainer
-chainercv==0.8.0
+chainercv
 fcn
 matplotlib
 pandas
