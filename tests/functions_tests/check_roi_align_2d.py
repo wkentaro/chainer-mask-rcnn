@@ -80,9 +80,12 @@ for rois in roiss:
 
     print('check_backward:')
     gradient_check.check_backward(
-        mrcnn.functions.ROIAlign2D(2, 2, 1),
-        (x.data, rois.data), y.grad, no_grads=[False, True],
-        **{'atol': 5e-4, 'rtol': 5e-3},
+        func=mrcnn.functions.ROIAlign2D(2, 2, 1),
+        x_data=(x.data, rois.data),
+        y_grad=y.grad,
+        no_grads=[False, True],
+        atol=5e-4,
+        rtol=5e-3,
     )
     print('Passed!')
     print('-' * 79)
