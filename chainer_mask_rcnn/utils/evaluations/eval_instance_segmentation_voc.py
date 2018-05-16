@@ -14,9 +14,9 @@ def mask_iou(mask_a, mask_b):
     if mask_a.shape[1:] != mask_b.shape[1:]:
         raise ValueError
 
-    I = len(mask_a)
-    J = len(mask_b)
-    iou = np.zeros((I, J), dtype=np.float64)
+    size_a = len(mask_a)
+    size_b = len(mask_b)
+    iou = np.zeros((size_a, size_b), dtype=np.float64)
     for i, ma in enumerate(mask_a):
         for j, mb in enumerate(mask_b):
             ov = get_mask_overlap(ma, mb)
