@@ -107,7 +107,6 @@ def main():
         )
     else:
         raise ValueError
-    mask_rcnn.use_preset('evaluate')
     model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
     if args.multi_node or args.gpu >= 0:
         model.to_gpu()

@@ -172,9 +172,10 @@ class MaskRCNN(chainer.Chain):
         self.loc_normalize_mean = loc_normalize_mean
         self.loc_normalize_std = loc_normalize_std
 
-        self._detections_per_im = detections_per_im
+        self.nms_thresh = 0.5
+        self.score_thresh = 0.05
 
-        self.use_preset('visualize')
+        self._detections_per_im = detections_per_im
 
     @property
     def n_class(self):
@@ -226,33 +227,6 @@ class MaskRCNN(chainer.Chain):
         roi_cls_locs, roi_scores, roi_masks = self.head(
             h, rois, roi_indices)
         return roi_cls_locs, roi_scores, rois, roi_indices, roi_masks
-
-    def use_preset(self, preset):
-        """Use the given preset during prediction.
-
-        This method changes values of :obj:`self.nms_thresh` and
-        :obj:`self.score_thresh`. These values are a threshold value
-        used for non maximum suppression and a threshold value
-        to discard low confidence proposals in :meth:`predict`,
-        respectively.
-
-        If the attributes need to be changed to something
-        other than the values provided in the presets, please modify
-        them by directly accessing the public attributes.
-
-        Args:
-            preset ({'visualize', 'evaluate'): A string to determine the
-                preset to use.
-
-        """
-        if preset == 'visualize':
-            self.nms_thresh = 0.5
-            self.score_thresh = 0.7
-        elif preset == 'evaluate':
-            self.nms_thresh = 0.5
-            self.score_thresh = 0.05
-        else:
-            raise ValueError('preset must be visualize or evaluate')
 
     def prepare(self, img):
         """Preprocess an image for feature extraction.
