@@ -28,8 +28,6 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
         iterator = self._iterators['main']
         target = self._targets['main']
 
-        target.use_preset('visualize')
-
         if hasattr(iterator, 'reset'):
             iterator.reset()
             it = iterator
@@ -42,6 +40,8 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
         pred_bboxes, pred_masks, pred_labels, pred_scores = pred_values
 
         gt_bboxes, gt_labels, gt_masks = gt_values[:3]
+
+        score_thresh = 0.7
 
         # visualize
         vizs = []
@@ -61,6 +61,12 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
                 img, gt_bbox, gt_label + 1, n_class=n_class,
                 masks=gt_mask, captions=label_names[gt_label + 1],
                 bg_class=0)
+
+            keep = pred_score >= score_thresh
+            pred_bbox = pred_bbox[keep]
+            pred_label = pred_label[keep]
+            pred_mask = pred_mask[keep]
+            pred_score = pred_score[keep]
 
             captions = []
             for p_score, l_name in zip(pred_score,
@@ -88,5 +94,3 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
         if self._copy_latest:
             shutil.copy(file_name,
                         osp.join(osp.dirname(file_name), 'latest.jpg'))
-
-        target.use_preset('evaluate')

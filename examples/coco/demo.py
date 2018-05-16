@@ -80,8 +80,10 @@ def main():
     img_chw = img.transpose(2, 0, 1)
     bboxes, masks, labels, scores = mask_rcnn.predict([img_chw])
     bboxes, masks, labels, scores = bboxes[0], masks[0], labels[0], scores[0]
-    o = np.argsort(scores)
-    bboxes, masks, labels, scores = bboxes[o], masks[o], labels[o], scores[o]
+    k = scores >= 0.7
+    bboxes, masks, labels, scores = bboxes[k], masks[k], labels[k], scores[k]
+    i = np.argsort(scores)
+    bboxes, masks, labels, scores = bboxes[i], masks[i], labels[i], scores[i]
 
     captions = ['{}: {:.1%}'.format(class_names[l], s)
                 for l, s in zip(labels, scores)]

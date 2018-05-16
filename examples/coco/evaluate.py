@@ -107,7 +107,6 @@ def main():
         test_data, batch_size=1, repeat=False, shuffle=False)
 
     print('Evaluating...')
-    mask_rcnn.use_preset('evaluate')
     evaluator = mrcnn.extensions.InstanceSegmentationCOCOEvaluator(
         test_iter, mask_rcnn, label_names=class_names, show_progress=True)
     result = evaluator()

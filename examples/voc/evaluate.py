@@ -105,7 +105,6 @@ def main():
         test_data, batch_size=1, repeat=False, shuffle=False)
 
     print('Evaluating...')
-    mask_rcnn.use_preset('evaluate')
     evaluator = mrcnn.extensions.InstanceSegmentationVOCEvaluator(
         test_iter, mask_rcnn, use_07_metric=True,
         label_names=fg_class_names, show_progress=True)
