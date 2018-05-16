@@ -37,6 +37,68 @@ from chainercv.utils import non_maximum_suppression
 import six
 
 
+def expand_boxes(boxes, scale):
+    """Expand an array of boxes by a given scale."""
+    w_half = (boxes[:, 2] - boxes[:, 0]) * .5
+    h_half = (boxes[:, 3] - boxes[:, 1]) * .5
+    x_c = (boxes[:, 2] + boxes[:, 0]) * .5
+    y_c = (boxes[:, 3] + boxes[:, 1]) * .5
+
+    w_half *= scale
+    h_half *= scale
+
+    boxes_exp = np.zeros(boxes.shape)
+    boxes_exp[:, 0] = x_c - w_half
+    boxes_exp[:, 2] = x_c + w_half
+    boxes_exp[:, 1] = y_c - h_half
+    boxes_exp[:, 3] = y_c + h_half
+
+    return boxes_exp
+
+
+def segm_results(bbox, label, roi_mask, im_h, im_w):
+    ref_boxes = bbox[:, [1, 0, 3, 2]]
+    masks = roi_mask
+
+    num_classes = 81
+    all_masks = []
+    mask_ind = 0
+    M = 14
+    scale = (M + 2.0) / M
+    ref_boxes = expand_boxes(ref_boxes, scale)
+    ref_boxes = ref_boxes.astype(np.int32)
+    padded_mask = np.zeros((M + 2, M + 2), dtype=np.float32)
+
+    for mask_ind in range(len(ref_boxes)):
+        l = label[mask_ind]
+        padded_mask[1:-1, 1:-1] = masks[mask_ind, l, :, :]
+
+        ref_box = ref_boxes[mask_ind, :]
+        w = (ref_box[2] - ref_box[0] + 1)
+        h = (ref_box[3] - ref_box[1] + 1)
+        w = np.maximum(w, 1)
+        h = np.maximum(h, 1)
+
+        mask = cv2.resize(padded_mask, (w, h))
+        mask = np.array(mask > 0.5, dtype=np.uint8)
+        im_mask = np.zeros((im_h, im_w), dtype=np.uint8)
+
+        x_0 = max(ref_box[0], 0)
+        x_1 = min(ref_box[2] + 1, im_w)
+        y_0 = max(ref_box[1], 0)
+        y_1 = min(ref_box[3] + 1, im_h)
+
+        im_mask[y_0:y_1, x_0:x_1] = mask[
+            (y_0 - ref_box[1]):(y_1 - ref_box[1]),
+            (x_0 - ref_box[0]):(x_1 - ref_box[0])]
+        im_mask = im_mask.astype(bool)
+
+        all_masks.append(im_mask)
+    all_masks = np.asarray(all_masks)
+
+    return all_masks
+
+
 class MaskRCNN(chainer.Chain):
 
     """Base class for Faster R-CNN.
@@ -351,19 +413,10 @@ class MaskRCNN(chainer.Chain):
                 _, _, roi_masks = self.head(
                     x=h, rois=rois, roi_indices=roi_indices,
                     pred_bbox=False, pred_mask=True)
+                roi_masks = F.sigmoid(roi_masks)
             roi_mask = cuda.to_cpu(roi_masks.data)
 
-            n_roi = len(rois)
-            roi_mask = roi_mask[np.arange(n_roi), label, :, :]
-            mask = np.zeros((n_roi, size[0], size[1]), dtype=bool)
-            roi = np.round(bbox).astype(np.int32)
-            for i in six.moves.range(n_roi):
-                y1, x1, y2, x2 = roi[i]
-                roi_H = y2 - y1
-                roi_W = x2 - x1
-                roi_mask_i = cv2.resize(roi_mask[i], (roi_W, roi_H))
-                roi_mask_i = roi_mask_i > 0.5  # float -> bool
-                mask[i, y1:y2, x1:x2][roi_mask_i] = True
+            mask = segm_results(bbox, label, roi_mask, size[0], size[1])
             masks.append(mask)
 
         return bboxes, masks, labels, scores

@@ -77,7 +77,7 @@ class ResNet50Extractor(ResNet50Layers):
     def functions(self):
         return collections.OrderedDict([
             ('conv1', [self.conv1, self.bn1, F.relu]),
-            ('pool1', [lambda x: F.max_pooling_2d(x, ksize=3, stride=2)]),
+            ('pool1', [lambda x: F.max_pooling_2d(x, 3, stride=2, pad=1)]),
             ('res2', [self.res2]),
             ('res3', [self.res3]),
             ('res4', [self.res4]),
@@ -161,17 +161,23 @@ class MaskRCNNResNet(MaskRCNN):
                  n_layers,
                  n_fg_class=None,
                  pretrained_model=None,
-                 min_size=600, max_size=1000,
-                 ratios=[0.5, 1, 2], anchor_scales=[4, 8, 16, 32],
-                 res_initialW=None, rpn_initialW=None,
-                 loc_initialW=None, score_initialW=None,
+                 min_size=600,
+                 max_size=1000,
+                 ratios=(0.5, 1, 2),
+                 anchor_scales=(4, 8, 16, 32),
+                 mean=(123.152, 115.903, 103.063),
+                 res_initialW=None,
+                 rpn_initialW=None,
+                 loc_initialW=None,
+                 score_initialW=None,
                  proposal_creator_params=dict(
                      min_size=0,
                      n_test_pre_nms=6000,
                      n_test_post_nms=1000,
                  ),
                  pooling_func=functions.roi_align_2d,
-                 rpn_hidden=1024, roi_size=7,
+                 rpn_hidden=1024,
+                 roi_size=7,
                  ):
         if n_fg_class is None:
             if pretrained_model not in self._models:
@@ -214,12 +220,15 @@ class MaskRCNNResNet(MaskRCNN):
             pooling_func=pooling_func,
         )
 
+        if len(mean) != 3:
+            raise ValueError('The mean must be tuple of RGB values.')
+        mean = np.asarray(mean, dtype=np.float32)[:, None, None]
+
         super(MaskRCNNResNet, self).__init__(
             extractor,
             rpn,
             head,
-            mean=np.array([123.152, 115.903, 103.063],
-                          dtype=np.float32)[:, None, None],
+            mean=mean,
             min_size=min_size,
             max_size=max_size
         )
