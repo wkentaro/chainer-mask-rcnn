@@ -21,7 +21,8 @@ See [examples](examples).
 ### For single GPU training
 
 ```bash
-conda install -c conda-forge -y opencv
+pip install opencv-python
+pip install Cython
 pip install .
 ```
 
@@ -58,7 +59,8 @@ pip install chainermn
 - Install [chainer-mask-rcnn](https://github.com/wkentaro/chainer-mask-rcnn)
 
 ```bash
-conda install -c conda-forge -y opencv
+pip install opencv-python
+pip install Cython
 pip install .
 ```
 
@@ -66,9 +68,9 @@ pip install .
 ## Testing
 
 ```bash
-pip install hacking pytest
+pip install flake8 pytest
 flake8 .
-pytest tests
+pytest -v tests
 ```
 
 
