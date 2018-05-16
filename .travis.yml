@@ -21,7 +21,7 @@ install:
 
 script:
   - flake8 .
-  - pytest -v tests
+  - pytest -v tests -m 'not gpu'
 
 notifications:
   email: false
