@@ -85,6 +85,8 @@ def main():
 
     captions = ['{}: {:.1%}'.format(class_names[l], s)
                 for l, s in zip(labels, scores)]
+    for caption in captions:
+        print(caption)
     viz = mrcnn.utils.draw_instance_bboxes(
         img, bboxes, labels + 1, n_class=len(class_names) + 1,
         captions=captions, masks=masks)
