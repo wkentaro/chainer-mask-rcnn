@@ -281,5 +281,10 @@ if not osp.exists(link_file):
     os.symlink(dst_file, link_file)
 yaml_file = osp.join(log_dir, 'params.yaml')
 with open(yaml_file, 'w') as f:
-    params = dict(model='resnet50', pooling_func='align', roi_size=14)
-    yaml.dump(params, f)
+    params = dict(
+        model='resnet50',
+        pooling_func='align',
+        roi_size=14,
+        mean=[122.7717, 115.9465, 102.9801],
+    )
+    yaml.safe_dump(params, f, default_flow_style=False)
