@@ -66,6 +66,7 @@ def main():
         pretrained_model=pretrained_model,
         pooling_func=pooling_func,
         anchor_scales=anchor_scales,
+        mean=params.get('mean', (123.152, 115.903, 103.063)),
         min_size=min_size,
         max_size=max_size,
         roi_size=params.get('roi_size', 7)
