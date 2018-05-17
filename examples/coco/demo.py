@@ -27,7 +27,7 @@ def main():
     print('Using image file: {}'.format(args.img))
 
     # XXX: see also evaluate.py
-    # -------------------------------------------------------------------------
+    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # param
     params = yaml.load(open(osp.join(args.log_dir, 'params.yaml')))
     print('Training config:')
@@ -54,7 +54,7 @@ def main():
 
     min_size = 800
     max_size = 1333
-    anchor_scales = [2, 4, 8, 16, 32]
+    anchor_scales = (2, 4, 8, 16, 32)
 
     pretrained_model = osp.join(args.log_dir, 'snapshot_model.npz')
     print('Using pretrained_model: %s' % pretrained_model)
@@ -74,7 +74,7 @@ def main():
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
         mask_rcnn.to_gpu()
-    # -------------------------------------------------------------------------
+    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     img = skimage.io.imread(args.img)
     img_chw = img.transpose(2, 0, 1)

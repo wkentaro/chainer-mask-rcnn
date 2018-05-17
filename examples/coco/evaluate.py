@@ -12,8 +12,6 @@ import yaml
 
 import chainer_mask_rcnn as mrcnn
 
-from train import MaskRCNNDataset
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -22,6 +20,8 @@ def main():
     parser.add_argument('--gpu', '-g', type=int, default=0, help='gpu id')
     args = parser.parse_args()
 
+    # XXX: see also demo.py
+    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # param
     params = yaml.load(open(osp.join(args.log_dir, 'params.yaml')))
     print('Training config:')
@@ -33,7 +33,6 @@ def main():
     test_data = mrcnn.datasets.COCOInstanceSegmentationDataset(
         'minival', use_crowd=True, return_crowd=True, return_area=True)
     class_names = test_data.class_names
-    test_data = MaskRCNNDataset(test_data)
 
     # model
     chainer.global_config.train = False
@@ -62,6 +61,7 @@ def main():
         pretrained_model=pretrained_model,
         pooling_func=pooling_func,
         anchor_scales=anchor_scales,
+        mean=params.get('mean', (123.152, 115.903, 103.063)),
         min_size=min_size,
         max_size=max_size,
         roi_size=params.get('roi_size', 7)
@@ -69,6 +69,7 @@ def main():
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
         mask_rcnn.to_gpu()
+    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     test_data = chainer.datasets.TransformDataset(
         test_data, mrcnn.datasets.MaskRCNNTransform(mask_rcnn, train=False))

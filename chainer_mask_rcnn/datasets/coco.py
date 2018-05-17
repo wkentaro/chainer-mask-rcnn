@@ -149,7 +149,7 @@ class COCOInstanceSegmentationDataset(chainer.dataset.DatasetMixin):
         bboxes = np.asarray(bboxes, dtype=np.float32)
         bboxes = bboxes.reshape((-1, 4))
         labels = np.asarray(labels, dtype=np.int32)
-        masks = np.asarray(masks, dtype=bool)
+        masks = np.asarray(masks, dtype=np.int32)
         masks = masks.reshape((-1, height, width))
         example = [bboxes, labels, masks]
         if self._return_crowd:

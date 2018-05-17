@@ -27,27 +27,6 @@ import chainer_mask_rcnn as mrcnn
 here = osp.dirname(osp.abspath(__file__))
 
 
-class MaskRCNNDataset(chainer.dataset.DatasetMixin):
-
-    def __init__(self, dataset):
-        self.dataset = dataset
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def get_example(self, i):
-        example = self.dataset.get_example(i)
-        img, bboxes, labels, masks = example[:4]
-
-        masks = masks.astype(np.int32, copy=False)
-        labels = labels.astype(np.int32, copy=False)
-        bboxes = bboxes.astype(np.float32, copy=False)
-
-        example = list(example)
-        example[:4] = img, bboxes, labels, masks
-        return tuple(example)
-
-
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -110,9 +89,6 @@ def main():
     test_data = mrcnn.datasets.COCOInstanceSegmentationDataset(
         'minival', use_crowd=True, return_crowd=True, return_area=True)
     class_names = test_data.class_names
-
-    train_data = MaskRCNNDataset(train_data)
-    test_data = MaskRCNNDataset(test_data)
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
