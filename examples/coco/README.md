@@ -35,8 +35,9 @@ See [here](https://drive.google.com/open?id=1Dfpc2Dd7_hh9ZsgfbDnuVG4xUnQFBksa) f
 ./convert_caffe2_to_chainer.py
 
 ./evaluate.py logs/R-50-C4_x1_caffe2_to_chainer
+
+./demo.py logs/R-50-C4_x1_caffe2_to_chainer
 ```
 
-<img src=".readme/R-50-C4_x1_caffe2_result_33823288584_1d21cf0a26_k.jpg" width="48%" /> <img src=".readme/R-50-C4_x1_caffe2_to_chainer_result_33823288584_1d21cf0a26_k.jpg" width="48%" />
-
-Fig 1. Inference results: Caffe2 (left), Chainer (right).
+<img src=".readme/R-50-C4_x1_caffe2_result_33823288584_1d21cf0a26_k.jpg" width="48%" /> <img src=".readme/R-50-C4_x1_caffe2_to_chainer_result_33823288584_1d21cf0a26_k.jpg" width="48%" />  
+*Fig 1. Inference results: Caffe2 (left), Chainer (right).*
