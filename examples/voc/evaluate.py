@@ -24,6 +24,8 @@ def main():
 
     log_dir = args.log_dir
 
+    # XXX: see also demo.py
+    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # param
     params = yaml.load(open(osp.join(log_dir, 'params.yaml')))
     print('Training config:')
@@ -33,17 +35,7 @@ def main():
 
     # dataset
     test_data = mrcnn.datasets.SBDInstanceSegmentationDataset('val')
-    fg_class_names = test_data.class_names
-
-    def transform_test_data(in_data):
-        img = in_data[0]
-        img = img.transpose(2, 0, 1)
-        out_data = list(in_data)
-        out_data[0] = img
-        return tuple(out_data)
-
-    test_data = chainer.datasets.TransformDataset(
-        test_data, transform_test_data)
+    class_names = test_data.class_names
 
     # model
     chainer.global_config.train = False
@@ -58,18 +50,32 @@ def main():
     else:
         raise ValueError
 
+    min_size = 600
+    max_size = 1000
+    anchor_scales = (4, 8, 16, 32)
+
+    pretrained_model = osp.join(args.log_dir, 'snapshot_model.npz')
+    print('Using pretrained_model: %s' % pretrained_model)
+
     model = params['model']
-    pretrained_model = osp.join(log_dir, 'snapshot_model.npz')
     mask_rcnn = mrcnn.models.MaskRCNNResNet(
         n_layers=int(model.lstrip('resnet')),
-        n_fg_class=len(fg_class_names),
+        n_fg_class=len(class_names),
         pretrained_model=pretrained_model,
         pooling_func=pooling_func,
-        roi_size=params.get('roi_size', 7)
+        anchor_scales=anchor_scales,
+        mean=params.get('mean', (123.152, 115.903, 103.063)),
+        min_size=min_size,
+        max_size=max_size,
+        roi_size=params.get('roi_size', 7),
     )
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
         mask_rcnn.to_gpu()
+    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    test_data = chainer.datasets.TransformDataset(
+        test_data, mrcnn.datasets.MaskRCNNTransform(mask_rcnn, train=False))
 
     # visualization
     # -------------------------------------------------------------------------
@@ -91,7 +97,7 @@ def main():
     print('Visualizing...')
     visualizer = mrcnn.extensions.InstanceSegmentationVisReport(
         test_vis_iter, mask_rcnn,
-        label_names=fg_class_names,
+        label_names=class_names,
         file_name='iteration=%s.jpg',
         copy_latest=False,
     )
@@ -107,7 +113,7 @@ def main():
     print('Evaluating...')
     evaluator = mrcnn.extensions.InstanceSegmentationVOCEvaluator(
         test_iter, mask_rcnn, use_07_metric=True,
-        label_names=fg_class_names, show_progress=True)
+        label_names=class_names, show_progress=True)
     result = evaluator()
 
     for k in result:
