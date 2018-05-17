@@ -174,7 +174,7 @@ class CocoInstanceSeg(COCOInstanceSegmentationDataset):
 if __name__ == '__main__':
     from .view_dataset import view_dataset
 
-    split = 'val'
+    split = 'minival'
     dataset = COCOInstanceSegmentationDataset(split)
     dataset.split = split
     print(dataset.class_names)
@@ -182,6 +182,7 @@ if __name__ == '__main__':
 
     def visualize_func(dataset, index):
         img, bboxes, labels, masks = dataset[index]
+        print('{:08d}: # of instances = {:d}'.format(index, len(bboxes)))
         masks = masks.astype(bool)
         captions = [dataset.class_names[l] for l in labels]
         viz = utils.draw_instance_bboxes(

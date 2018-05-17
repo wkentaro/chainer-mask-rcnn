@@ -78,7 +78,7 @@ def main():
     # -------------------------------------------------------------------------
 
     test_vis_data = mrcnn.datasets.IndexingDataset(
-        test_data, indices=[196, 204, 216, 257, 326, 473, 566, 649, 1063])
+        test_data, indices=[10, 22, 61, 104, 107, 116, 127, 149, 185])
     test_vis_iter = chainer.iterators.SerialIterator(
         test_vis_data, batch_size=1, repeat=False, shuffle=False)
 
