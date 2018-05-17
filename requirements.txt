@@ -5,4 +5,5 @@ matplotlib
 pandas
 PyYAML
 scikit-image
+six
 tabulate

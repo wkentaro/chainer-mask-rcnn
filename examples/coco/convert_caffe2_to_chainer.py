@@ -8,6 +8,7 @@ import shutil
 import chainer
 import chainercv
 import numpy as np
+import six
 import yaml
 
 from chainer_mask_rcnn.models import MaskRCNNResNet
@@ -27,7 +28,11 @@ if not osp.exists(src_file):
     shutil.move(cache_path, src_file)
 
 print('Loading from: {}'.format(src_file))
-blobs = pickle.load(open(src_file, 'rb'), encoding='latin-1')['blobs']
+with open(src_file, 'rb') as f:
+    if six.PY2:
+        blobs = pickle.load(f)['blobs']
+    else:
+        blobs = pickle.load(f, encoding='latin-1')['blobs']
 
 model = MaskRCNNResNet(
     n_layers=50,
