@@ -182,9 +182,10 @@ if __name__ == '__main__':
 
     def visualize_func(dataset, index):
         img, bboxes, labels, masks = dataset[index]
+        masks = masks.astype(bool)
         captions = [dataset.class_names[l] for l in labels]
         viz = utils.draw_instance_bboxes(
-            img, bboxes, labels, n_class=len(dataset.class_names),
+            img, bboxes, labels + 1, n_class=len(dataset.class_names) + 1,
             masks=masks, captions=captions)
         return fcn.utils.get_tile_image([img, viz])
 
