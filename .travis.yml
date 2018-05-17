@@ -29,3 +29,5 @@ script:
   - pip install flake8 pytest
   - flake8 .
   - pytest -v tests -m 'not gpu'
+  # examples
+  - (cd examples/coco && ./convert_caffe2_to_chainer.py && ./demo.py logs/R-50-C4_x1_caffe2_to_chainer --gpu -1)
