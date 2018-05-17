@@ -22,10 +22,7 @@ mpiexec -n 4 ./train.py --multi-node
 | Mask R-CNN, ResNet101 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 8 | `TODO(wkentaro)` |
 | FCIS, ResNet101 | [msracver/FCIS](https://github.com/msracver/FCIS) | 8 | 66.0 |
 
-![](.readme/resnet50_ngpu4_voc_20180516_182644.jpg)  
-Fig 1. Mask R-CNN, ResNet50, Ours, 66.8 mAP@50.
-
-![](.readme/resnet101_ngpu4_voc_20180516_231137.jpg)  
-Fig 2. Mask R-CNN, ResNet101, Ours, 68.1 mAP@50.
+<img src=".readme/resnet50_ngpu4_voc_20180516_182644.jpg" width="48%" /> <img src=".readme/resnet101_ngpu4_voc_20180516_231137.jpg" width="48%" />  
+Mask R-CNN, ResNet50, Ours, 66.8 mAP@50 (left), Mask R-CNN, ResNet101, Ours, 68.1 mAP@50 (right).
 
 See [here](https://drive.google.com/open?id=1-aqbWUgjs3E7xQgXTpSSBKSpPhcUa4V_) for training logs.
