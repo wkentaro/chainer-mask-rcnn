@@ -21,7 +21,7 @@ def summarize_log(logs_dir, name, keys, target_key, objective):
     try:
         df = pandas.DataFrame(json.load(open(log_file)))
     except Exception:
-        return None, None, osp.join(logs_dir, name)
+        df = None
 
     try:
         if objective == 'min':
@@ -44,15 +44,21 @@ def summarize_log(logs_dir, name, keys, target_key, objective):
         if key == 'name':
             row.append(name)
         elif key == 'elapsed_time':
-            value = datetime.timedelta(seconds=df[key].max())
+            if dfi is None:
+                value = '<none>'
+            else:
+                value = datetime.timedelta(seconds=df[key].max())
             row.append(value)
         elif key in ['epoch', 'iteration']:
             if dfi is None:
                 value = '<none>'
             else:
                 value = '%d' % dfi[key]
-            max_value = df[key].max()
-            row.append('%s /%d' % (value, max_value))
+            if df is None:
+                row.append('<none>')
+            else:
+                max_value = df[key].max()
+                row.append('%s /%d' % (value, max_value))
         elif key == 'git_branch':
             value = params.get('git', '<none>')
             cmd = 'git log {:s} -1 --format="%d"'.format(value)
@@ -72,9 +78,12 @@ def summarize_log(logs_dir, name, keys, target_key, objective):
                 value = '<none>'
             else:
                 value = '%.3f' % dfi[key]
-            min_value = df[key].min()
-            max_value = df[key].max()
-            row.append('%.3f< %s <%.3f' % (min_value, value, max_value))
+            if df is None:
+                row.append('<none>')
+            else:
+                min_value = df[key].min()
+                max_value = df[key].max()
+                row.append('%.3f< %s <%.3f' % (min_value, value, max_value))
         elif key.endswith('/map'):
             min_value = max_value = '<none>'
             if dfi is None:
