@@ -30,7 +30,7 @@ cd examples/coco
 ./demo.py logs/R-50-C4_x1_caffe2_to_chainer --img https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/33823288584_1d21cf0a26_k.jpg
 ```
 
-<img src=".readme/R-50-C4_x1_caffe2_to_chainer_result_33823288584_1d21cf0a26_k.jpg" width="44.3%" /> <img src=".readme/R-50-C4_x1_caffe2_to_chainer_result_17790319373_bd19b24cfc_k.jpg" width="52%" />  
+<img src="examples/coco/.readme/R-50-C4_x1_caffe2_to_chainer_result_33823288584_1d21cf0a26_k.jpg" width="44.3%" /> <img src="examples/coco/.readme/R-50-C4_x1_caffe2_to_chainer_result_17790319373_bd19b24cfc_k.jpg" width="52%" />  
 *Fig 2. Mask R-CNN, ResNet50, 8GPU, Copied from Detectron, COCO 31.4 mAP@50:95*
 
 
