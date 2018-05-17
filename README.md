@@ -24,8 +24,10 @@ See [examples](examples).
 # copy weight from caffe2 to chainer
 cd examples/coco
 ./convert_caffe2_to_chainer.py
-
 ./demo.py logs/R-50-C4_x1_caffe2_to_chainer --img https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/33823288584_1d21cf0a26_k.jpg
+
+# you can use your trained model
+./demo.py logs/<YOUR_TRAINING_LOG> --img <IMAGE_PATH_OR_URL>
 ```
 
 <img src=".readme/R-50-C4_x1_caffe2_to_chainer_result.jpg" width="44.3%" />
