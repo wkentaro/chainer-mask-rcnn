@@ -39,7 +39,7 @@ def main():
     parser.add_argument('--gpu', '-g', type=int, help='GPU id.')
     parser.add_argument('--multi-node', '-n', action='store_true',
                         help='use multi node')
-    parser.add_argument('--roi-size', '-r', type=int, default=7,
+    parser.add_argument('--roi-size', '-r', type=int, default=14,
                         help='roi size')
     args = parser.parse_args()
 
