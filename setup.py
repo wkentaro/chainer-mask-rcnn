@@ -35,9 +35,9 @@ version = '0.3.0'
 
 if sys.argv[-1] == 'release':
     commands = [
-        'python setup.py sdist upload',
         'git tag v{0}'.format(version),
         'git push origin master --tags',
+        'python setup.py sdist upload',
     ]
     for cmd in commands:
         subprocess.call(cmd, shell=True)
