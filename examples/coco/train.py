@@ -142,9 +142,6 @@ def main():
         mask_rcnn.extractor.conv1.disable_update()
         mask_rcnn.extractor.bn1.disable_update()
         mask_rcnn.extractor.res2.disable_update()
-        for link in mask_rcnn.links():
-            if isinstance(link, mrcnn.links.AffineChannel2D):
-                link.disable_update()
 
     train_data = chainer.datasets.TransformDataset(
         train_data, mrcnn.datasets.MaskRCNNTransform(mask_rcnn))
