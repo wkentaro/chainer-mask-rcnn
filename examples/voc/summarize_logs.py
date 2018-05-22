@@ -47,7 +47,12 @@ def summarize_log(logs_dir, name, keys, target_key, objective):
             if dfi is None:
                 value = '<none>'
             else:
-                value = datetime.timedelta(seconds=df[key].max())
+                seconds = int(round(df[key].max()))
+                minutes = seconds // 60
+                seconds = seconds % 60
+                hours = minutes // 60
+                minutes = minutes % 60
+                value = '{:02d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
             row.append(value)
         elif key in ['epoch', 'iteration']:
             if dfi is None:
