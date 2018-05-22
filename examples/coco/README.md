@@ -12,8 +12,7 @@
 mpiexec -n 4 ./train.py --multi-node
 
 ./evaluate.py logs/<log_dir> --gpu 0
-./demo.py logs/<log_dir> --gpu 0
-./demo.py logs/<log_dir> --gpu 0 --img https://github.com/facebookresearch/Detectron/blob/master/demo/17790319373_bd19b24cfc_k.jpg?raw=true
+./demo.py logs/<log_dir> --gpu 0 --img <img_file_or_url>
 ```
 
 

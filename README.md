@@ -9,8 +9,18 @@ It includes:
 - ResNet50, ResNet101 backbone (FPN not included)
 - [VOC and COCO training examples](examples).
 
-<img src=".readme/resnet50_ngpu4_coco_20180225_a.jpg" width="44.3%" /> <img src=".readme/resnet50_ngpu4_coco_20180225_b.jpg" width="52%" />  
-*Fig 1. Mask R-CNN, ResNet50, 4GPU, 20180225, COCO 28.3 mAP@50:95 (31.4 in original work with 8GPU)*
+<img src="examples/coco/.readme/R-50-C4_x1_Roi7_20180517_112639_33823288584_1d21cf0a26_k.jpg" width="44.3%" /> <img src="examples/coco/.readme/R-50-C4_x1_Roi7_20180517_112639_17790319373_bd19b24cfc_k.jpg" width="52%" />  
+*Fig 1. Mask R-CNN, ResNet50, 4GPU, 20180517_112639, COCO 27.1 mAP@50:95*
+
+
+## COCO Results
+
+| Model | Implementation | N gpu training | mAP@50:95 by `evaluate.py` |
+|-------|----------------|----------------|-----------|
+| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 4 | 27.1 |
+| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 8 | `TODO(wkentaro)` |
+| Mask R-CNN, ResNet50 | [facebookresearch/Detectron](https://github.com/facebookresearch/Detectron) | 8 | 30.7 (31.4 reported in Detectron) |
+| FCIS, ResNet50 | [msracver/FCIS](https://github.com/msracver/FCIS) | 8 | 27.1 |
 
 
 ## Training
@@ -32,7 +42,7 @@ cd examples/coco
 ```
 
 <img src="examples/coco/.readme/R-50-C4_x1_caffe2_to_chainer_result_33823288584_1d21cf0a26_k.jpg" width="44.3%" /> <img src="examples/coco/.readme/R-50-C4_x1_caffe2_to_chainer_result_17790319373_bd19b24cfc_k.jpg" width="52%" />  
-*Fig 2. Mask R-CNN, ResNet50, 8GPU, Copied from Detectron, COCO 31.4 mAP@50:95*
+*Fig 2. Mask R-CNN, ResNet50, 8GPU, Copied from Detectron, COCO 30.7 mAP@50:95*
 
 
 
