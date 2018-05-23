@@ -27,7 +27,6 @@ from chainercv.utils import download_model
 from .. import functions
 from .. import links
 from .faster_rcnn_resnet import _copy_persistent_chain
-from .faster_rcnn_resnet import _global_average_pooling_2d
 from .mask_rcnn import MaskRCNN
 from .region_proposal_network import RegionProposalNetwork
 
@@ -323,15 +322,14 @@ class ResNetRoIHead(chainer.Chain):
             x, indices_and_rois, self.roi_size, self.roi_size,
             self.spatial_scale, self._pooling_func)
 
-        with chainer.using_config('train', False):
-            res5 = self.res5(pool)
+        res5 = self.res5(pool)
 
         roi_cls_locs = None
         roi_scores = None
         roi_masks = None
 
         if pred_bbox:
-            pool5 = _global_average_pooling_2d(res5)
+            pool5 = F.average_pooling_2d(res5, 7, stride=7)
             roi_cls_locs = self.cls_loc(pool5)
             roi_scores = self.score(pool5)
 
