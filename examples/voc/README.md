@@ -9,7 +9,7 @@
 ./train.py --gpu 0
 
 # multi gpu training
-mpiexec -n 4 ./train.py --multi-node
+mpirun -n 4 ./train.py --multi-node
 ```
 
 

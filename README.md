@@ -3,14 +3,20 @@
 [![PyPI version](https://badge.fury.io/py/chainer-mask-rcnn.svg)](https://badge.fury.io/py/chainer-mask-rcnn)
 [![Build Status](https://travis-ci.com/wkentaro/chainer-mask-rcnn.svg?branch=master)](https://travis-ci.com/wkentaro/chainer-mask-rcnn)
 
-Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).  
-It includes:
+Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 
-- ResNet50, ResNet101 backbone (FPN not included)
-- [VOC and COCO training examples](examples).
+## Features
+
+- [x] ResNet50, ResNet101 backbone.
+- [x] [VOC and COCO training examples](examples).
+- [x] **[Reproduced result of original work (ResNet50, COCO)](https://github.com/wkentaro/chainer-mask-rcnn#coco-results)**.
+- [x] Weight copy from pretrained model at [facebookresearch/Detectron](https://github.com/facebookresearch/Detectron).
+- [ ] Support FPN backbones.
+- [ ] Keypoint detection.
 
 <img src="examples/coco/.readme/R-50-C4_x1_33823288584_1d21cf0a26_k.jpg" width="44.3%" /> <img src="examples/coco/.readme/R-50-C4_x1_17790319373_bd19b24cfc_k.jpg" width="52%" />  
-*Fig 1. Mask R-CNN, ResNet50, 8GPU, COCO 31.4 mAP@50:95*
+*Fig 1. Mask R-CNN, ResNet50, 8GPU, Ours, COCO 31.4 mAP@50:95*
+
 
 
 ## COCO Results
@@ -44,23 +50,25 @@ cd examples/coco
 *Fig 2. Mask R-CNN, ResNet50, 8GPU, Copied from Detectron, COCO 31.4 mAP@50:95*
 
 
-
 ## Installation
 
 
-### For single GPU training
+### Single GPU Training
 
 ```bash
+# Install Chainer Mask R-CNN.
 pip install opencv-python
 pip install .
+
+# Run training!
+cd examples/coco && ./train.py --gpu 0
 ```
 
 
-### For multi GPU training
-
-- Install [OpenMPI](https://www.open-mpi.org/software/ompi/v3.0/)
+### Multi GPU Training
 
 ```bash
+# Install OpenMPI
 wget https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.gz
 tar zxvf openmpi-3.0.0.tar.gz
 cd openmpi-3.0.0
@@ -68,28 +76,22 @@ cd openmpi-3.0.0
 make -j4
 sudo make install
 sudo ldconfig
-```
 
-- Install [NCCL](https://developer.nvidia.com/nccl)
-
-```bash
+# Install NCCL
 # dpkg -i nccl-repo-ubuntu1404-2.1.4-ga-cuda8.0_1-1_amd64.deb
 dpkg -i nccl-repo-ubuntu1604-2.1.15-ga-cuda9.1_1-1_amd64.deb
 sudo apt update
 sudo apt install libnccl2 libnccl-dev
-```
 
-- Install [ChainerMN](https://github.com/chainer/chainermn)
-
-```bash
+# Install ChainerMN
 pip install chainermn
-```
 
-- Install [chainer-mask-rcnn](https://github.com/wkentaro/chainer-mask-rcnn)
-
-```bash
+# Finally, install Chainer Mask R-CNN.
 pip install opencv-python
 pip install .
+
+# Run training!
+cd examples/coco && mpirun -n 4 ./train.py --multi-node
 ```
 
 
@@ -100,11 +102,3 @@ pip install flake8 pytest
 flake8 .
 pytest -v tests
 ```
-
-
-## ROS integration (real-time demo)
-
-It runs in around 10fps with Titan X Pascal.  
-See https://github.com/jsk-ros-pkg/jsk_recognition/pull/2257.
-
-<img src="https://user-images.githubusercontent.com/4310419/38289831-39bc0534-3813-11e8-9ab4-d774ab4289b4.gif" width="66%" />

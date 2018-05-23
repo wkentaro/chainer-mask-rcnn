@@ -9,7 +9,7 @@
 ./train.py --gpu 0
 
 # multi gpu training
-mpiexec -n 4 ./train.py --multi-node
+mpirun -n 4 ./train.py --multi-node
 
 ./evaluate.py logs/<log_dir> --gpu 0
 ./demo.py logs/<log_dir> --gpu 0 --img <img_file_or_url>
