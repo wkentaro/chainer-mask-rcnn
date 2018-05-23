@@ -165,14 +165,14 @@ class VGG16RoIHead(chainer.Chain):
             self.cls_loc = L.Linear(4096, n_class * 4, initialW=loc_initialW)
             self.score = L.Linear(4096, n_class, initialW=score_initialW)
 
+            initialW = chainer.initializers.HeNormal(fan_option='fan_out')
             # 7 x 7 x 512 -> 14 x 14 x 256
             self.deconv6 = L.Deconvolution2D(
-                512, 256, 2, stride=2,
-                initialW=chainer.initializers.Normal(0.01))
+                512, 256, 2, stride=2, initialW=initialW)
             # 14 x 14 x 256 -> 14 x 14 x 20
             n_fg_class = n_class - 1
             self.mask = L.Convolution2D(
-                256, n_fg_class, 1, initialW=chainer.initializers.Normal(0.01))
+                256, n_fg_class, 1, initialW=initialW)
 
         self.n_class = n_class
         self.roi_size = roi_size
