@@ -199,6 +199,7 @@ if __name__ == '__main__':
         'hostname',
         'model',
         'roi_size',
+        'initializer',
         'lr', 'pooling_func',
         'epoch', 'iteration',
         # 'main/loss',
