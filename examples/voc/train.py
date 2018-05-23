@@ -39,6 +39,8 @@ def main():
                         help='use multi node')
     parser.add_argument('--roi-size', '-r', type=int, default=14,
                         help='roi size')
+    parser.add_argument('--initializer', choices=['normal', 'he_normal'],
+                        help='initializer')
     args = parser.parse_args()
 
     if args.multi_node:
@@ -89,12 +91,20 @@ def main():
     else:
         raise ValueError
 
+    if args.initializer == 'normal':
+        mask_initialW = chainer.initializers.Normal(0.01)
+    elif args.initializer == 'he_normal':
+        mask_initialW = chainer.initializers.HeNormal(fan_option='fan_out')
+    else:
+        raise ValueError
+
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(fg_class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
             roi_size=args.roi_size,
+            mask_initialW=mask_initialW,
         )
     elif args.model in ['resnet50', 'resnet101']:
         n_layers = int(args.model.lstrip('resnet'))
@@ -104,6 +114,7 @@ def main():
             pretrained_model='imagenet',
             pooling_func=pooling_func,
             roi_size=args.roi_size,
+            mask_initialW=mask_initialW,
         )
     else:
         raise ValueError
