@@ -20,12 +20,15 @@ mpiexec -n 4 ./train.py --multi-node
 
 | Model | Implementation | N gpu training | mAP@50:95 by `evaluate.py` |
 |-------|----------------|----------------|-----------|
-| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 4 | `TODO(wkentaro)` |
-| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 8 | `TODO(wkentaro)` |
-| Mask R-CNN, ResNet50 | [facebookresearch/Detectron](https://github.com/facebookresearch/Detectron) | 8 | 30.7 (31.4 reported in Detectron) |
+| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 8 | 31.4 |
+| Mask R-CNN, ResNet50 | [facebookresearch/Detectron](https://github.com/facebookresearch/Detectron) | 8 | 31.4 (30.7 after copied) |
 | FCIS, ResNet50 | [msracver/FCIS](https://github.com/msracver/FCIS) | 8 | 27.1 |
 
 See [here](https://drive.google.com/open?id=1Dfpc2Dd7_hh9ZsgfbDnuVG4xUnQFBksa) for training logs.
+
+<img src=".readme/resnet50_results.jpg" width="48%" />
+
+*Fig 1. Mask R-CNN, ResNet50, Ours, 31.4 mAP@50:95.*
 
 
 ## Caffe2 (Detectron) to Chainer
