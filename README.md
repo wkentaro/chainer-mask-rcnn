@@ -52,7 +52,6 @@ cd examples/coco
 
 ```bash
 pip install opencv-python
-pip install Cython
 pip install .
 ```
 
@@ -90,7 +89,6 @@ pip install chainermn
 
 ```bash
 pip install opencv-python
-pip install Cython
 pip install .
 ```
 
