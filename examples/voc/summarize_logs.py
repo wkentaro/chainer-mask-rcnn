@@ -11,6 +11,16 @@ import pandas
 import tabulate
 
 
+def seconds_to_string(seconds):
+    seconds = int(round(seconds))
+    minutes = seconds // 60
+    seconds = seconds % 60
+    hours = minutes // 60
+    minutes = minutes % 60
+    value = '{:02d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
+    return value
+
+
 def summarize_log(logs_dir, name, keys, target_key, objective):
     try:
         params = yaml.load(open(osp.join(logs_dir, name, 'params.yaml')))
@@ -47,12 +57,7 @@ def summarize_log(logs_dir, name, keys, target_key, objective):
             if dfi is None:
                 value = '<none>'
             else:
-                seconds = int(round(df[key].max()))
-                minutes = seconds // 60
-                seconds = seconds % 60
-                hours = minutes // 60
-                minutes = minutes % 60
-                value = '{:02d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
+                value = seconds_to_string(df[key].max())
             row.append(value)
         elif key in ['epoch', 'iteration']:
             if dfi is None:
@@ -120,7 +125,7 @@ def summarize_log(logs_dir, name, keys, target_key, objective):
                     value -= datetime.timedelta(
                         microseconds=value.microseconds)
                     value = max(datetime.timedelta(seconds=0), value)
-                    value = '- %s' % value.__str__()
+                    value = '- %s' % seconds_to_string(value.total_seconds())
             row.append(value)
         elif key == 'eval_result':
             value = None
@@ -166,6 +171,8 @@ def summarize_logs(logs_dir, keys, target_key, objective):
             continue
         rows.append(row)
 
+    print('logs_dir: {}\n'.format(osp.abspath(logs_dir)))
+
     rows = sorted(rows, key=lambda x: x[0], reverse=True)
     print(tabulate.tabulate(rows, headers=keys,
                             floatfmt='.3f', tablefmt='grid',
@@ -186,7 +193,7 @@ if __name__ == '__main__':
         # 'timestamp',
         'elapsed_time',
         'last_time',
-        'dataset',
+        # 'dataset',
         'git_hash',
         # 'git_branch',
         'hostname',
