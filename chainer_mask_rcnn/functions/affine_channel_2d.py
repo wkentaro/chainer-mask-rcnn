@@ -23,6 +23,19 @@ class AffineChannel2DFunction(chainer.Function):
     def check_type_forward(self, in_types):
         type_check.expect(in_types.size() == 3)
 
+        x_type = in_types[0]
+        w_type = in_types[1]
+        b_type = in_types[2]
+        type_check.expect(
+            x_type.dtype.kind == 'f',
+            w_type.dtype.kind == 'f',
+            b_type.dtype.kind == 'f',
+            x_type.ndim == 4,
+            w_type.ndim == 4,
+            b_type.ndim == 4,
+            w_type.shape[1] == b_type.shape[1],
+        )
+
     def backward(self, inputs, gy):
         xp = cuda.get_array_module(inputs)
         x, W, b = inputs
