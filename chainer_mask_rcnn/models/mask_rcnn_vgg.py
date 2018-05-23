@@ -45,6 +45,7 @@ class MaskRCNNVGG16(MaskRCNN):
                  rpn_initialW=None,
                  loc_initialW=None,
                  score_initialW=None,
+                 mask_initialW=None,
                  proposal_creator_params=None,
                  pooling_func=functions.roi_align_2d,
                  roi_size=7,
@@ -59,6 +60,8 @@ class MaskRCNNVGG16(MaskRCNN):
             loc_initialW = chainer.initializers.Normal(0.001)
         if score_initialW is None:
             score_initialW = chainer.initializers.Normal(0.01)
+        if mask_initialW is None:
+            mask_initialW = chainer.initializers.Normal(0.01)
         if rpn_initialW is None:
             rpn_initialW = chainer.initializers.Normal(0.01)
         if vgg_initialW is None and pretrained_model:
@@ -92,6 +95,7 @@ class MaskRCNNVGG16(MaskRCNN):
             vgg_initialW=vgg_initialW,
             loc_initialW=loc_initialW,
             score_initialW=score_initialW,
+            mask_initialW=mask_initialW,
             pooling_func=pooling_func,
         )
 
@@ -156,7 +160,7 @@ class VGG16RoIHead(chainer.Chain):
 
     def __init__(self, n_class, roi_size, spatial_scale,
                  vgg_initialW=None, loc_initialW=None, score_initialW=None,
-                 pooling_func=functions.roi_align_2d):
+                 mask_initialW=None, pooling_func=functions.roi_align_2d):
         # n_class includes the background
         super(VGG16RoIHead, self).__init__()
         with self.init_scope():
@@ -167,12 +171,11 @@ class VGG16RoIHead(chainer.Chain):
 
             # 7 x 7 x 512 -> 14 x 14 x 256
             self.deconv6 = L.Deconvolution2D(
-                512, 256, 2, stride=2,
-                initialW=chainer.initializers.Normal(0.01))
+                512, 256, 2, stride=2, initialW=mask_initialW)
             # 14 x 14 x 256 -> 14 x 14 x 20
             n_fg_class = n_class - 1
             self.mask = L.Convolution2D(
-                256, n_fg_class, 1, initialW=chainer.initializers.Normal(0.01))
+                256, n_fg_class, 1, initialW=mask_initialW)
 
         self.n_class = n_class
         self.roi_size = roi_size

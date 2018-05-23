@@ -169,6 +169,7 @@ class MaskRCNNResNet(MaskRCNN):
                  rpn_initialW=None,
                  loc_initialW=None,
                  score_initialW=None,
+                 mask_initialW=None,
                  proposal_creator_params=dict(
                      min_size=0,
                      n_test_pre_nms=6000,
@@ -188,6 +189,8 @@ class MaskRCNNResNet(MaskRCNN):
             loc_initialW = chainer.initializers.Normal(0.001)
         if score_initialW is None:
             score_initialW = chainer.initializers.Normal(0.01)
+        if mask_initialW is None:
+            mask_initialW = chainer.initializers.Normal(0.01)
         if rpn_initialW is None:
             rpn_initialW = chainer.initializers.Normal(0.01)
         if res_initialW is None and pretrained_model:
@@ -216,6 +219,7 @@ class MaskRCNNResNet(MaskRCNN):
             res_initialW=res_initialW,
             loc_initialW=loc_initialW,
             score_initialW=score_initialW,
+            mask_initialW=mask_initialW,
             pooling_func=pooling_func,
         )
 
@@ -276,7 +280,8 @@ class ResNetRoIHead(chainer.Chain):
 
     def __init__(self, n_class, roi_size, spatial_scale,
                  res_initialW=None, loc_initialW=None, score_initialW=None,
-                 pooling_func=functions.roi_align_2d):
+                 mask_initialW=None, pooling_func=functions.roi_align_2d,
+                 ):
         # n_class includes the background
         super(ResNetRoIHead, self).__init__()
         with self.init_scope():
@@ -288,13 +293,11 @@ class ResNetRoIHead(chainer.Chain):
 
             # 7 x 7 x 2048 -> 14 x 14 x 256
             self.deconv6 = L.Deconvolution2D(
-                2048, 256, 2, stride=2,
-                initialW=chainer.initializers.Normal(0.01))
+                2048, 256, 2, stride=2, initialW=mask_initialW)
             # 14 x 14 x 256 -> 14 x 14 x 20
             n_fg_class = n_class - 1
             self.mask = L.Convolution2D(
-                256, n_fg_class, 1,
-                initialW=chainer.initializers.Normal(0.01))
+                256, n_fg_class, 1, initialW=mask_initialW)
 
         for name, link in self.res5.namedlinks():
             if not isinstance(link, L.BatchNormalization):

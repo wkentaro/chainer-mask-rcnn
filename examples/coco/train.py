@@ -41,6 +41,8 @@ def main():
                         help='use multi node')
     parser.add_argument('--roi-size', '-r', type=int, default=7,
                         help='roi size')
+    parser.add_argument('--initializer', choices=['normal', 'he_normal'],
+                        help='initializer')
     args = parser.parse_args()
 
     if args.multi_node:
@@ -99,6 +101,13 @@ def main():
     else:
         raise ValueError
 
+    if args.initializer == 'normal':
+        mask_initialW = chainer.initializers.Normal(0.01)
+    elif args.initializer == 'he_normal':
+        mask_initialW = chainer.initializers.HeNormal(fan_option='fan_out')
+    else:
+        raise ValueError
+
     min_size = 800
     max_size = 1333
     anchor_scales = (2, 4, 8, 16, 32)
@@ -112,6 +121,7 @@ def main():
             min_size=min_size,
             max_size=max_size,
             roi_size=args.roi_size,
+            mask_initialW=mask_initialW,
         )
     elif args.model in ['resnet50', 'resnet101']:
         n_layers = int(args.model.lstrip('resnet'))
@@ -124,6 +134,7 @@ def main():
             min_size=min_size,
             max_size=max_size,
             roi_size=args.roi_size,
+            mask_initialW=mask_initialW,
         )
     else:
         raise ValueError
