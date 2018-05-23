@@ -8,11 +8,11 @@ import fcn
 import numpy as np
 import PIL.Image
 import PIL.ImageDraw
+import pycocotools
+from pycocotools.coco import COCO
 import skimage.io
 
 from .. import utils
-from ..external import pycocotools
-from ..external.pycocotools.coco import COCO
 
 
 class COCOInstanceSegmentationDataset(chainer.dataset.DatasetMixin):

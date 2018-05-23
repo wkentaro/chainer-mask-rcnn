@@ -12,9 +12,7 @@ import sys
 
 import six
 
-import chainer_mask_rcnn.external.pycocotools.coco as pycocotools_coco
-import chainer_mask_rcnn.external.pycocotools.cocoeval as pycocotools_cocoeval
-import chainer_mask_rcnn.external.pycocotools.mask as mask_tools
+import pycocotools
 
 
 def eval_instseg_coco(
@@ -64,8 +62,8 @@ def eval_instseg_coco(
             bounding box (i.e. width multiplied by height).
 
     """
-    gt_coco = pycocotools_coco.COCO()
-    pred_coco = pycocotools_coco.COCO()
+    gt_coco = pycocotools.coco.COCO()
+    pred_coco = pycocotools.coco.COCO()
 
     if gt_crowdeds is None:
         gt_crowdeds = itertools.repeat(None)
@@ -118,7 +116,7 @@ def eval_instseg_coco(
     with _redirect_stdout(open(os.devnull, 'w')):
         pred_coco.createIndex()
         gt_coco.createIndex()
-        ev = pycocotools_cocoeval.COCOeval(gt_coco, pred_coco, 'segm')
+        ev = pycocotools.cocoeval.COCOeval(gt_coco, pred_coco, 'segm')
         ev.evaluate()
         ev.accumulate()
 
@@ -182,10 +180,10 @@ def _create_ann(whole_m, lbl, sc, img_id, ann_id, crw=None, ar=None):
     if crw is None:
         crw = False
     whole_m = np.asfortranarray(whole_m.astype(np.uint8))
-    rle = mask_tools.encode(whole_m)
+    rle = pycocotools.mask.encode(whole_m)
     # Surprisingly, ground truth ar can be different from area(rle)
     if ar is None:
-        ar = mask_tools.area(rle)
+        ar = pycocotools.mask.area(rle)
     ann = {
         'image_id': img_id, 'category_id': lbl,
         'segmentation': rle,

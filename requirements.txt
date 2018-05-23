@@ -3,6 +3,7 @@ chainercv>=0.9.0
 fcn
 matplotlib
 pandas
+pycocotools
 PyYAML
 scikit-image
 six
