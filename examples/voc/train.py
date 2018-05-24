@@ -41,6 +41,10 @@ def main():
                         help='roi size')
     parser.add_argument('--initializer', choices=['normal', 'he_normal'],
                         help='initializer')
+    # (180e3 * 8) / len(coco_trainval)
+    default_max_epoch = (180e3 * 8) / 118287
+    parser.add_argument('--max-epoch', type=float, default=default_max_epoch,
+                        help='max epoch')
     args = parser.parse_args()
 
     if args.multi_node:
@@ -67,8 +71,6 @@ def main():
     args.lr = 0.00125 * args.batch_size
     args.weight_decay = 0.0001
 
-    # (180e3 * 8) / len(coco_trainval)
-    args.max_epoch = (180e3 * 8) / 118287
     # lr / 10 at 120k iteration with
     # 160k iteration * 16 batchsize in original
     args.step_size = [(120e3 / 180e3) * args.max_epoch,
