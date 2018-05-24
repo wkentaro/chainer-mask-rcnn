@@ -1,4 +1,5 @@
 import chainer
+from chainer import functions
 from chainer import initializers
 
 from ..functions import affine_channel_2d
