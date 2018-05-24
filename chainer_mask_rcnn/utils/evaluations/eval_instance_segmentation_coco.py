@@ -12,7 +12,9 @@ import sys
 
 import six
 
-import pycocotools
+import pycocotools.coco
+import pycocotools.cocoeval
+import pycocotools.mask
 
 
 def eval_instseg_coco(
