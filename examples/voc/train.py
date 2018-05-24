@@ -40,7 +40,7 @@ def main():
     parser.add_argument('--roi-size', '-r', type=int, default=14,
                         help='roi size')
     parser.add_argument('--initializer', choices=['normal', 'he_normal'],
-                        help='initializer')
+                        default='normal', help='initializer')
     # (180e3 * 8) / len(coco_trainval)
     default_max_epoch = (180e3 * 8) / 118287
     parser.add_argument('--max-epoch', type=float, default=default_max_epoch,
