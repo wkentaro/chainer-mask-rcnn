@@ -1,10 +1,13 @@
 import collections
+import os.path as osp
 
 import chainer
 import chainer.functions as F
 import chainer.links as L
 from chainer.links.model.vision.resnet import ResNet50Layers
 from chainer.links.model.vision.resnet import ResNet101Layers
+
+import fcn
 
 from .. import links
 
@@ -85,6 +88,16 @@ class ResNet50Extractor(ResNetExtractorBase, ResNet50Layers):
         super(ResNet50Extractor, self).__init__(*args, **kwargs)
         self._init_layers(remove_layers)
 
+        root = chainer.dataset.get_dataset_directory('pfnet/chainer/models')
+        self.model_path = osp.join(root, 'ResNet-50-model.npz')
+        if not osp.exists(self.model_path):
+            self.download()
+
+    def download(self):
+        url = 'https://drive.google.com/uc?id=1hSGnWZX_kjEWlfvi0fCHc8sczHio0i-t'  # NOQA
+        md5 = '841b996a74049800cf0749ac97ab7eba'
+        fcn.data.cached_download(url, self.model_path, md5)
+
 
 class ResNet101Extractor(ResNetExtractorBase, ResNet101Layers):
 
@@ -92,3 +105,13 @@ class ResNet101Extractor(ResNetExtractorBase, ResNet101Layers):
         remove_layers = kwargs.pop('remove_layers', True)
         super(ResNet101Extractor, self).__init__(*args, **kwargs)
         self._init_layers(remove_layers)
+
+        root = chainer.dataset.get_dataset_directory('pfnet/chainer/models')
+        self.model_path = osp.join(root, 'ResNet-101-model.npz')
+        if not osp.exists(self.model_path):
+            self.download()
+
+    def download(self):
+        url = 'https://drive.google.com/uc?id=1c-wtuSDWmBCUTfNKLrQAIjrBMNMW4b7q'  # NOQA
+        md5 = '2220786332e361fd7f956d9bf2f9d328'
+        fcn.data.cached_download(url, self.model_path, md5)
