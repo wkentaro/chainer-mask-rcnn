@@ -46,6 +46,21 @@ def _get_affine_from_bn(bn):
     return affine
 
 
+def _convert_bn_to_affine(chain):
+    for name, link in chain.namedlinks():
+        if not isinstance(link, L.BatchNormalization):
+            continue
+        for key in name.split('/')[:-1]:
+            if key == '':
+                parent = chain
+            else:
+                parent = getattr(parent, key)
+        key = name.split('/')[-1]
+        delattr(parent, key)
+        link2 = _get_affine_from_bn(link)
+        parent.add_link(key, link2)
+
+
 class ResNet50Extractor(ResNet50Layers):
 
     mode = 'all'
@@ -57,19 +72,7 @@ class ResNet50Extractor(ResNet50Layers):
             # Remove no need layers to save memory
             delattr(self, 'res5')
             delattr(self, 'fc6')
-        # BatchNormalization -> AffineChannel2D
-        for name, link in self.namedlinks():
-            if not isinstance(link, L.BatchNormalization):
-                continue
-            for key in name.split('/')[:-1]:
-                if key == '':
-                    parent = self
-                else:
-                    parent = getattr(parent, key)
-            key = name.split('/')[-1]
-            delattr(parent, key)
-            link2 = _get_affine_from_bn(link)
-            parent.add_link(key, link2)
+        _convert_bn_to_affine(self)
 
     @property
     def functions(self):
@@ -109,19 +112,7 @@ class ResNet101Extractor(ResNet101Layers):
             # Remove no need layers to save memory
             delattr(self, 'res5')
             delattr(self, 'fc6')
-        # BatchNormalization -> AffineChannel2D
-        for name, link in self.namedlinks():
-            if not isinstance(link, L.BatchNormalization):
-                continue
-            for key in name.split('/')[:-1]:
-                if key == '':
-                    parent = self
-                else:
-                    parent = getattr(parent, key)
-            key = name.split('/')[-1]
-            delattr(parent, key)
-            link2 = _get_affine_from_bn(link)
-            parent.add_link(key, link2)
+        _convert_bn_to_affine(self)
 
     @property
     def functions(self):
@@ -298,18 +289,7 @@ class ResNetRoIHead(chainer.Chain):
             self.mask = L.Convolution2D(
                 256, n_fg_class, 1, initialW=mask_initialW)
 
-        for name, link in self.res5.namedlinks():
-            if not isinstance(link, L.BatchNormalization):
-                continue
-            for key in name.split('/')[:-1]:
-                if key == '':
-                    parent = self.res5
-                else:
-                    parent = getattr(parent, key)
-            key = name.split('/')[-1]
-            delattr(parent, key)
-            link2 = _get_affine_from_bn(link)
-            parent.add_link(key, link2)
+        _convert_bn_to_affine(self)
 
         self.n_class = n_class
         self.roi_size = roi_size
