@@ -11,15 +11,12 @@
 # https://github.com/chainer/chainercv
 # --------------------------------------------------------
 
-import os.path as osp
-
 import numpy as np
 
 import chainer
 import chainer.functions as F
 import chainer.links as L
 
-from chainercv.links.model.faster_rcnn import FasterRCNNVGG16
 from chainercv.links.model.faster_rcnn.region_proposal_network \
     import RegionProposalNetwork
 from chainercv.links.model.vgg.vgg16 import VGG16
@@ -114,9 +111,6 @@ class MaskRCNNVGG16(MaskRCNN):
             chainer.serializers.load_npz(path, self)
         elif pretrained_model == 'imagenet':
             self._copy_imagenet_pretrained_vgg16()
-        elif pretrained_model in ('voc12_train_faster_rcnn',
-                                  'voc0712_faster_rcnn'):
-            self._copy_voc_pretrained_faster_rcnn(pretrained_model)
         elif pretrained_model:
             chainer.serializers.load_npz(pretrained_model, self)
 
@@ -137,23 +131,6 @@ class MaskRCNNVGG16(MaskRCNN):
         self.extractor.conv5_3.copyparams(pretrained_model.conv5_3)
         self.head.fc6.copyparams(pretrained_model.fc6)
         self.head.fc7.copyparams(pretrained_model.fc7)
-
-    def _copy_voc_pretrained_faster_rcnn(self, pretrained_model):
-        if pretrained_model == 'voc12_train_faster_rcnn':
-            pretrained_model = osp.expanduser('~/mask-rcnn/experiments/faster_rcnn/logs/model=vgg16.lr=0.001.seed=0.step_size=50000.iteration=70000.weight_decay=0.0005.timestamp=20171017_064645/snapshot_model.npz')  # NOQA
-            n_fg_class = 20
-        elif pretrained_model == 'voc0712_faster_rcnn':
-            n_fg_class = None
-        else:
-            raise ValueError
-        pretrained_model = FasterRCNNVGG16(
-            n_fg_class=n_fg_class, pretrained_model=pretrained_model)
-        self.extractor.copyparams(pretrained_model.extractor)
-        self.rpn.copyparams(pretrained_model.rpn)
-        self.head.fc6.copyparams(pretrained_model.head.fc6)
-        self.head.fc7.copyparams(pretrained_model.head.fc7)
-        self.head.cls_loc.copyparams(pretrained_model.head.cls_loc)
-        self.head.score.copyparams(pretrained_model.head.score)
 
 
 class VGG16RoIHead(chainer.Chain):
