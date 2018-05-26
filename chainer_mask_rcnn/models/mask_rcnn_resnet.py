@@ -26,7 +26,6 @@ from chainercv.utils import download_model
 
 from .. import functions
 from .. import links
-from .faster_rcnn_resnet import _copy_persistent_chain
 from .mask_rcnn import MaskRCNN
 from .region_proposal_network import RegionProposalNetwork
 
@@ -348,3 +347,27 @@ def _roi_pooling_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,
     xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
     pool = pooling_func(x, xy_indices_and_rois, outh, outw, spatial_scale)
     return pool
+
+
+def _copy_persistent_link(dst, src):
+    for name in dst._persistent:
+        d = dst.__dict__[name]
+        s = src.__dict__[name]
+        if isinstance(d, np.ndarray):
+            d[:] = s
+        elif isinstance(d, int):
+            d = s
+        else:
+            raise ValueError
+
+
+def _copy_persistent_chain(dst, src):
+    _copy_persistent_link(dst, src)
+    for l in dst.children():
+        name = l.name
+        if (isinstance(dst.__dict__[name], chainer.Chain) and
+                isinstance(src.__dict__[name], chainer.Chain)):
+            _copy_persistent_chain(dst.__dict__[name], src.__dict__[name])
+        elif (isinstance(dst.__dict__[name], chainer.Link) and
+                isinstance(src.__dict__[name], chainer.Link)):
+            _copy_persistent_link(dst.__dict__[name], src.__dict__[name])
