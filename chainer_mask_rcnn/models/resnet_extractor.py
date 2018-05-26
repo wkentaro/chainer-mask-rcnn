@@ -121,3 +121,12 @@ class ResNet101Extractor(ResNetExtractorBase, ResNet101Layers):
         url = 'https://drive.google.com/uc?id=1c-wtuSDWmBCUTfNKLrQAIjrBMNMW4b7q'  # NOQA
         md5 = '2220786332e361fd7f956d9bf2f9d328'
         fcn.data.cached_download(url, self.model_path, md5)
+
+
+def ResNetExtractor(*args, **kwargs):
+    n_layers = kwargs.pop('n_layers', 50)
+    if n_layers == 50:
+        return ResNet50Extractor(*args, **kwargs)
+    elif n_layers == 101:
+        return ResNet101Extractor(*args, **kwargs)
+    raise ValueError('Unsupported n_layers: {}'.format(n_layers))

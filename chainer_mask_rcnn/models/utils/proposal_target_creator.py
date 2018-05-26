@@ -21,6 +21,8 @@ from chainercv.utils.bbox.bbox_iou import bbox_iou
 import cv2
 import numpy as np
 
+from ..multilevel_region_proposal_network import map_rois_to_fpn_levels
+
 
 class ProposalTargetCreator(object):
     """Assign ground truth bounding boxes to given RoIs.
@@ -60,7 +62,7 @@ class ProposalTargetCreator(object):
         self.mask_size = mask_size
         self.binary_thresh = binary_thresh
 
-    def __call__(self, roi, bbox, label, mask,
+    def __call__(self, roi, bbox, label, mask, level=None,
                  loc_normalize_mean=(0., 0., 0., 0.),
                  loc_normalize_std=(0.1, 0.1, 0.2, 0.2)):
         """Assigns ground truth to sampled proposals.
@@ -114,6 +116,10 @@ class ProposalTargetCreator(object):
         bbox = cuda.to_cpu(bbox)
         label = cuda.to_cpu(label)
 
+        if level is not None:
+            level = cuda.to_cpu(level)
+            level = np.concatenate([level, map_rois_to_fpn_levels(bbox)])
+
         n_bbox, _ = bbox.shape
 
         roi = np.concatenate((roi, bbox), axis=0)
@@ -149,6 +155,8 @@ class ProposalTargetCreator(object):
         gt_roi_label = gt_roi_label[keep_index]
         gt_roi_label[pos_roi_per_this_image:] = 0  # negative labels --> 0
         sample_roi = roi[keep_index]
+        if level is not None:
+            sample_level = level[keep_index]
 
         # Compute offsets and scales to match sampled RoIs to the GTs.
         gt_roi_loc = bbox2loc(sample_roi, bbox[gt_assignment[keep_index]])
@@ -179,4 +187,10 @@ class ProposalTargetCreator(object):
             gt_roi_loc = cuda.to_gpu(gt_roi_loc)
             gt_roi_label = cuda.to_gpu(gt_roi_label)
             gt_roi_mask = cuda.to_gpu(gt_roi_mask)
-        return sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask
+            if level is not None:
+                sample_level = cuda.to_gpu(sample_level)
+        if level is None:
+            return sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask
+        else:
+            return sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask, \
+                sample_level

@@ -117,7 +117,6 @@ def main():
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(class_names),
-            pretrained_model='imagenet',
             pooling_func=pooling_func,
             anchor_scales=anchor_scales,
             min_size=min_size,
@@ -130,7 +129,6 @@ def main():
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             n_layers=n_layers,
             n_fg_class=len(class_names),
-            pretrained_model='imagenet',
             pooling_func=pooling_func,
             anchor_scales=anchor_scales,
             min_size=min_size,

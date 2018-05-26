@@ -95,6 +95,32 @@ def segm_results(bbox, label, roi_mask, im_h, im_w, mask_size):
     return all_masks
 
 
+def im_list_to_blob(ims, fpn=False):
+    if not isinstance(ims, list):
+        ims = [ims]
+    max_shape = get_max_shape([im.shape[1:3] for im in ims], fpn=fpn)
+
+    num_images = len(ims)
+    blob = np.zeros(
+        (num_images, 3, max_shape[0], max_shape[1]), dtype=np.float32)
+    for i in range(num_images):
+        im = ims[i]
+        blob[i, :, 0:im.shape[1], 0:im.shape[2]] = im
+    return blob
+
+
+def get_max_shape(im_shapes, fpn=False):
+    max_shape = np.array(im_shapes).max(axis=0)
+    assert max_shape.size == 2
+    # Pad the image so they can be divisible by a stride
+    if fpn:
+        # stride = float(cfg.FPN.COARSEST_STRIDE)
+        stride = 32.
+        max_shape[0] = int(np.ceil(max_shape[0] / stride) * stride)
+        max_shape[1] = int(np.ceil(max_shape[1] / stride) * stride)
+    return max_shape
+
+
 class MaskRCNN(chainer.Chain):
 
     """Base class for Faster R-CNN.
@@ -291,23 +317,23 @@ class MaskRCNN(chainer.Chain):
 
     def predict(self, imgs):
         prepared_imgs = list()
-        sizes = list()
+        scales = list()
         for img in imgs:
             size = img.shape[1:]
             img = self.prepare(img.astype(np.float32))
+            scale = img.shape[2] / size[1]
             prepared_imgs.append(img)
-            sizes.append(size)
+            scales.append(scale)
+        prepared_imgs = im_list_to_blob(prepared_imgs)
 
         bboxes = list()
         masks = list()
         labels = list()
         scores = list()
-        for img, size in zip(prepared_imgs, sizes):
+        for img, scale in zip(prepared_imgs, scales):
             with chainer.using_config('train', False), \
                     chainer.function.no_backprop_mode():
                 img_var = chainer.Variable(self.xp.asarray(img[None]))
-                scale = img_var.shape[3] / size[1]
-
                 img_size = img_var.shape[2:]
 
                 h = self.extractor(img_var)
@@ -385,7 +411,7 @@ class MaskRCNN(chainer.Chain):
             roi_mask = cuda.to_cpu(roi_masks.data)
 
             mask = segm_results(bbox, label, roi_mask, size[0], size[1],
-                                mask_size=14)
+                                mask_size=self.head.mask_size)
             masks.append(mask)
 
         return bboxes, masks, labels, scores

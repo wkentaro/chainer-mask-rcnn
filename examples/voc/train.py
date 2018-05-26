@@ -4,6 +4,7 @@ from __future__ import division
 
 import argparse
 import datetime
+import functools
 import os
 import os.path as osp
 import random
@@ -29,7 +30,8 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--model', '-m',
-                        choices=['vgg16', 'resnet50', 'resnet101'],
+                        choices=['vgg16', 'resnet50', 'resnet101',
+                                 'resnet50_fpn', 'resnet101_fpn'],
                         default='resnet50', help='base model')
     parser.add_argument('--pooling-func', '-p',
                         choices=['pooling', 'align', 'resize'],
@@ -103,7 +105,6 @@ def main():
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
             n_fg_class=len(fg_class_names),
-            pretrained_model='imagenet',
             pooling_func=pooling_func,
             roi_size=args.roi_size,
             mask_initialW=mask_initialW,
@@ -113,9 +114,25 @@ def main():
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             n_layers=n_layers,
             n_fg_class=len(fg_class_names),
-            pretrained_model='imagenet',
             pooling_func=pooling_func,
             roi_size=args.roi_size,
+            mask_initialW=mask_initialW,
+        )
+    elif args.model in ['resnet50_fpn', 'resnet101_fpn']:
+        model = args.model[:-len('_fpn')]
+        if args.pooling_func == 'align':
+            pooling_func = functools.partial(
+                mrcnn.functions.roi_align_2d,
+                sampling_ratio=2,
+            )
+        n_layers = int(model.lstrip('resnet'))
+        assert args.roi_size == 14
+        anchor_scales = (2, 4, 8, 16, 32)
+        mask_rcnn = mrcnn.models.MaskRCNNResNetFPN(
+            n_layers=n_layers,
+            n_fg_class=len(fg_class_names),
+            pooling_func=pooling_func,
+            anchor_scales=anchor_scales,
             mask_initialW=mask_initialW,
         )
     else:

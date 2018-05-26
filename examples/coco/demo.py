@@ -55,22 +55,46 @@ def main():
     min_size = 800
     max_size = 1333
     anchor_scales = (2, 4, 8, 16, 32)
+    mean = params.get('mean', (123.152, 115.903, 103.063))
 
     pretrained_model = osp.join(args.log_dir, 'snapshot_model.npz')
     print('Using pretrained_model: %s' % pretrained_model)
 
     model = params['model']
-    mask_rcnn = mrcnn.models.MaskRCNNResNet(
-        n_layers=int(model.lstrip('resnet')),
-        n_fg_class=len(class_names),
-        pretrained_model=pretrained_model,
-        pooling_func=pooling_func,
-        anchor_scales=anchor_scales,
-        mean=params.get('mean', (123.152, 115.903, 103.063)),
-        min_size=min_size,
-        max_size=max_size,
-        roi_size=params.get('roi_size', 7)
-    )
+    if model in ['resnet50', 'resnet101']:
+        mask_rcnn = mrcnn.models.MaskRCNNResNet(
+            n_layers=int(model.lstrip('resnet')),
+            n_fg_class=len(class_names),
+            pretrained_model=pretrained_model,
+            pooling_func=pooling_func,
+            anchor_scales=anchor_scales,
+            mean=mean,
+            min_size=min_size,
+            max_size=max_size,
+            roi_size=params.get('roi_size', 7)
+        )
+    elif model in ['resnet50_fpn', 'resnet101_fpn']:
+        import functools
+        assert params['pooling_func'] == 'align'
+        pooling_func = functools.partial(
+            mrcnn.functions.roi_align_2d,
+            sampling_ratio=2,
+        )
+        n_layers = int(model[:-len('_fpn')].lstrip('resnet'))
+        assert params.get('roi_size', 14) == 14
+        mask_rcnn = mrcnn.models.MaskRCNNResNetFPN(
+            n_layers=n_layers,
+            n_fg_class=len(class_names),
+            pretrained_model=pretrained_model,
+            pooling_func=pooling_func,
+            anchor_scales=anchor_scales,
+            mean=mean,
+            min_size=min_size,
+            max_size=max_size,
+        )
+    else:
+        raise ValueError
+
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
         mask_rcnn.to_gpu()

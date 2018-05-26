@@ -57,18 +57,16 @@ class MaskRCNNTrainChain(chainer.Chain):
 
     """
 
-    def __init__(self, mask_rcnn, rpn_sigma=3., roi_sigma=1.,
-                 anchor_target_creator=AnchorTargetCreator(),
-                 proposal_target_creator=ProposalTargetCreator(),
-                 ):
+    def __init__(self, mask_rcnn, rpn_sigma=3., roi_sigma=1.):
         super(MaskRCNNTrainChain, self).__init__()
         with self.init_scope():
             self.mask_rcnn = mask_rcnn
         self.rpn_sigma = rpn_sigma
         self.roi_sigma = roi_sigma
 
-        self.anchor_target_creator = anchor_target_creator
-        self.proposal_target_creator = proposal_target_creator
+        self.anchor_target_creator = AnchorTargetCreator()
+        self.proposal_target_creator = ProposalTargetCreator(
+            mask_size=self.mask_rcnn.head.mask_size)
 
         self.loc_normalize_mean = mask_rcnn.loc_normalize_mean
         self.loc_normalize_std = mask_rcnn.loc_normalize_std
@@ -117,8 +115,12 @@ class MaskRCNNTrainChain(chainer.Chain):
         img_size = (H, W)
 
         features = self.mask_rcnn.extractor(imgs)
-        rpn_locs, rpn_scores, rois, roi_indices, anchor = self.mask_rcnn.rpn(
-            features, img_size, scale)
+        if self.mask_rcnn.fpn:
+            rpn_locs, rpn_scores, rois, roi_indices, anchor, levels = \
+                self.mask_rcnn.rpn(features, img_size, scale)
+        else:
+            rpn_locs, rpn_scores, rois, roi_indices, anchor = \
+                self.mask_rcnn.rpn(features, img_size, scale)
 
         # Since batch size is one, convert variables to singular form
         bbox = bboxes[0]
@@ -127,18 +129,31 @@ class MaskRCNNTrainChain(chainer.Chain):
         rpn_loc = rpn_locs[0]
         roi = rois
         mask = masks[0]
+        if self.mask_rcnn.fpn:
+            level = levels
 
         if len(bbox) == 0:
             return chainer.Variable(self.xp.array(0, dtype=np.float32))
 
         # Sample RoIs and forward
-        sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
-            self.proposal_target_creator(roi, bbox, label, mask)
+        if self.mask_rcnn.fpn:
+            sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask, sample_level = \
+                self.proposal_target_creator(
+                    roi, bbox, label, mask, level=level)
+        else:
+            sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
+                self.proposal_target_creator(roi, bbox, label, mask)
 
         sample_roi_index = self.xp.zeros((len(sample_roi),), dtype=np.int32)
 
-        roi_cls_loc, roi_score, roi_mask = self.mask_rcnn.head(
-            features, sample_roi, sample_roi_index)
+        if self.mask_rcnn.fpn:
+            roi_cls_loc, roi_score, roi_mask = self.mask_rcnn.head(
+                features, sample_roi, sample_roi_index,
+                levels=sample_level,
+                spatial_scales=self.mask_rcnn.extractor.spatial_scales)
+        else:
+            roi_cls_loc, roi_score, roi_mask = self.mask_rcnn.head(
+                features, sample_roi, sample_roi_index)
 
         # RPN losses
         gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(
