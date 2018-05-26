@@ -29,9 +29,10 @@ class ROIAlign2D(function.Function):
 
     """ROI align over a set of 2d planes."""
 
-    def __init__(self, outh, outw, spatial_scale):
+    def __init__(self, outh, outw, spatial_scale, sampling_ratio=-1):
         self.outh, self.outw = outh, outw
         self.spatial_scale = spatial_scale
+        self.sampling_ratio = sampling_ratio
 
     def check_type_forward(self, in_types):
         type_check.expect(in_types.size() == 2)
@@ -75,8 +76,12 @@ class ROIAlign2D(function.Function):
             bin_size_h = 1. * roi_height / pooled_height
             bin_size_w = 1. * roi_width / pooled_width
 
-            roi_bin_grid_h = numpy.ceil(roi_height / pooled_height)
-            roi_bin_grid_w = numpy.ceil(roi_width / pooled_width)
+            if self.sampling_ratio > 0:
+                roi_bin_grid_h = self.sampling_ratio
+                roi_bin_grid_w = self.sampling_ratio
+            else:
+                roi_bin_grid_h = numpy.ceil(roi_height / pooled_height)
+                roi_bin_grid_w = numpy.ceil(roi_width / pooled_width)
 
             count = roi_bin_grid_h * roi_bin_grid_w
 
@@ -155,7 +160,7 @@ class ROIAlign2D(function.Function):
             '''
             raw float32 bottom_data, float32 spatial_scale, int32 channels,
             int32 height, int32 width, int32 pooled_height, int32 pooled_width,
-            raw float32 bottom_rois
+            int32 sampling_ratio, raw float32 bottom_rois
             ''',
             'float32 top_data',
             '''
@@ -183,7 +188,6 @@ class ROIAlign2D(function.Function):
                 (roi_batch_ind * channels + c) * height * width;
 
             // We use roi_bin_grid to sample the grid and mimic integral
-            int sampling_ratio = -1;
             int roi_bin_grid_h = (sampling_ratio > 0)
                 ? sampling_ratio
                 : ceil(roi_height / pooled_height);  // e.g. = 2
@@ -268,7 +272,8 @@ class ROIAlign2D(function.Function):
             top_data = output_val;
             ''', 'roi_align_2d_fwd'
         )(bottom_data, self.spatial_scale, channels, height, width,
-          self.outh, self.outw, bottom_rois, top_data)
+          self.outh, self.outw, self.sampling_ratio, bottom_rois,
+          top_data)
 
         return top_data,
 
@@ -301,8 +306,12 @@ class ROIAlign2D(function.Function):
 
             top_diff_this_bin = top_diff[n, c, ph, pw]
 
-            roi_bin_grid_h = numpy.ceil(roi_height / pooled_height)
-            roi_bin_grid_w = numpy.ceil(roi_width / pooled_width)
+            if self.sampling_ratio > 0:
+                roi_bin_grid_h = self.sampling_ratio
+                roi_bin_grid_w = self.sampling_ratio
+            else:
+                roi_bin_grid_h = numpy.ceil(roi_height / pooled_height)
+                roi_bin_grid_w = numpy.ceil(roi_width / pooled_width)
 
             count = roi_bin_grid_h * roi_bin_grid_w
 
@@ -376,7 +385,8 @@ class ROIAlign2D(function.Function):
             raw float32 top_diff,
             int32 num_rois, float32 spatial_scale,
             int32 channels, int32 height, int32 width,
-            int32 pooled_height, int32 pooled_width, raw float32 bottom_rois
+            int32 pooled_height, int32 pooled_width,
+            int32 sampling_ratio, raw float32 bottom_rois
             ''',
             'raw float32 bottom_diff',
             '''
@@ -409,7 +419,6 @@ class ROIAlign2D(function.Function):
                 top_diff[top_offset + ph * pooled_width + pw];
 
             // We use roi_bin_grid to sample the grid and mimic integral
-            int sampling_ratio = -1;
             int roi_bin_grid_h = (sampling_ratio > 0)
                 ? sampling_ratio
                 : ceil(roi_height / pooled_height); // e.g. = 2
@@ -498,12 +507,12 @@ class ROIAlign2D(function.Function):
             ''', 'roi_align_2d_bwd'
         )(gy[0], bottom_rois.shape[0],
           self.spatial_scale, channels, height, width, self.outh, self.outw,
-          bottom_rois, bottom_diff, size=gy[0].size)
+          self.sampling_ratio, bottom_rois, bottom_diff, size=gy[0].size)
 
         return bottom_diff, None
 
 
-def roi_align_2d(x, rois, outh, outw, spatial_scale):
+def roi_align_2d(x, rois, outh, outw, spatial_scale, sampling_ratio=-1):
     """Spatial Region of Interest (ROI) align function.
 
     This function acts similarly to :class:`~functions.MaxPooling2D`, but
@@ -527,7 +536,7 @@ def roi_align_2d(x, rois, outh, outw, spatial_scale):
     `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_.
 
     """
-    return ROIAlign2D(outh, outw, spatial_scale)(x, rois)
+    return ROIAlign2D(outh, outw, spatial_scale, sampling_ratio)(x, rois)
 
 
 def crop_and_resize(bottom_data, bottom_rois, outh, outw, spatial_scale):

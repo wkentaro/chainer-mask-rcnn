@@ -12,6 +12,9 @@ from chainer.testing import condition
 from chainer_mask_rcnn import functions
 
 
+@testing.parameterize(*testing.product({
+    'sampling_ratio': [-1, 1, 2],
+}))
 class TestROIAlign2D(unittest.TestCase):
 
     def setUp(self):
@@ -41,7 +44,9 @@ class TestROIAlign2D(unittest.TestCase):
         rois = chainer.Variable(roi_data)
         y = functions.roi_align_2d(
             x, rois, outh=self.outh, outw=self.outw,
-            spatial_scale=self.spatial_scale)
+            spatial_scale=self.spatial_scale,
+            sampling_ratio=self.sampling_ratio,
+        )
         self.assertEqual(y.data.dtype, numpy.float32)
         y_data = cuda.to_cpu(y.data)
 
@@ -64,21 +69,26 @@ class TestROIAlign2D(unittest.TestCase):
         rois_cpu = chainer.Variable(self.rois)
         y_cpu = functions.roi_align_2d(
             x_cpu, rois_cpu, outh=self.outh, outw=self.outw,
-            spatial_scale=self.spatial_scale)
+            spatial_scale=self.spatial_scale,
+            sampling_ratio=self.sampling_ratio,
+        )
 
         # gpu
         x_gpu = chainer.Variable(cuda.to_gpu(self.x))
         rois_gpu = chainer.Variable(cuda.to_gpu(self.rois))
         y_gpu = functions.roi_align_2d(
             x_gpu, rois_gpu, outh=self.outh, outw=self.outw,
-            spatial_scale=self.spatial_scale)
+            spatial_scale=self.spatial_scale,
+            sampling_ratio=self.sampling_ratio,
+        )
         testing.assert_allclose(y_cpu.data, cuda.to_cpu(y_gpu.data))
 
     def check_backward(self, x_data, roi_data, y_grad):
         gradient_check.check_backward(
             functions.ROIAlign2D(outh=self.outh,
                                  outw=self.outw,
-                                 spatial_scale=self.spatial_scale),
+                                 spatial_scale=self.spatial_scale,
+                                 sampling_ratio=self.sampling_ratio),
             (x_data, roi_data), y_grad, no_grads=[False, True],
             **self.check_backward_options)
 
