@@ -74,9 +74,15 @@ class MaskRCNNResNet(MaskRCNN):
             res_initialW = chainer.initializers.constant.Zero()
 
         if n_layers == 50:
-            extractor = ResNet50Extractor(pretrained_model=None)
+            extractor = ResNet50Extractor(
+                pretrained_model=None,
+                remove_layers=['res5', 'fc6'],
+            )
         elif n_layers == 101:
-            extractor = ResNet101Extractor(pretrained_model=None)
+            extractor = ResNet101Extractor(
+                pretrained_model=None,
+                remove_layers=['res5', 'fc6'],
+            )
         else:
             raise ValueError
         self._n_layers = n_layers
@@ -123,11 +129,9 @@ class MaskRCNNResNet(MaskRCNN):
 
     def _copy_imagenet_pretrained_resnet(self):
         if self._n_layers == 50:
-            pretrained_model = ResNet50Extractor(
-                pretrained_model='auto', remove_layers=False)
+            pretrained_model = ResNet50Extractor(pretrained_model='auto')
         elif self._n_layers == 101:
-            pretrained_model = ResNet101Extractor(
-                pretrained_model='auto', remove_layers=False)
+            pretrained_model = ResNet101Extractor(pretrained_model='auto')
         else:
             raise ValueError
 

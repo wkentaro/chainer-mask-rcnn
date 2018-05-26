@@ -1,4 +1,5 @@
 import collections
+
 import os.path as osp
 
 import chainer
@@ -45,38 +46,42 @@ def _convert_bn_to_affine(chain):
 
 class ResNetExtractorBase(object):
 
-    mode = 'all'
+    target_layer = 'res4'
+    freeze_at = 'res2'
 
-    def _init_layers(self, remove_layers):
+    def _init_layers(self, remove_layers=None):
         if remove_layers:
             # Remove no need layers to save memory
-            delattr(self, 'res5')
-            delattr(self, 'fc6')
+            for remove_layer in remove_layers:
+                delattr(self, remove_layer)
+                setattr(self, remove_layer, None)  # for the functions property
         _convert_bn_to_affine(self)
 
     @property
     def functions(self):
         return collections.OrderedDict([
             ('conv1', [self.conv1, self.bn1, F.relu]),
+            # pad=1 is different from original resnet but needed for mask-rcnn
             ('pool1', [lambda x: F.max_pooling_2d(x, 3, stride=2, pad=1)]),
             ('res2', [self.res2]),
             ('res3', [self.res3]),
             ('res4', [self.res4]),
+            ('res5', [self.res5]),
         ])
 
     def __call__(self, x):
-        assert self.mode in ['head', 'res3+', 'res4+', 'all']
+        if hasattr(self, 'mode'):
+            raise RuntimeError(
+                'mode attribute is deprecated, so please use freeze_at.')
+
+        assert self.freeze_at is None or self.freeze_at in self.functions
         h = x
         for key, funcs in self.functions.items():
             for func in funcs:
                 h = func(h)
-            if key == 'res2' and self.mode == 'res3+':
+            if key == self.freeze_at:
                 h.unchain_backward()
-            if key == 'res3' and self.mode == 'res4+':
-                h.unchain_backward()
-            if key == 'res4':
-                if self.mode == 'head':
-                    h.unchain_backward()
+            if key == self.target_layer:
                 break
         return h
 
@@ -84,14 +89,14 @@ class ResNetExtractorBase(object):
 class ResNet50Extractor(ResNetExtractorBase, ResNet50Layers):
 
     def __init__(self, *args, **kwargs):
-        remove_layers = kwargs.pop('remove_layers', True)
-        super(ResNet50Extractor, self).__init__(*args, **kwargs)
-        self._init_layers(remove_layers)
-
+        remove_layers = kwargs.pop('remove_layers', None)
         root = chainer.dataset.get_dataset_directory('pfnet/chainer/models')
         self.model_path = osp.join(root, 'ResNet-50-model.npz')
         if not osp.exists(self.model_path):
             self.download()
+
+        super(ResNet50Extractor, self).__init__(*args, **kwargs)
+        self._init_layers(remove_layers)
 
     def download(self):
         url = 'https://drive.google.com/uc?id=1hSGnWZX_kjEWlfvi0fCHc8sczHio0i-t'  # NOQA
@@ -102,14 +107,14 @@ class ResNet50Extractor(ResNetExtractorBase, ResNet50Layers):
 class ResNet101Extractor(ResNetExtractorBase, ResNet101Layers):
 
     def __init__(self, *args, **kwargs):
-        remove_layers = kwargs.pop('remove_layers', True)
-        super(ResNet101Extractor, self).__init__(*args, **kwargs)
-        self._init_layers(remove_layers)
-
+        remove_layers = kwargs.pop('remove_layers', None)
         root = chainer.dataset.get_dataset_directory('pfnet/chainer/models')
         self.model_path = osp.join(root, 'ResNet-101-model.npz')
         if not osp.exists(self.model_path):
             self.download()
+
+        super(ResNet101Extractor, self).__init__(*args, **kwargs)
+        self._init_layers(remove_layers)
 
     def download(self):
         url = 'https://drive.google.com/uc?id=1c-wtuSDWmBCUTfNKLrQAIjrBMNMW4b7q'  # NOQA
