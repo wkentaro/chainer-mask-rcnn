@@ -54,13 +54,13 @@ def expand_boxes(boxes, scale):
     return boxes_exp
 
 
-def segm_results(bbox, label, roi_mask, im_h, im_w):
+def segm_results(bbox, label, roi_mask, im_h, im_w, mask_size):
     ref_boxes = bbox[:, [1, 0, 3, 2]]
     masks = roi_mask
 
     all_masks = []
     mask_ind = 0
-    M = 14
+    M = mask_size
     scale = (M + 2.0) / M
     ref_boxes = expand_boxes(ref_boxes, scale)
     ref_boxes = ref_boxes.astype(np.int32)
@@ -383,7 +383,8 @@ class MaskRCNN(chainer.Chain):
                 roi_masks = F.sigmoid(roi_masks)
             roi_mask = cuda.to_cpu(roi_masks.data)
 
-            mask = segm_results(bbox, label, roi_mask, size[0], size[1])
+            mask = segm_results(bbox, label, roi_mask, size[0], size[1],
+                                mask_size=14)
             masks.append(mask)
 
         return bboxes, masks, labels, scores
