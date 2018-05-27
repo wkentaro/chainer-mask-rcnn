@@ -117,15 +117,13 @@ class RegionProposalNetwork(chainer.Chain):
 
         rpn_scores = self.score(h)
         rpn_scores = rpn_scores.transpose((0, 2, 3, 1))
-        rpn_fg_scores = rpn_scores.reshape((n, hh, ww, n_anchor))
-        rpn_fg_scores = rpn_fg_scores.reshape((n, -1))
         rpn_scores = rpn_scores.reshape((n, -1))
 
         rois = list()
         roi_indices = list()
         for i in range(n):
             roi = self.proposal_layer(
-                rpn_locs[i].array, rpn_fg_scores[i].array, anchor, img_size,
+                rpn_locs[i].array, rpn_scores[i].array, anchor, img_size,
                 scale=scale)
             batch_index = i * self.xp.ones((len(roi),), dtype=np.int32)
             rois.append(roi)
