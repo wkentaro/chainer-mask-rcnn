@@ -31,7 +31,6 @@ import chainer
 from chainer import cuda
 import chainer.functions as F
 from chainercv.links.model.faster_rcnn.utils.loc2bbox import loc2bbox
-from chainercv.transforms.image.resize import resize
 from chainercv.utils import non_maximum_suppression
 
 
@@ -257,7 +256,9 @@ class MaskRCNN(chainer.Chain):
         if self.max_size and scale * max(H, W) > self.max_size:
             scale = self.max_size / max(H, W)
 
-        img = resize(img, (int(H * scale), int(W * scale)))
+        img = img.transpose(1, 2, 0)
+        img = cv2.resize(img, None, fx=scale, fy=scale)
+        img = img.transpose(2, 0, 1)
 
         img = (img - self.mean).astype(np.float32, copy=False)
         return img
