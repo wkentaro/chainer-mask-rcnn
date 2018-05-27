@@ -23,7 +23,6 @@
 # --------------------------------------------------------
 
 from __future__ import division
-import warnings
 
 import cv2
 import numpy as np
@@ -288,10 +287,6 @@ class MaskRCNN(chainer.Chain):
         label = np.concatenate(label, axis=0).astype(np.int32)
         score = np.concatenate(score, axis=0).astype(np.float32)
         return bbox, label, score
-
-    def predict_masks(self, imgs):
-        warnings.warn('predict_masks is deprecated, please use predict.')
-        return self.predict(imgs)
 
     def predict(self, imgs):
         prepared_imgs = list()
