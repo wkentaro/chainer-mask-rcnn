@@ -11,7 +11,7 @@ import numpy as np
 import skimage.io
 import yaml
 
-import chainer_mask_rcnn as mrcnn
+import chainer_mask_rcnn as cmr
 
 
 def main():
@@ -39,10 +39,10 @@ def main():
     if 'class_names' in params:
         class_names = params['class_names']
     elif params['dataset'] == 'voc':
-        test_data = mrcnn.datasets.SBDInstanceSegmentationDataset('val')
+        test_data = cmr.datasets.SBDInstanceSegmentationDataset('val')
         class_names = test_data.class_names
     elif params['dataset'] == 'coco':
-        test_data = mrcnn.datasets.COCOInstanceSegmentationDataset('minival')
+        test_data = cmr.datasets.COCOInstanceSegmentationDataset('minival')
         class_names = test_data.class_names
     else:
         raise ValueError
@@ -67,11 +67,11 @@ def main():
         raise ValueError
 
     if params['pooling_func'] == 'align':
-        pooling_func = mrcnn.functions.roi_align_2d
+        pooling_func = cmr.functions.roi_align_2d
     elif params['pooling_func'] == 'pooling':
         pooling_func = chainer.functions.roi_pooling_2d
     elif params['pooling_func'] == 'resize':
-        pooling_func = mrcnn.functions.crop_and_resize
+        pooling_func = cmr.functions.crop_and_resize
     else:
         raise ValueError
 
@@ -79,7 +79,7 @@ def main():
     print('Using pretrained_model: %s' % pretrained_model)
 
     model = params['model']
-    mask_rcnn = mrcnn.models.MaskRCNNResNet(
+    mask_rcnn = cmr.models.MaskRCNNResNet(
         n_layers=int(model.lstrip('resnet')),
         n_fg_class=len(class_names),
         pretrained_model=pretrained_model,
@@ -108,7 +108,7 @@ def main():
                 for l, s in zip(labels, scores)]
     for caption in captions:
         print(caption)
-    viz = mrcnn.utils.draw_instance_bboxes(
+    viz = cmr.utils.draw_instance_bboxes(
         img, bboxes, labels + 1, n_class=len(class_names) + 1,
         captions=captions, masks=masks)
     out_file = 'result.jpg'

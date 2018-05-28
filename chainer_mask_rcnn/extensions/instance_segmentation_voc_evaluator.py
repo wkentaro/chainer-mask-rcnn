@@ -6,7 +6,7 @@ from chainercv.utils import apply_to_iterator
 import numpy as np
 import tqdm
 
-import chainer_mask_rcnn as mrcnn
+from .. import utils
 
 
 class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
@@ -47,7 +47,7 @@ class InstanceSegmentationVOCEvaluator(chainer.training.extensions.Evaluator):
             gt_difficults = None
 
         # evaluate
-        result = mrcnn.utils.eval_instseg_voc(
+        result = utils.eval_instseg_voc(
             pred_masks, pred_labels, pred_scores,
             gt_masks, gt_labels, gt_difficults,
             use_07_metric=self.use_07_metric)

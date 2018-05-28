@@ -5,7 +5,7 @@ from chainer import gradient_check
 import matplotlib.pyplot as plt
 import numpy as np
 
-import chainer_mask_rcnn as mrcnn
+import chainer_mask_rcnn as cmr
 
 
 parser = argparse.ArgumentParser()
@@ -54,13 +54,13 @@ for rois in roiss:
     rois = chainer.Variable(rois)
 
     if args.func == 'align':
-        y = mrcnn.functions.roi_align_2d(
+        y = cmr.functions.roi_align_2d(
             x, rois, outh=2, outw=2, spatial_scale=1)
     elif args.func == 'pool':
         y = chainer.functions.roi_pooling_2d(
             x, rois, outh=2, outw=2, spatial_scale=1)
     elif args.func == 'resize':
-        y = mrcnn.functions.crop_and_resize(
+        y = cmr.functions.crop_and_resize(
             x, rois, outh=2, outw=2, spatial_scale=1)
 
     grad = np.ones((1, 1, 2, 2), dtype=np.float32)
@@ -80,7 +80,7 @@ for rois in roiss:
 
     print('check_backward:')
     gradient_check.check_backward(
-        func=mrcnn.functions.ROIAlign2D(2, 2, 1),
+        func=cmr.functions.ROIAlign2D(2, 2, 1),
         x_data=(x.data, rois.data),
         y_grad=y.grad,
         no_grads=[False, True],

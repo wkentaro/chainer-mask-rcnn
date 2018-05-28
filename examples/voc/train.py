@@ -19,7 +19,7 @@ from chainer.training import extensions
 import fcn
 import numpy as np
 
-import chainer_mask_rcnn as mrcnn
+import chainer_mask_rcnn as cmr
 
 
 here = osp.dirname(osp.abspath(__file__))
@@ -80,16 +80,16 @@ def main():
     np.random.seed(args.seed)
 
     args.dataset = 'voc'
-    train_data = mrcnn.datasets.SBDInstanceSegmentationDataset('train')
-    test_data = mrcnn.datasets.SBDInstanceSegmentationDataset('val')
+    train_data = cmr.datasets.SBDInstanceSegmentationDataset('train')
+    test_data = cmr.datasets.SBDInstanceSegmentationDataset('val')
     args.class_names = tuple(train_data.class_names.tolist())
 
     if args.pooling_func == 'align':
-        pooling_func = mrcnn.functions.roi_align_2d
+        pooling_func = cmr.functions.roi_align_2d
     elif args.pooling_func == 'pooling':
         pooling_func = chainer.functions.roi_pooling_2d
     elif args.pooling_func == 'resize':
-        pooling_func = mrcnn.functions.crop_and_resize
+        pooling_func = cmr.functions.crop_and_resize
     else:
         raise ValueError
 
@@ -101,7 +101,7 @@ def main():
         raise ValueError
 
     if args.model == 'vgg16':
-        mask_rcnn = mrcnn.models.MaskRCNNVGG16(
+        mask_rcnn = cmr.models.MaskRCNNVGG16(
             n_fg_class=len(args.class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
@@ -110,7 +110,7 @@ def main():
         )
     elif args.model in ['resnet50', 'resnet101']:
         n_layers = int(args.model.lstrip('resnet'))
-        mask_rcnn = mrcnn.models.MaskRCNNResNet(
+        mask_rcnn = cmr.models.MaskRCNNResNet(
             n_layers=n_layers,
             n_fg_class=len(args.class_names),
             pretrained_model='imagenet',
@@ -120,7 +120,7 @@ def main():
         )
     else:
         raise ValueError
-    model = mrcnn.models.MaskRCNNTrainChain(mask_rcnn)
+    model = cmr.models.MaskRCNNTrainChain(mask_rcnn)
     if args.multi_node or args.gpu >= 0:
         model.to_gpu()
 
@@ -131,13 +131,13 @@ def main():
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
 
     for link in mask_rcnn.links():
-        if isinstance(link, mrcnn.links.AffineChannel2D):
+        if isinstance(link, cmr.links.AffineChannel2D):
             link.disable_update()
 
     train_data = chainer.datasets.TransformDataset(
-        train_data, mrcnn.datasets.MaskRCNNTransform(mask_rcnn))
+        train_data, cmr.datasets.MaskRCNNTransform(mask_rcnn))
     test_data = chainer.datasets.TransformDataset(
-        test_data, mrcnn.datasets.MaskRCNNTransform(mask_rcnn, train=False))
+        test_data, cmr.datasets.MaskRCNNTransform(mask_rcnn, train=False))
     if args.multi_node:
         if comm.rank != 0:
             train_data = None
@@ -153,7 +153,7 @@ def main():
 
     updater = chainer.training.updater.StandardUpdater(
         train_iter, optimizer, device=device,
-        converter=mrcnn.datasets.concat_examples)
+        converter=cmr.datasets.concat_examples)
 
     trainer = training.Trainer(
         updater, (args.max_epoch, 'epoch'), out=args.out)
@@ -168,7 +168,7 @@ def main():
     plot_interval = 0.1, 'epoch'
     print_interval = 20, 'iteration'
 
-    evaluator = mrcnn.extensions.InstanceSegmentationVOCEvaluator(
+    evaluator = cmr.extensions.InstanceSegmentationVOCEvaluator(
         test_iter, model.mask_rcnn, device=device,
         use_07_metric=True, label_names=args.class_names)
     if args.multi_node:
@@ -180,11 +180,11 @@ def main():
             extensions.snapshot_object(model.mask_rcnn, 'snapshot_model.npz'),
             trigger=training.triggers.MaxValueTrigger(
                 'validation/main/map', eval_interval))
-        args.git_hash = mrcnn.utils.git_hash()
+        args.git_hash = cmr.utils.git_hash()
         args.hostname = socket.gethostname()
         trainer.extend(fcn.extensions.ParamsReport(args.__dict__))
         trainer.extend(
-            mrcnn.extensions.InstanceSegmentationVisReport(
+            cmr.extensions.InstanceSegmentationVisReport(
                 test_iter, model.mask_rcnn,
                 label_names=args.class_names),
             trigger=eval_interval)

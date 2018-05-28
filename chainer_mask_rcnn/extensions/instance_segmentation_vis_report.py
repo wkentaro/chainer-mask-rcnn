@@ -10,7 +10,7 @@ import fcn
 import numpy as np
 import six
 
-import chainer_mask_rcnn as mrcnn
+from .. import utils
 
 
 class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
@@ -59,7 +59,7 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
             label_names = np.hstack((['__background__'], self.label_names))
             n_class = len(label_names)
 
-            gt_viz = mrcnn.utils.draw_instance_bboxes(
+            gt_viz = utils.draw_instance_bboxes(
                 img, gt_bbox, gt_label + 1, n_class=n_class,
                 masks=gt_mask, captions=label_names[gt_label + 1],
                 bg_class=0)
@@ -75,7 +75,7 @@ class InstanceSegmentationVisReport(chainer.training.extensions.Evaluator):
                                        label_names[pred_label + 1]):
                 caption = '{:s} {:.1%}'.format(l_name, p_score)
                 captions.append(caption)
-            pred_viz = mrcnn.utils.draw_instance_bboxes(
+            pred_viz = utils.draw_instance_bboxes(
                 img, pred_bbox, pred_label + 1, n_class=n_class,
                 masks=pred_mask, captions=captions, bg_class=0)
 

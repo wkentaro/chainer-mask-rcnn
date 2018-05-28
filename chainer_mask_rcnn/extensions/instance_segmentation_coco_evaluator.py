@@ -6,7 +6,7 @@ from chainercv.utils import apply_to_iterator
 import numpy as np
 import tqdm
 
-import chainer_mask_rcnn as mrcnn
+from .. import utils
 
 
 class InstanceSegmentationCOCOEvaluator(chainer.training.extensions.Evaluator):
@@ -47,7 +47,7 @@ class InstanceSegmentationCOCOEvaluator(chainer.training.extensions.Evaluator):
             gt_areas = None
 
         # evaluate
-        result = mrcnn.utils.eval_instseg_coco(
+        result = utils.eval_instseg_coco(
             pred_masks, pred_labels, pred_scores,
             gt_masks, gt_labels, gt_crowdeds, gt_areas)
 
