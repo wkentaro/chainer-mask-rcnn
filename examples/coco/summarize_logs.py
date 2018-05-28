@@ -1,1 +1,1 @@
-../voc/summarize_logs.py
+../summarize_logs.py
