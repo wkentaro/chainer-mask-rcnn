@@ -82,7 +82,7 @@ def main():
     args.dataset = 'voc'
     train_data = mrcnn.datasets.SBDInstanceSegmentationDataset('train')
     test_data = mrcnn.datasets.SBDInstanceSegmentationDataset('val')
-    fg_class_names = train_data.class_names
+    args.class_names = tuple(train_data.class_names.tolist())
 
     if args.pooling_func == 'align':
         pooling_func = mrcnn.functions.roi_align_2d
@@ -102,7 +102,7 @@ def main():
 
     if args.model == 'vgg16':
         mask_rcnn = mrcnn.models.MaskRCNNVGG16(
-            n_fg_class=len(fg_class_names),
+            n_fg_class=len(args.class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
             roi_size=args.roi_size,
@@ -112,7 +112,7 @@ def main():
         n_layers = int(args.model.lstrip('resnet'))
         mask_rcnn = mrcnn.models.MaskRCNNResNet(
             n_layers=n_layers,
-            n_fg_class=len(fg_class_names),
+            n_fg_class=len(args.class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
             roi_size=args.roi_size,
@@ -170,7 +170,7 @@ def main():
 
     evaluator = mrcnn.extensions.InstanceSegmentationVOCEvaluator(
         test_iter, model.mask_rcnn, device=device,
-        use_07_metric=True, label_names=fg_class_names)
+        use_07_metric=True, label_names=args.class_names)
     if args.multi_node:
         evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
     trainer.extend(evaluator, trigger=eval_interval)
@@ -186,7 +186,7 @@ def main():
         trainer.extend(
             mrcnn.extensions.InstanceSegmentationVisReport(
                 test_iter, model.mask_rcnn,
-                label_names=fg_class_names),
+                label_names=args.class_names),
             trigger=eval_interval)
         trainer.extend(chainer.training.extensions.observe_lr(),
                        trigger=log_interval)
