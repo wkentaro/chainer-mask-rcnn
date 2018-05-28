@@ -290,6 +290,10 @@ with open(yaml_file, 'w') as f:
         model='resnet50',
         pooling_func='align',
         roi_size=14,
-        mean=[122.7717, 115.9465, 102.9801],
+        mean=(122.7717, 115.9465, 102.9801),
+        dataset='coco',
+        anchor_scales=(2, 4, 8, 16, 32),
+        min_size=800,
+        max_size=1333,
     )
     yaml.safe_dump(params, f, default_flow_style=False)
