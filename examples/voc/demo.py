@@ -15,7 +15,7 @@ import chainer_mask_rcnn as mrcnn
 
 
 def main():
-    default_img = 'https://c1.staticflickr.com/5/4171/33823288584_4c058a3e7b_c.jpg'  # NOQA
+    default_img = 'https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/33823288584_1d21cf0a26_k.jpg'  # NOQA
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('log_dir', help='log dir')
