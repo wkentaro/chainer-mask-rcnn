@@ -109,7 +109,6 @@ class RegionProposalNetwork(chainer.Chain):
         n, _, hh, ww = x.shape
         anchor = _enumerate_shifted_anchor(
             self.xp.array(self.anchor_base), self.feat_stride, hh, ww)
-        n_anchor = anchor.shape[0] // (hh * ww)
         h = F.relu(self.conv1(x))
 
         rpn_locs = self.loc(h)
