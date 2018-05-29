@@ -18,7 +18,6 @@ import chainer.functions as F
 import chainer.links as L
 
 from chainer.links.model.vision.resnet import BuildingBlock
-from chainercv.utils import download_model
 
 from .. import functions
 from .mask_rcnn import MaskRCNN
@@ -31,11 +30,10 @@ from .resnet_extractor import ResNet50Extractor
 class MaskRCNNResNet(MaskRCNN):
 
     feat_stride = 16
-    _models = {}
 
     def __init__(self,
                  n_layers,
-                 n_fg_class=None,
+                 n_fg_class,
                  pretrained_model=None,
                  min_size=600,
                  max_size=1000,
@@ -56,12 +54,6 @@ class MaskRCNNResNet(MaskRCNN):
                  rpn_hidden=1024,
                  roi_size=7,
                  ):
-        if n_fg_class is None:
-            if pretrained_model not in self._models:
-                raise ValueError(
-                    'The n_fg_class needs to be supplied as an argument')
-            n_fg_class = self._models[pretrained_model]['n_fg_class']
-
         if loc_initialW is None:
             loc_initialW = chainer.initializers.Normal(0.001)
         if score_initialW is None:
@@ -75,17 +67,16 @@ class MaskRCNNResNet(MaskRCNN):
 
         if n_layers == 50:
             extractor = ResNet50Extractor(
-                pretrained_model=None,
+                pretrained_model=None if pretrained_model else 'auto',
                 remove_layers=['res5', 'fc6'],
             )
         elif n_layers == 101:
             extractor = ResNet101Extractor(
-                pretrained_model=None,
+                pretrained_model=None if pretrained_model else 'auto',
                 remove_layers=['res5', 'fc6'],
             )
         else:
             raise ValueError
-        self._n_layers = n_layers
 
         rpn = RegionProposalNetwork(
             1024, rpn_hidden,
@@ -99,6 +90,7 @@ class MaskRCNNResNet(MaskRCNN):
             n_fg_class + 1,
             roi_size=roi_size,
             spatial_scale=1. / self.feat_stride,
+            pretrained_model=None if pretrained_model else 'auto',
             res_initialW=res_initialW,
             loc_initialW=loc_initialW,
             score_initialW=score_initialW,
@@ -119,47 +111,14 @@ class MaskRCNNResNet(MaskRCNN):
             max_size=max_size
         )
 
-        if pretrained_model in self._models:
-            path = download_model(self._models[pretrained_model]['url'])
-            chainer.serializers.load_npz(path, self)
-        elif pretrained_model == 'imagenet':
-            self._copy_imagenet_pretrained_resnet()
-        elif pretrained_model:
+        if pretrained_model:
             chainer.serializers.load_npz(pretrained_model, self)
-
-    def _copy_imagenet_pretrained_resnet(self):
-        if self._n_layers == 50:
-            pretrained_model = ResNet50Extractor(pretrained_model='auto')
-        elif self._n_layers == 101:
-            pretrained_model = ResNet101Extractor(pretrained_model='auto')
-        else:
-            raise ValueError
-
-        self.extractor.conv1.copyparams(pretrained_model.conv1)
-        # The pretrained weights are trained to accept BGR images.
-        # Convert weights so that they accept RGB images.
-        self.extractor.conv1.W.data[:] = \
-            self.extractor.conv1.W.data[:, ::-1]
-
-        self.extractor.bn1.copyparams(pretrained_model.bn1)
-        _copy_persistent_chain(self.extractor.bn1, pretrained_model.bn1)
-
-        self.extractor.res2.copyparams(pretrained_model.res2)
-        _copy_persistent_chain(self.extractor.res2, pretrained_model.res2)
-
-        self.extractor.res3.copyparams(pretrained_model.res3)
-        _copy_persistent_chain(self.extractor.res3, pretrained_model.res3)
-
-        self.extractor.res4.copyparams(pretrained_model.res4)
-        _copy_persistent_chain(self.extractor.res4, pretrained_model.res4)
-
-        self.head.res5.copyparams(pretrained_model.res5)
-        _copy_persistent_chain(self.head.res5, pretrained_model.res5)
 
 
 class ResNetRoIHead(chainer.Chain):
 
-    def __init__(self, n_class, roi_size, spatial_scale,
+    def __init__(self, n_layers, n_class, roi_size, spatial_scale,
+                 pretrained_model='auto',
                  res_initialW=None, loc_initialW=None, score_initialW=None,
                  mask_initialW=None, pooling_func=functions.roi_align_2d,
                  ):
@@ -180,12 +139,28 @@ class ResNetRoIHead(chainer.Chain):
             self.mask = L.Convolution2D(
                 256, n_fg_class, 1, initialW=mask_initialW)
 
-        _convert_bn_to_affine(self)
-
         self.n_class = n_class
         self.roi_size = roi_size
         self.spatial_scale = spatial_scale
-        self._pooling_func = pooling_func
+        self.pooling_func = pooling_func
+
+        if pretrained_model == 'auto':
+            self._copy_imagenet_pretrained_resnet(n_layers)
+        else:
+            assert pretrained_model is None, \
+                'Unsupported pretrained_model: {}'.format(pretrained_model)
+
+        _convert_bn_to_affine(self)
+
+    def _copy_imagenet_pretrained_resnet(self, n_layers):
+        if n_layers == 50:
+            pretrained_model = ResNet50Extractor(pretrained_model='auto')
+        elif n_layers == 101:
+            pretrained_model = ResNet101Extractor(pretrained_model='auto')
+        else:
+            raise ValueError
+        self.head.res5.copyparams(pretrained_model.res5)
+        _copy_persistent_chain(self.head.res5, pretrained_model.res5)
 
     def __call__(self, x, rois, roi_indices, pred_bbox=True, pred_mask=True):
         roi_indices = roi_indices.astype(np.float32)
@@ -193,7 +168,7 @@ class ResNetRoIHead(chainer.Chain):
             (roi_indices[:, None], rois), axis=1)
         pool = _roi_pooling_2d_yx(
             x, indices_and_rois, self.roi_size, self.roi_size,
-            self.spatial_scale, self._pooling_func)
+            self.spatial_scale, self.pooling_func)
 
         res5 = self.res5(pool)
 
