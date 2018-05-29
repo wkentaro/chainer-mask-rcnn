@@ -113,7 +113,6 @@ def main():
         mask_rcnn = cmr.models.MaskRCNNResNet(
             n_layers=n_layers,
             n_fg_class=len(args.class_names),
-            pretrained_model='imagenet',
             pooling_func=pooling_func,
             roi_size=args.roi_size,
             mask_initialW=mask_initialW,
