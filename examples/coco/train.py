@@ -29,28 +29,55 @@ here = osp.dirname(osp.abspath(__file__))
 
 def main():
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--model', '-m',
-                        choices=['vgg16', 'resnet50', 'resnet101'],
-                        default='resnet50', help='base model')
-    parser.add_argument('--pooling-func', '-p',
-                        choices=['pooling', 'align', 'resize'],
-                        default='align', help='pooling function')
-    parser.add_argument('--gpu', '-g', type=int, help='GPU id.')
-    parser.add_argument('--multi-node', '-n', action='store_true',
-                        help='use multi node')
-    parser.add_argument('--roi-size', '-r', type=int, default=7,
-                        help='roi size')
-    parser.add_argument('--initializer', choices=['normal', 'he_normal'],
-                        default='normal', help='initializer')
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        '--model',
+        '-m',
+        choices=['vgg16', 'resnet50', 'resnet101'],
+        default='resnet50',
+        help='base model',
+    )
+    parser.add_argument(
+        '--pooling-func',
+        '-p',
+        choices=['pooling', 'align', 'resize'],
+        default='align',
+        help='pooling function',
+    )
+    parser.add_argument('--gpu', '-g', type=int, help='gpu id')
+    parser.add_argument(
+        '--multi-node',
+        '-n',
+        action='store_true',
+        help='use multi node',
+    )
+    parser.add_argument(
+        '--roi-size',
+        '-r',
+        type=int,
+        default=7,
+        help='roi size',
+    )
+    parser.add_argument(
+        '--initializer',
+        choices=['normal', 'he_normal'],
+        default='normal',
+        help='initializer',
+    )
     # (180e3 * 8) / len(coco_trainval)
     default_max_epoch = (180e3 * 8) / 118287
-    parser.add_argument('--max-epoch', type=float, default=default_max_epoch,
-                        help='max epoch')
+    parser.add_argument(
+        '--max-epoch',
+        type=float,
+        default=default_max_epoch,
+        help='max epoch',
+    )
     args = parser.parse_args()
 
     if args.multi_node:
         import chainermn
+
         comm = chainermn.create_communicator('hierarchical')
         device = comm.intra_rank
 
@@ -59,8 +86,10 @@ def main():
         chainer.cuda.get_device_from_id(device).use()
     else:
         if args.gpu is None:
-            print('Option --gpu is required without --multi-node.',
-                  file=sys.stderr)
+            print(
+                'Option --gpu is required without --multi-node.',
+                file=sys.stderr,
+            )
             quit(1)
         args.n_node = 1
         args.n_gpu = 1
@@ -91,7 +120,11 @@ def main():
         cmr.datasets.COCOInstanceSegmentationDataset('valminusminival'),
     )
     test_data = cmr.datasets.COCOInstanceSegmentationDataset(
-        'minival', use_crowd=True, return_crowd=True, return_area=True)
+        'minival',
+        use_crowd=True,
+        return_crowd=True,
+        return_area=True,
+    )
     class_names = test_data.class_names
 
     if args.pooling_func == 'align':
@@ -154,9 +187,13 @@ def main():
             link.disable_update()
 
     train_data = chainer.datasets.TransformDataset(
-        train_data, cmr.datasets.MaskRCNNTransform(mask_rcnn))
+        train_data,
+        cmr.datasets.MaskRCNNTransform(mask_rcnn),
+    )
     test_data = chainer.datasets.TransformDataset(
-        test_data, cmr.datasets.MaskRCNNTransform(mask_rcnn, train=False))
+        test_data,
+        cmr.datasets.MaskRCNNTransform(mask_rcnn, train=False),
+    )
     if args.multi_node:
         if comm.rank != 0:
             train_data = None
@@ -165,22 +202,34 @@ def main():
         test_data = chainermn.scatter_dataset(test_data, comm)
 
     # FIXME: MultiProcessIterator sometimes hangs
-    train_iter = chainer.iterators.SerialIterator(
-        train_data, batch_size=1)
+    train_iter = chainer.iterators.SerialIterator(train_data, batch_size=1)
     test_iter = chainer.iterators.SerialIterator(
-        test_data, batch_size=1, repeat=False, shuffle=False)
+        test_data,
+        batch_size=1,
+        repeat=False,
+        shuffle=False,
+    )
 
     updater = chainer.training.updater.StandardUpdater(
-        train_iter, optimizer, device=device,
-        converter=cmr.datasets.concat_examples)
+        train_iter,
+        optimizer,
+        device=device,
+        converter=cmr.datasets.concat_examples,
+    )
 
     trainer = training.Trainer(
-        updater, (args.max_epoch, 'epoch'), out=args.out)
+        updater,
+        (args.max_epoch, 'epoch'),
+        out=args.out,
+    )
 
     trainer.extend(
         extensions.ExponentialShift('lr', 0.1),
         trigger=training.triggers.ManualScheduleTrigger(
-            args.step_size, 'epoch'))
+            args.step_size,
+            'epoch',
+        ),
+    )
 
     eval_interval = 1, 'epoch'
     log_interval = 20, 'iteration'
@@ -188,7 +237,11 @@ def main():
     print_interval = 20, 'iteration'
 
     evaluator = cmr.extensions.InstanceSegmentationCOCOEvaluator(
-        test_iter, model.mask_rcnn, device=device, label_names=class_names)
+        test_iter,
+        model.mask_rcnn,
+        device=device,
+        label_names=class_names,
+    )
     if args.multi_node:
         evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
     trainer.extend(evaluator, trigger=eval_interval)
@@ -196,50 +249,73 @@ def main():
     if not args.multi_node or comm.rank == 0:
         trainer.extend(
             extensions.snapshot_object(
-                model.mask_rcnn, 'snapshot_model.npz'),
+                model.mask_rcnn,
+                'snapshot_model.npz',
+            ),
             trigger=training.triggers.MaxValueTrigger(
-                'validation/main/map', eval_interval))
+                'validation/main/map',
+                eval_interval,
+            ),
+        )
 
         args.git_hash = cmr.utils.git_hash()
         args.hostname = socket.gethostname()
         trainer.extend(fcn.extensions.ParamsReport(args.__dict__))
         trainer.extend(
             cmr.extensions.InstanceSegmentationVisReport(
-                test_iter, model.mask_rcnn,
-                label_names=class_names),
-            trigger=eval_interval)
-        trainer.extend(chainer.training.extensions.observe_lr(),
-                       trigger=log_interval)
+                test_iter,
+                model.mask_rcnn,
+                label_names=class_names,
+            ),
+            trigger=eval_interval,
+        )
+        trainer.extend(
+            chainer.training.extensions.observe_lr(),
+            trigger=log_interval,
+        )
         trainer.extend(extensions.LogReport(trigger=log_interval))
-        trainer.extend(extensions.PrintReport(
-            ['iteration', 'epoch', 'elapsed_time', 'lr',
-             'main/loss',
-             'main/roi_loc_loss',
-             'main/roi_cls_loss',
-             'main/roi_mask_loss',
-             'main/rpn_loc_loss',
-             'main/rpn_cls_loss',
-             'validation/main/map']), trigger=print_interval)
+        trainer.extend(
+            extensions.PrintReport(
+                [
+                    'iteration',
+                    'epoch',
+                    'elapsed_time',
+                    'lr',
+                    'main/loss',
+                    'main/roi_loc_loss',
+                    'main/roi_cls_loss',
+                    'main/roi_mask_loss',
+                    'main/rpn_loc_loss',
+                    'main/rpn_cls_loss',
+                    'validation/main/map',
+                ],
+            ),
+            trigger=print_interval,
+        )
         trainer.extend(extensions.ProgressBar(update_interval=10))
 
         # plot
         assert extensions.PlotReport.available()
         trainer.extend(
             extensions.PlotReport(
-                ['main/loss',
-                 'main/roi_loc_loss',
-                 'main/roi_cls_loss',
-                 'main/roi_mask_loss',
-                 'main/rpn_loc_loss',
-                 'main/rpn_cls_loss'],
-                file_name='loss.png', trigger=plot_interval
+                [
+                    'main/loss',
+                    'main/roi_loc_loss',
+                    'main/roi_cls_loss',
+                    'main/roi_mask_loss',
+                    'main/rpn_loc_loss',
+                    'main/rpn_cls_loss',
+                ],
+                file_name='loss.png',
+                trigger=plot_interval,
             ),
             trigger=plot_interval,
         )
         trainer.extend(
             extensions.PlotReport(
                 ['validation/main/map'],
-                file_name='accuracy.png', trigger=plot_interval
+                file_name='accuracy.png',
+                trigger=plot_interval,
             ),
             trigger=eval_interval,
         )

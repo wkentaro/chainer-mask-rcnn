@@ -17,10 +17,15 @@ import chainer_mask_rcnn as cmr
 def main():
     default_img = 'https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/33823288584_1d21cf0a26_k.jpg'  # NOQA
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument('log_dir', help='log dir')
-    parser.add_argument('--img', '-i', default=default_img,
-                        help='img file or url')
+    parser.add_argument(
+        '--img',
+        '-i',
+        default=default_img,
+        help='img file or url',
+    )
     parser.add_argument('--gpu', '-g', type=int, default=0, help='gpu id')
     args = parser.parse_args()
 
@@ -109,8 +114,13 @@ def main():
     for caption in captions:
         print(caption)
     viz = cmr.utils.draw_instance_bboxes(
-        img, bboxes, labels + 1, n_class=len(class_names) + 1,
-        captions=captions, masks=masks)
+        img=img,
+        bboxes=bboxes,
+        labels=labels + 1,
+        n_class=len(class_names) + 1,
+        captions=captions,
+        masks=masks,
+    )
     out_file = 'result.jpg'
     skimage.io.imsave(out_file, viz)
     print('Saved result: {}'.format(out_file))

@@ -17,7 +17,8 @@ import chainer_mask_rcnn as cmr
 
 def main():
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument('log_dir', help='Log dir.')
     parser.add_argument('-g', '--gpu', type=int, default=0, help='GPU id.')
     args = parser.parse_args()
@@ -71,15 +72,23 @@ def main():
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     test_data = chainer.datasets.TransformDataset(
-        test_data, cmr.datasets.MaskRCNNTransform(mask_rcnn, train=False))
+        test_data,
+        cmr.datasets.MaskRCNNTransform(mask_rcnn, train=False),
+    )
 
     # visualization
     # -------------------------------------------------------------------------
 
     test_vis_data = cmr.datasets.IndexingDataset(
-        test_data, indices=[196, 204, 216, 257, 326, 473, 566, 649, 1063])
+        test_data,
+        indices=[196, 204, 216, 257, 326, 473, 566, 649, 1063],
+    )
     test_vis_iter = chainer.iterators.SerialIterator(
-        test_vis_data, batch_size=1, repeat=False, shuffle=False)
+        test_vis_data,
+        batch_size=1,
+        repeat=False,
+        shuffle=False,
+    )
 
     class DummyTrainer(object):
 
@@ -92,7 +101,8 @@ def main():
 
     print('Visualizing...')
     visualizer = cmr.extensions.InstanceSegmentationVisReport(
-        test_vis_iter, mask_rcnn,
+        iterator=test_vis_iter,
+        target=mask_rcnn,
         label_names=class_names,
         file_name='iteration=%s.jpg',
         copy_latest=False,
@@ -104,12 +114,20 @@ def main():
     # -------------------------------------------------------------------------
 
     test_iter = chainer.iterators.SerialIterator(
-        test_data, batch_size=1, repeat=False, shuffle=False)
+        test_data,
+        batch_size=1,
+        repeat=False,
+        shuffle=False,
+    )
 
     print('Evaluating...')
     evaluator = cmr.extensions.InstanceSegmentationVOCEvaluator(
-        test_iter, mask_rcnn, use_07_metric=True,
-        label_names=class_names, show_progress=True)
+        test_iter,
+        mask_rcnn,
+        use_07_metric=True,
+        label_names=class_names,
+        show_progress=True,
+    )
     result = evaluator()
 
     for k in result:

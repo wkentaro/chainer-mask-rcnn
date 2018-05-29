@@ -7,6 +7,7 @@ import os.path as osp
 import subprocess
 import yaml
 
+import dateutil.parser
 import pandas
 import tabulate
 
@@ -115,7 +116,6 @@ def summarize_log(logs_dir, name, keys, target_key, objective):
                 elapsed_time = df['elapsed_time'].max()
                 value = params.get('timestamp', '<none>')
                 if value is not '<none>':
-                    import dateutil.parser
                     value = dateutil.parser.parse(value)
                     value += datetime.timedelta(seconds=elapsed_time)
                     now = datetime.datetime.now()
@@ -174,10 +174,18 @@ def summarize_logs(logs_dir, keys, target_key, objective):
     print('logs_dir: {}\n'.format(osp.abspath(logs_dir)))
 
     rows = sorted(rows, key=lambda x: x[0], reverse=True)
-    print(tabulate.tabulate(rows, headers=keys,
-                            floatfmt='.3f', tablefmt='grid',
-                            numalign='center', stralign='center',
-                            showindex=True, disable_numparse=True))
+    print(
+        tabulate.tabulate(
+            rows,
+            headers=keys,
+            floatfmt='.3f',
+            tablefmt='grid',
+            numalign='center',
+            stralign='center',
+            showindex=True,
+            disable_numparse=True,
+        ),
+    )
 
     if not ignored:
         return
