@@ -87,7 +87,8 @@ class MaskRCNNResNet(MaskRCNN):
             proposal_creator_params=proposal_creator_params,
         )
         head = ResNetRoIHead(
-            n_fg_class + 1,
+            n_layers=n_layers,
+            n_class=n_fg_class + 1,
             roi_size=roi_size,
             spatial_scale=1. / self.feat_stride,
             pretrained_model=None if pretrained_model else 'auto',
