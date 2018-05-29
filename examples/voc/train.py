@@ -100,11 +100,18 @@ def main():
     else:
         raise ValueError
 
+    args.min_size = 600
+    args.max_size = 1000
+    args.anchor_scales = (4, 8, 16, 32)
+
     if args.model == 'vgg16':
         mask_rcnn = cmr.models.MaskRCNNVGG16(
             n_fg_class=len(args.class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
+            min_size=args.min_size,
+            max_size=args.max_size,
+            anchor_scales=args.anchor_scales,
             roi_size=args.roi_size,
             mask_initialW=mask_initialW,
         )
@@ -114,6 +121,9 @@ def main():
             n_layers=n_layers,
             n_fg_class=len(args.class_names),
             pooling_func=pooling_func,
+            min_size=args.min_size,
+            max_size=args.max_size,
+            anchor_scales=args.anchor_scales,
             roi_size=args.roi_size,
             mask_initialW=mask_initialW,
         )

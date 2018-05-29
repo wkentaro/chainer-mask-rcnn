@@ -47,10 +47,6 @@ def main():
     else:
         raise ValueError
 
-    min_size = 800
-    max_size = 1333
-    anchor_scales = (2, 4, 8, 16, 32)
-
     pretrained_model = osp.join(args.log_dir, 'snapshot_model.npz')
     print('Using pretrained_model: %s' % pretrained_model)
 
@@ -60,10 +56,10 @@ def main():
         n_fg_class=len(class_names),
         pretrained_model=pretrained_model,
         pooling_func=pooling_func,
-        anchor_scales=anchor_scales,
+        anchor_scales=params.get('anchor_scales', (2, 4, 8, 16, 32)),
         mean=params.get('mean', (123.152, 115.903, 103.063)),
-        min_size=min_size,
-        max_size=max_size,
+        min_size=params.get('min_size', 800),
+        max_size=params.get('max_size', 1333),
         roi_size=params.get('roi_size', 7)
     )
     if args.gpu >= 0:
