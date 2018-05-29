@@ -160,8 +160,8 @@ class ResNetRoIHead(chainer.Chain):
             pretrained_model = ResNet101Extractor(pretrained_model='auto')
         else:
             raise ValueError
-        self.head.res5.copyparams(pretrained_model.res5)
-        _copy_persistent_chain(self.head.res5, pretrained_model.res5)
+        self.res5.copyparams(pretrained_model.res5)
+        _copy_persistent_chain(self.res5, pretrained_model.res5)
 
     def __call__(self, x, rois, roi_indices, pred_bbox=True, pred_mask=True):
         roi_indices = roi_indices.astype(np.float32)
