@@ -145,13 +145,13 @@ class ResNetRoIHead(chainer.Chain):
         self.spatial_scale = spatial_scale
         self.pooling_func = pooling_func
 
+        _convert_bn_to_affine(self)
+
         if pretrained_model == 'auto':
             self._copy_imagenet_pretrained_resnet(n_layers)
         else:
             assert pretrained_model is None, \
                 'Unsupported pretrained_model: {}'.format(pretrained_model)
-
-        _convert_bn_to_affine(self)
 
     def _copy_imagenet_pretrained_resnet(self, n_layers):
         if n_layers == 50:
