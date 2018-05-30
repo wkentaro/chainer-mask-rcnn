@@ -49,7 +49,11 @@ class ResNetExtractorBase(object):
     target_layer = 'res4'
     freeze_at = 'res2'
 
-    def _init_layers(self, remove_layers=None):
+    def _init_layers(self, pretrained_model='auto', remove_layers=None):
+        if pretrained_model == 'auto':
+            # The pretrained weights are trained to accept BGR images.
+            # Convert weights so that they accept RGB images.
+            self.conv1.W.data[:] = self.conv1.W.data[:, ::-1]
         if remove_layers:
             # Remove no need layers to save memory
             for remove_layer in remove_layers:
@@ -89,15 +93,14 @@ class ResNetExtractorBase(object):
 
 class ResNet50Extractor(ResNetExtractorBase, ResNet50Layers):
 
-    def __init__(self, *args, **kwargs):
-        remove_layers = kwargs.pop('remove_layers', None)
+    def __init__(self, pretrained_model='auto', remove_layers=None):
         root = chainer.dataset.get_dataset_directory('pfnet/chainer/models')
         self.model_path = osp.join(root, 'ResNet-50-model.npz')
         if not osp.exists(self.model_path):
             self.download()
 
-        super(ResNet50Extractor, self).__init__(*args, **kwargs)
-        self._init_layers(remove_layers)
+        super(ResNet50Extractor, self).__init__(pretrained_model)
+        self._init_layers(pretrained_model, remove_layers)
 
     def download(self):
         url = 'https://drive.google.com/uc?id=1hSGnWZX_kjEWlfvi0fCHc8sczHio0i-t'  # NOQA
@@ -115,7 +118,7 @@ class ResNet101Extractor(ResNetExtractorBase, ResNet101Layers):
             self.download()
 
         super(ResNet101Extractor, self).__init__(*args, **kwargs)
-        self._init_layers(remove_layers)
+        self._init_layers(pretrained_model, remove_layers)
 
     def download(self):
         url = 'https://drive.google.com/uc?id=1c-wtuSDWmBCUTfNKLrQAIjrBMNMW4b7q'  # NOQA
