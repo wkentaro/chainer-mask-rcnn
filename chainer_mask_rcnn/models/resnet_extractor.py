@@ -110,14 +110,13 @@ class ResNet50Extractor(ResNetExtractorBase, ResNet50Layers):
 
 class ResNet101Extractor(ResNetExtractorBase, ResNet101Layers):
 
-    def __init__(self, *args, **kwargs):
-        remove_layers = kwargs.pop('remove_layers', None)
+    def __init__(self, pretrained_model='auto', remove_layers=None):
         root = chainer.dataset.get_dataset_directory('pfnet/chainer/models')
         self.model_path = osp.join(root, 'ResNet-101-model.npz')
         if not osp.exists(self.model_path):
             self.download()
 
-        super(ResNet101Extractor, self).__init__(*args, **kwargs)
+        super(ResNet101Extractor, self).__init__(pretrained_model)
         self._init_layers(pretrained_model, remove_layers)
 
     def download(self):
