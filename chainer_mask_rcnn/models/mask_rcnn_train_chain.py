@@ -73,7 +73,7 @@ class MaskRCNNTrainChain(chainer.Chain):
         self.loc_normalize_mean = mask_rcnn.loc_normalize_mean
         self.loc_normalize_std = mask_rcnn.loc_normalize_std
 
-    def __call__(self, imgs, bboxes, labels, masks, scale):
+    def __call__(self, imgs, bboxes, labels, masks, scales):
         """Forward Faster R-CNN and calculate losses.
 
         Here are notations used.
@@ -106,59 +106,76 @@ class MaskRCNNTrainChain(chainer.Chain):
             bboxes = bboxes.data
         if isinstance(labels, chainer.Variable):
             labels = labels.data
-        if isinstance(scale, chainer.Variable):
-            scale = scale.data
-        scale = np.asscalar(cuda.to_cpu(scale))
-        n = bboxes.shape[0]
-        if n != 1:
-            raise ValueError('Currently only batch size 1 is supported.')
+        if isinstance(scales, chainer.Variable):
+            scales = scales.data
+        scales = cuda.to_cpu(scales)
 
-        _, _, H, W = imgs.shape
+        batch_size, _, H, W = imgs.shape
         img_size = (H, W)
 
         features = self.mask_rcnn.extractor(imgs)
         rpn_locs, rpn_scores, rois, roi_indices, anchor = self.mask_rcnn.rpn(
-            features, img_size, scale)
+            features, img_size, scales)
 
-        # Since batch size is one, convert variables to singular form
-        bbox = bboxes[0]
-        label = labels[0]
-        rpn_score = rpn_scores[0]
-        rpn_loc = rpn_locs[0]
-        roi = rois
-        mask = masks[0]
+        batch_indices = range(batch_size)
+        sample_rois = []
+        sample_roi_indices = []
+        gt_roi_locs = []
+        gt_roi_labels = []
+        gt_roi_masks = []
+        for batch_index, bbox, label, mask in \
+                zip(batch_indices, bboxes, labels, masks):
+            roi = rois[roi_indices == batch_index]
+            # Sample RoIs and forward
+            sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
+                self.proposal_target_creator(roi, bbox, label, mask)
+            sample_roi_index = self.xp.full(
+                (len(sample_roi),), batch_index, dtype=np.int32)
+            sample_rois.append(sample_roi)
+            sample_roi_indices.append(sample_roi_index)
+            gt_roi_locs.append(gt_roi_loc)
+            gt_roi_labels.append(gt_roi_label)
+            gt_roi_masks.append(gt_roi_mask)
+        del sample_roi, sample_roi_index
+        del gt_roi_loc, gt_roi_label, gt_roi_mask
+        sample_rois = self.xp.concatenate(sample_rois, axis=0)
+        sample_roi_indices = self.xp.concatenate(sample_roi_indices, axis=0)
+        gt_roi_locs = self.xp.concatenate(gt_roi_locs, axis=0)
+        gt_roi_labels = self.xp.concatenate(gt_roi_labels, axis=0)
+        gt_roi_masks = self.xp.concatenate(gt_roi_masks, axis=0)
 
-        if len(bbox) == 0:
-            return chainer.Variable(self.xp.array(0, dtype=np.float32))
-
-        # Sample RoIs and forward
-        sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
-            self.proposal_target_creator(roi, bbox, label, mask)
-
-        sample_roi_index = self.xp.zeros((len(sample_roi),), dtype=np.int32)
-
-        roi_cls_loc, roi_score, roi_mask = self.mask_rcnn.head(
-            features, sample_roi, sample_roi_index)
+        roi_cls_locs, roi_scores, roi_masks = self.mask_rcnn.head(
+            features, sample_rois, sample_roi_indices)
 
         # RPN losses
-        gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(
-            bbox, anchor, img_size)
+        gt_rpn_locs = []
+        gt_rpn_labels = []
+        for bbox, rpn_loc, rpn_score in zip(bboxes, rpn_locs, rpn_scores):
+            gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(
+                bbox, anchor, img_size)
+            gt_rpn_locs.append(gt_rpn_loc)
+            gt_rpn_labels.append(gt_rpn_label)
+        del gt_rpn_loc, gt_rpn_label
+        gt_rpn_locs = self.xp.concatenate(gt_rpn_locs, axis=0)
+        gt_rpn_labels = self.xp.concatenate(gt_rpn_labels, axis=0)
+        rpn_locs = F.concat(rpn_locs, axis=0)
+        rpn_scores = F.concat(rpn_scores, axis=0)
         rpn_loc_loss = _fast_rcnn_loc_loss(
-            rpn_loc, gt_rpn_loc, gt_rpn_label, self.rpn_sigma)
-        rpn_cls_loss = F.sigmoid_cross_entropy(rpn_score, gt_rpn_label)
+            rpn_locs, gt_rpn_locs, gt_rpn_labels, self.rpn_sigma)
+        rpn_cls_loss = F.sigmoid_cross_entropy(rpn_scores, gt_rpn_labels)
 
         # Losses for outputs of the head.
-        n_sample = roi_cls_loc.shape[0]
-        roi_cls_loc = roi_cls_loc.reshape((n_sample, -1, 4))
-        roi_loc = roi_cls_loc[self.xp.arange(n_sample), gt_roi_label]
+        n_sample = len(roi_cls_locs)
+        roi_cls_locs = roi_cls_locs.reshape((n_sample, -1, 4))
+        roi_locs = roi_cls_locs[self.xp.arange(n_sample), gt_roi_labels]
         roi_loc_loss = _fast_rcnn_loc_loss(
-            roi_loc, gt_roi_loc, gt_roi_label, self.roi_sigma)
-        roi_cls_loss = F.softmax_cross_entropy(roi_score, gt_roi_label)
+            roi_locs, gt_roi_locs, gt_roi_labels, self.roi_sigma)
+        roi_cls_loss = F.softmax_cross_entropy(roi_scores, gt_roi_labels)
 
         # Losses for outputs of mask branch
         roi_mask_loss = F.sigmoid_cross_entropy(
-            roi_mask[np.arange(n_sample), gt_roi_label - 1, :, :],
-            gt_roi_mask)
+            roi_masks[np.arange(n_sample), gt_roi_labels - 1, :, :],
+            gt_roi_masks)
 
         loss = rpn_loc_loss + rpn_cls_loss + roi_loc_loss + roi_cls_loss + \
             roi_mask_loss
