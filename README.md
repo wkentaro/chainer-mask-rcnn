@@ -28,11 +28,6 @@ Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 | FCIS, ResNet50 | [msracver/FCIS](https://github.com/msracver/FCIS) | 8 | 27.1 | - |
 
 
-## Training
-
-See [examples](examples).
-
-
 ## Inference
 
 ```bash
@@ -50,7 +45,7 @@ cd examples/coco
 *Fig 2. Mask R-CNN, ResNet50, 8GPU, Copied from Detectron, COCO 31.4 mAP@50:95*
 
 
-## Installation
+## Installation & Training
 
 
 ### Single GPU Training
