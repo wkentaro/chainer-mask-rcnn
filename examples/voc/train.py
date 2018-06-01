@@ -4,6 +4,7 @@ from __future__ import division
 
 import argparse
 import datetime
+import functools
 import os
 import os.path as osp
 import random
@@ -71,6 +72,12 @@ def main():
         default=default_max_epoch,
         help='max epoch',
     )
+    parser.add_argument(
+        '--batch-size-per-gpu',
+        type=int,
+        default=1,
+        help='batch size / gpu',
+    )
     args = parser.parse_args()
 
     if args.multi_node:
@@ -93,8 +100,9 @@ def main():
     args.timestamp = now.isoformat()
     args.out = osp.join(here, 'logs', now.strftime('%Y%m%d_%H%M%S'))
 
-    # 0.00125 * 8 = 0.01  in original
-    args.batch_size = 1 * args.n_gpu
+    args.batch_size = args.batch_size_per_gpu * args.n_gpu
+
+    # lr: 0.00125 * 8 = 0.01  in original
     args.lr = 0.00125 * args.batch_size
     args.weight_decay = 0.0001
 
@@ -187,24 +195,31 @@ def main():
 
     train_iter = chainer.iterators.MultiprocessIterator(
         train_data,
-        batch_size=1,
+        batch_size=args.batch_size_per_gpu,
         n_prefetch=4,
         shared_mem=10 ** 8,
     )
     test_iter = chainer.iterators.MultiprocessIterator(
         test_data,
-        batch_size=1,
+        batch_size=args.batch_size_per_gpu,
         n_prefetch=4,
         shared_mem=10 ** 8,
         repeat=False,
         shuffle=False,
     )
 
+    converter = functools.partial(
+        cmr.datasets.concat_examples,
+        padding=0,
+        # img, bboxes, labels, masks, scales
+        indices_concat=[0, 2, 3, 4],  # img, _, labels, masks, scales
+        indices_to_device=[0, 1],  # img, bbox
+    )
     updater = chainer.training.updater.StandardUpdater(
         train_iter,
         optimizer,
         device=device,
-        converter=cmr.datasets.concat_examples,
+        converter=converter,
     )
 
     trainer = training.Trainer(
