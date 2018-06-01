@@ -34,6 +34,15 @@ Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 # you can use your trained model
 ./demo.py logs/<YOUR_TRAINING_LOG> --img <IMAGE_PATH_OR_URL>
 
+# COCO Example: Mask R-CNN, ResNet50, 31.4 mAP@50:95
+cd examples/coco
+LOG_DIR=logs/20180522_005447
+mkdir -p $LOG_DIR
+pip install gdown
+gdown https://drive.google.com/uc?id=19sciU40y_a3tN18QyLiQcWAuGc2hZw9p -O $LOG_DIR/snapshot_model.npz
+gdown https://drive.google.com/uc?id=1rIKigHbnPPgv2kFNVHApagUdfrQylicq -O $LOG_DIR/params.yaml
+./demo.py $LOG_DIR
+
 # copy weight from caffe2 to chainer
 cd examples/coco
 ./convert_caffe2_to_chainer.py
