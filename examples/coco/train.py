@@ -56,7 +56,7 @@ def main():
         '--roi-size',
         '-r',
         type=int,
-        default=7,
+        default=14,
         help='roi size',
     )
     parser.add_argument(
