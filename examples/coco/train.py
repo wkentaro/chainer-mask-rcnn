@@ -125,7 +125,7 @@ def main():
         return_crowd=True,
         return_area=True,
     )
-    class_names = test_data.class_names
+    args.class_names = tuple(test_data.class_names.tolist())
 
     if args.pooling_func == 'align':
         pooling_func = cmr.functions.roi_align_2d
@@ -149,7 +149,7 @@ def main():
 
     if args.model == 'vgg16':
         mask_rcnn = cmr.models.MaskRCNNVGG16(
-            n_fg_class=len(class_names),
+            n_fg_class=len(args.class_names),
             pretrained_model='imagenet',
             pooling_func=pooling_func,
             anchor_scales=args.anchor_scales,
@@ -162,7 +162,7 @@ def main():
         n_layers = int(args.model.lstrip('resnet'))
         mask_rcnn = cmr.models.MaskRCNNResNet(
             n_layers=n_layers,
-            n_fg_class=len(class_names),
+            n_fg_class=len(args.class_names),
             pooling_func=pooling_func,
             anchor_scales=args.anchor_scales,
             min_size=args.min_size,
@@ -240,7 +240,7 @@ def main():
         test_iter,
         model.mask_rcnn,
         device=device,
-        label_names=class_names,
+        label_names=args.class_names,
     )
     if args.multi_node:
         evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
@@ -265,7 +265,7 @@ def main():
             cmr.extensions.InstanceSegmentationVisReport(
                 test_iter,
                 model.mask_rcnn,
-                label_names=class_names,
+                label_names=args.class_names,
             ),
             trigger=eval_interval,
         )
