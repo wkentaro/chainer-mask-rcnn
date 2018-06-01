@@ -11,7 +11,7 @@ Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 - [x] [VOC and COCO training examples](examples).
 - [x] **[Reproduced result of original work (ResNet50, COCO)](https://github.com/wkentaro/chainer-mask-rcnn#coco-results)**.
 - [x] Weight copy from pretrained model at [facebookresearch/Detectron](https://github.com/facebookresearch/Detectron).
-- [ ] Training with batch size >= 2.
+- [x] Training with batch size >= 2.
 - [ ] Support FPN backbones.
 - [ ] Keypoint detection.
 
