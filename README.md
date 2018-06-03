@@ -25,8 +25,8 @@ Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 | Model | Implementation | N gpu training | mAP@50:95 | Log |
 |-------|----------------|----------------|-----------|-----|
 | Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 8 | 31.4 | [Log](https://drive.google.com/open?id=1DRt96S0asaAiN5aDiWUYVcPs0bQ_USU3) |
-| Mask R-CNN, ResNet50 | [facebookresearch/Detectron](https://github.com/facebookresearch/Detectron) | 8 | 31.4 (30.7 after copied) | [Log](https://drive.google.com/open?id=1xQBox3uMv2FoyXXpsC9ASNZ-92NgAbcT) |
-| FCIS, ResNet50 | [msracver/FCIS](https://github.com/msracver/FCIS) | 8 | 27.1 | - |
+| Mask R-CNN, ResNet50 | [Detectron](https://github.com/facebookresearch/Detectron) | 8 | 31.4 (30.7 after copied) | [Log](https://drive.google.com/open?id=1xQBox3uMv2FoyXXpsC9ASNZ-92NgAbcT) |
+| FCIS, ResNet50 | [FCIS](https://github.com/msracver/FCIS) | 8 | 27.1 | - |
 
 
 ## Inference
