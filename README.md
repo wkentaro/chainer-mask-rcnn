@@ -1,6 +1,7 @@
 # chainer-mask-rcnn
 
 [![PyPI version](https://badge.fury.io/py/chainer-mask-rcnn.svg)](https://badge.fury.io/py/chainer-mask-rcnn)
+[![Python Versions](https://img.shields.io/pypi/pyversions/chainer-mask-rcnn.svg)](https://pypi.org/project/chainer-mask-rcnn)
 [![Build Status](https://travis-ci.com/wkentaro/chainer-mask-rcnn.svg?branch=master)](https://travis-ci.com/wkentaro/chainer-mask-rcnn)
 
 Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).

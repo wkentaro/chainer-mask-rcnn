@@ -5,7 +5,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 
-version = '0.5.7'
+version = '0.5.8'
 
 
 if sys.argv[-1] == 'release':
@@ -32,4 +32,15 @@ setup(
     description='Chainer Implementation of Mask R-CNN.',
     url='http://github.com/wkentaro/chainer-mask-rcnn',
     license='MIT',
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'Natural Language :: English',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
+    ],
 )
