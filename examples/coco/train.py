@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-from __future__ import division
 from __future__ import print_function
 
 import argparse
 import datetime
+import functools
 import os
 import os.path as osp
 import random
@@ -90,7 +90,7 @@ def main():
                 'Option --gpu is required without --multi-node.',
                 file=sys.stderr,
             )
-            quit(1)
+            sys.exit(1)
         args.n_node = 1
         args.n_gpu = 1
         chainer.cuda.get_device_from_id(args.gpu).use()
@@ -210,11 +210,18 @@ def main():
         shuffle=False,
     )
 
+    converter = functools.partial(
+        cmr.datasets.concat_examples,
+        padding=0,
+        # img, bboxes, labels, masks, scales
+        indices_concat=[0, 2, 3, 4],  # img, _, labels, masks, scales
+        indices_to_device=[0, 1],  # img, bbox
+    )
     updater = chainer.training.updater.StandardUpdater(
         train_iter,
         optimizer,
         device=device,
-        converter=cmr.datasets.concat_examples,
+        converter=converter,
     )
 
     trainer = training.Trainer(

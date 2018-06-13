@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import division
+from __future__ import print_function
 
 import argparse
 import datetime
@@ -9,6 +9,7 @@ import os
 import os.path as osp
 import random
 import socket
+import sys
 
 os.environ['MPLBACKEND'] = 'Agg'  # NOQA
 
@@ -90,6 +91,12 @@ def main():
         args.n_gpu = comm.size
         chainer.cuda.get_device_from_id(device).use()
     else:
+        if args.gpu is None:
+            print(
+                'Option --gpu is required without --multi-node.',
+                file=sys.stderr,
+            )
+            sys.exit(1)
         args.n_node = 1
         args.n_gpu = 1
         chainer.cuda.get_device_from_id(args.gpu).use()
