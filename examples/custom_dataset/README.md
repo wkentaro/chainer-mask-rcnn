@@ -9,6 +9,12 @@ and same dataset for both training and testing.
 
 ```bash
 ./train.py --gpu 0
+
+./demo.py <log_dir> --img src/labelme/examples/instance_segmentation/data_dataset_voc/JPEGImages/2011_000003.jpg
+
+./evaluate.py <log_dir>
+
+./summarize_logs.py
 ```
 
 
