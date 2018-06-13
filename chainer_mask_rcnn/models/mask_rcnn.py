@@ -185,7 +185,7 @@ class MaskRCNN(chainer.Chain):
         # Total number of classes including the background.
         return self.head.n_class
 
-    def __call__(self, x, scale=1.):
+    def __call__(self, x, scales):
         """Forward Faster R-CNN.
 
         Scaling paramter :obj:`scale` is used by RPN to determine the
@@ -226,7 +226,7 @@ class MaskRCNN(chainer.Chain):
 
         h = self.extractor(x)
         rpn_locs, rpn_scores, rois, roi_indices, anchor =\
-            self.rpn(h, img_size, scale)
+            self.rpn(h, img_size, scales)
         roi_cls_locs, roi_scores, roi_masks = self.head(
             h, rois, roi_indices)
         return roi_cls_locs, roi_scores, rois, roi_indices, roi_masks
@@ -296,28 +296,28 @@ class MaskRCNN(chainer.Chain):
 
     def predict(self, imgs):
         prepared_imgs = list()
-        sizes = list()
+        scales = list()
         for img in imgs:
             size = img.shape[1:]
             img = self.prepare(img.astype(np.float32))
             prepared_imgs.append(img)
-            sizes.append(size)
+            scale = img.shape[2] / size[1]
+            scales.append(scale)
 
         bboxes = list()
         masks = list()
         labels = list()
         scores = list()
-        for img, size in zip(prepared_imgs, sizes):
+        for img, scale in zip(prepared_imgs, scales):
             with chainer.using_config('train', False), \
                     chainer.function.no_backprop_mode():
                 img_var = chainer.Variable(self.xp.asarray(img[None]))
-                scale = img_var.shape[3] / size[1]
 
                 img_size = img_var.shape[2:]
 
                 h = self.extractor(img_var)
                 rpn_locs, rpn_scores, rois, roi_indices, anchor =\
-                    self.rpn(h, img_size, scale)
+                    self.rpn(h, img_size, [scale])
                 roi_cls_locs, roi_scores, _, = self.head(
                     h, rois, roi_indices, pred_mask=False)
             # We are assuming that batch size is 1.
