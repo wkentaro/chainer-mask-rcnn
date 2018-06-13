@@ -125,8 +125,11 @@ class MaskRCNNTrainChain(chainer.Chain):
         gt_roi_masks = []
         for batch_index, bbox, label, mask in \
                 zip(batch_indices, bboxes, labels, masks):
-            roi = rois[roi_indices == batch_index]
+            # Skip empty bounding box.
+            if len(bbox) == 0:
+                continue
             # Sample RoIs and forward
+            roi = rois[roi_indices == batch_index]
             sample_roi, gt_roi_loc, gt_roi_label, gt_roi_mask = \
                 self.proposal_target_creator(roi, bbox, label, mask)
             sample_roi_index = self.xp.full(
@@ -136,8 +139,11 @@ class MaskRCNNTrainChain(chainer.Chain):
             gt_roi_locs.append(gt_roi_loc)
             gt_roi_labels.append(gt_roi_label)
             gt_roi_masks.append(gt_roi_mask)
-        del sample_roi, sample_roi_index
-        del gt_roi_loc, gt_roi_label, gt_roi_mask
+            del roi, sample_roi, sample_roi_index
+            del gt_roi_loc, gt_roi_label, gt_roi_mask
+        if len(sample_rois) == 0:
+            # All ground truth bounding boxes are empty. So we skip training.
+            return chainer.Variable(self.xp.array(0, dtype=np.float32))
         sample_rois = self.xp.concatenate(sample_rois, axis=0)
         sample_roi_indices = self.xp.concatenate(sample_roi_indices, axis=0)
         gt_roi_locs = self.xp.concatenate(gt_roi_locs, axis=0)
