@@ -286,6 +286,8 @@ if not osp.exists(link_file):
     os.symlink(dst_file, link_file)
 yaml_file = osp.join(log_dir, 'params.yaml')
 with open(yaml_file, 'w') as f:
+    # 0: person ... 79: toothbrush
+    class_names = ['<class {:02d}>'.format(c) for c in range(80)]
     params = dict(
         model='resnet50',
         pooling_func='align',
@@ -295,5 +297,6 @@ with open(yaml_file, 'w') as f:
         anchor_scales=(2, 4, 8, 16, 32),
         min_size=800,
         max_size=1333,
+        class_names=class_names,
     )
     yaml.safe_dump(params, f, default_flow_style=False)
