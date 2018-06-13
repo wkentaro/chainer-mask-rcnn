@@ -69,7 +69,9 @@ def main():
         if 'anchor_scales' not in params:
             params['anchor_scales'] = (2, 4, 8, 16, 32)
     else:
-        raise ValueError
+        assert 'min_size' in params
+        assert 'max_size' in params
+        assert 'anchor_scales' in params
 
     if params['pooling_func'] == 'align':
         pooling_func = cmr.functions.roi_align_2d
@@ -78,7 +80,9 @@ def main():
     elif params['pooling_func'] == 'resize':
         pooling_func = cmr.functions.crop_and_resize
     else:
-        raise ValueError
+        raise ValueError(
+            'Unsupported pooling_func: {}'.format(params['pooling_func'])
+        )
 
     pretrained_model = osp.join(args.log_dir, 'snapshot_model.npz')
     print('Using pretrained_model: %s' % pretrained_model)
