@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import argparse
 import os.path as osp
 import pprint
 
@@ -10,11 +11,19 @@ import yaml
 import chainer_mask_rcnn as cmr
 
 
-def evaluate(gpu, log_dir, test_data, evaluator_type, indices_vis=None):
-    assert evaluator_type in ['voc', 'coco']
+def evaluate(test_data, evaluator_type, indices_vis=None):
+    assert evaluator_type in ['voc', 'coco'], \
+        'Unsupported evaluator_type: {}'.format(evaluator_type)
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument('log_dir', help='log dir')
+    parser.add_argument('-g', '--gpu', type=int, default=0, help='gpu id')
+    args = parser.parse_args()
 
     # param
-    with open(osp.join(log_dir, 'params.yaml')) as f:
+    with open(osp.join(args.log_dir, 'params.yaml')) as f:
         params = yaml.load(f)
     print('Training config:')
     print('# ' + '-' * 77)
@@ -35,7 +44,7 @@ def evaluate(gpu, log_dir, test_data, evaluator_type, indices_vis=None):
     else:
         raise ValueError
 
-    pretrained_model = osp.join(log_dir, 'snapshot_model.npz')
+    pretrained_model = osp.join(args.log_dir, 'snapshot_model.npz')
     print('Using pretrained_model:', pretrained_model)
 
     model = params['model']
@@ -50,8 +59,8 @@ def evaluate(gpu, log_dir, test_data, evaluator_type, indices_vis=None):
         max_size=params['max_size'],
         roi_size=params['roi_size'],
     )
-    if gpu >= 0:
-        chainer.cuda.get_device_from_id(gpu).use()
+    if args.gpu >= 0:
+        chainer.cuda.get_device_from_id(args.gpu).use()
         mask_rcnn.to_gpu()
 
     test_data = chainer.datasets.TransformDataset(
@@ -80,7 +89,7 @@ def evaluate(gpu, log_dir, test_data, evaluator_type, indices_vis=None):
             iteration = 'best'
 
         updater = DummyUpdater()
-        out = log_dir
+        out = args.log_dir
 
     print('Visualizing...')
     visualizer = cmr.extensions.InstanceSegmentationVisReport(
@@ -91,7 +100,7 @@ def evaluate(gpu, log_dir, test_data, evaluator_type, indices_vis=None):
         copy_latest=False,
     )
     visualizer(trainer=DummyTrainer())
-    print('Saved visualization:', osp.join(log_dir, 'iteration=best.jpg'))
+    print('Saved visualization:', osp.join(args.log_dir, 'iteration=best.jpg'))
 
     # evaluation
     # -------------------------------------------------------------------------
