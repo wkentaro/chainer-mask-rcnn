@@ -118,6 +118,8 @@ class MaskRCNNResNet(MaskRCNN):
 
 class ResNetRoIHead(chainer.Chain):
 
+    mask_size = 14  # Size of the predicted mask.
+
     def __init__(self, n_layers, n_class, roi_size, spatial_scale,
                  pretrained_model='auto',
                  res_initialW=None, loc_initialW=None, score_initialW=None,

@@ -389,8 +389,14 @@ class MaskRCNN(chainer.Chain):
                 roi_masks = F.sigmoid(roi_masks)
             roi_mask = cuda.to_cpu(roi_masks.data)
 
-            mask = segm_results(bbox, label, roi_mask, size[0], size[1],
-                                mask_size=14)
+            mask = segm_results(
+                bbox,
+                label,
+                roi_mask,
+                size[0],
+                size[1],
+                mask_size=self.head.mask_size,
+            )
             masks.append(mask)
 
         return bboxes, masks, labels, scores
