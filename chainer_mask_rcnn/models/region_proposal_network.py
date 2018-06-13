@@ -1,3 +1,15 @@
+# Modified works:
+# --------------------------------------------------------
+# Copyright (c) 2017 - 2018 Kentaro Wada.
+# Licensed under The MIT License [see LICENSE for details]
+# --------------------------------------------------------
+
+# This is modified work of RegionProposalNetwork:
+# --------------------------------------------------------
+# Copyright (c) 2017 Preferred Networks, Inc.
+# Licensed under The MIT License [see LICENSE for details]
+# https://github.com/chainer/chainercv
+# --------------------------------------------------------
 import numpy as np
 
 import chainer
