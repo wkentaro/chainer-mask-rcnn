@@ -6,6 +6,11 @@
 
 # Original works:
 # --------------------------------------------------------
+# expand_boxes, segm_results
+# Copyright (c) 2017-present, Facebook, Inc.
+# Licensed under The Apache License [see LICENSE for details]
+# https://github.com/facebookresearch/Detectron
+# --------------------------------------------------------
 # Copyright (c) 2017 Preferred Networks, Inc.
 # Licensed under The MIT License [see LICENSE for details]
 # https://github.com/chainer/chainercv
