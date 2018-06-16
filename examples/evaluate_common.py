@@ -38,7 +38,7 @@ def evaluate(test_data, evaluator_type, indices_vis=None):
     if params['pooling_func'] == 'align':
         pooling_func = cmr.functions.roi_align_2d
     elif params['pooling_func'] == 'pooling':
-        pooling_func = chainer.functions.roi_pooling_2d
+        pooling_func = cmr.functions.roi_pooling_2d
     elif params['pooling_func'] == 'resize':
         pooling_func = cmr.functions.crop_and_resize
     else:
