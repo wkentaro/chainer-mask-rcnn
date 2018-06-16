@@ -15,7 +15,7 @@ if sys.argv[-1] == 'release':
         'python setup.py sdist upload',
     ]
     for cmd in commands:
-        subprocess.call(cmd, shell=True)
+        subprocess.check_call(cmd, shell=True)
     sys.exit(0)
 
 
