@@ -13,7 +13,7 @@ from chainer_mask_rcnn import functions
 
 
 @testing.parameterize(*testing.product({
-    'sampling_ratio': [-1, 1, 2],
+    'sampling_ratio': [0, 1, 2],
 }))
 class TestROIAlign2D(unittest.TestCase):
 

@@ -29,7 +29,22 @@ class ROIAlign2D(function.Function):
 
     """ROI align over a set of 2d planes."""
 
-    def __init__(self, outh, outw, spatial_scale, sampling_ratio=-1):
+    def __init__(self, outh, outw, spatial_scale, sampling_ratio=0):
+        for arg in ['outh', 'outw', 'sampling_ratio']:
+            value = eval(arg)
+            if not (isinstance(value, int) and value >= 0):
+                raise TypeError(
+                    '{} must be positive integer: {}, {}'
+                    .format(arg, type(value), value)
+                )
+        if isinstance(spatial_scale, int):
+            spatial_scale = float(spatial_scale)
+        elif not isinstance(spatial_scale, float):
+            raise TypeError(
+                'spatial_scale must be float: {}'
+                .format(type(spatial_scale), spatial_scale)
+            )
+
         self.outh, self.outw = outh, outw
         self.spatial_scale = spatial_scale
         self.sampling_ratio = sampling_ratio
@@ -512,7 +527,7 @@ class ROIAlign2D(function.Function):
         return bottom_diff, None
 
 
-def roi_align_2d(x, rois, outh, outw, spatial_scale, sampling_ratio=-1):
+def roi_align_2d(x, rois, outh, outw, spatial_scale, sampling_ratio=0):
     """Spatial Region of Interest (ROI) align function.
 
     This function acts similarly to :class:`~functions.MaxPooling2D`, but
