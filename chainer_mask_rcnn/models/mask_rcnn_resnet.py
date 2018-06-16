@@ -169,9 +169,14 @@ class ResNetRoIHead(chainer.Chain):
         roi_indices = roi_indices.astype(np.float32)
         indices_and_rois = self.xp.concatenate(
             (roi_indices[:, None], rois), axis=1)
-        pool = _roi_pooling_2d_yx(
-            x, indices_and_rois, self.roi_size, self.roi_size,
-            self.spatial_scale, self.pooling_func)
+        pool = self.pooling_func(
+            x,
+            indices_and_rois,
+            outh=self.roi_size,
+            outw=self.roi_size,
+            spatial_scale=self.spatial_scale,
+            axes='yx',
+        )
 
         res5 = self.res5(pool)
 
@@ -189,13 +194,6 @@ class ResNetRoIHead(chainer.Chain):
             roi_masks = self.mask(deconv6)
 
         return roi_cls_locs, roi_scores, roi_masks
-
-
-def _roi_pooling_2d_yx(x, indices_and_rois, outh, outw, spatial_scale,
-                       pooling_func):
-    xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
-    pool = pooling_func(x, xy_indices_and_rois, outh, outw, spatial_scale)
-    return pool
 
 
 def _copy_persistent_link(dst, src):

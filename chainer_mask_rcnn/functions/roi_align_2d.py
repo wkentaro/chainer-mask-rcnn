@@ -13,15 +13,12 @@
 # -----------------------------------------------------------------------------
 # Copyright (c) 2017 Kentaro Wada <www.kentaro.wada@gmail.com>
 # -----------------------------------------------------------------------------
-import collections
 
 import numpy
 import six
 
-import chainer
 from chainer import cuda
 from chainer import function
-from chainer import functions
 from chainer.utils import type_check
 
 
@@ -527,7 +524,9 @@ class ROIAlign2D(function.Function):
         return bottom_diff, None
 
 
-def roi_align_2d(x, rois, outh, outw, spatial_scale, sampling_ratio=0):
+def roi_align_2d(
+        x, rois, outh, outw, spatial_scale, sampling_ratio=0, axes='xy',
+):
     """Spatial Region of Interest (ROI) align function.
 
     This function acts similarly to :class:`~functions.MaxPooling2D`, but
@@ -543,6 +542,8 @@ def roi_align_2d(x, rois, outh, outw, spatial_scale, sampling_ratio=0):
         outh (int): Height of output image after pooled.
         outw (int): Width of output image after pooled.
         spatial_scale (float): Scale of the roi is resized.
+        sampling_ratio (int): Sampling step for the alignment.
+            It must meet sampling_ratio >= 0.
 
     Returns:
         ~chainer.Variable: Output variable.
@@ -551,4 +552,9 @@ def roi_align_2d(x, rois, outh, outw, spatial_scale, sampling_ratio=0):
     `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_.
 
     """
+    if axes not in ['xy', 'yx']:
+        raise ValueError('Unsupported axes: {}'.format(axes))
+    if axes == 'yx':
+        rois = rois[:, [0, 2, 1, 4, 3]]
+
     return ROIAlign2D(outh, outw, spatial_scale, sampling_ratio)(x, rois)

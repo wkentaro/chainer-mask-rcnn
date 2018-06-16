@@ -138,18 +138,22 @@ def train(args, train_data, test_data, evaluator_type):
     if args.pooling_func == 'align':
         pooling_func = cmr.functions.roi_align_2d
     elif args.pooling_func == 'pooling':
-        pooling_func = chainer.functions.roi_pooling_2d
+        pooling_func = cmr.functions.roi_pooling_2d
     elif args.pooling_func == 'resize':
         pooling_func = cmr.functions.crop_and_resize
     else:
-        raise ValueError
+        raise ValueError(
+            'Unsupported pooling_func: {}'.format(args.pooling_func)
+        )
 
     if args.initializer == 'normal':
         mask_initialW = chainer.initializers.Normal(0.01)
     elif args.initializer == 'he_normal':
         mask_initialW = chainer.initializers.HeNormal(fan_option='fan_out')
     else:
-        raise ValueError
+        raise ValueError(
+            'Unsupported initializer: {}'.format(args.initializer)
+        )
 
     if args.model == 'vgg16':
         mask_rcnn = cmr.models.MaskRCNNVGG16(
@@ -175,7 +179,7 @@ def train(args, train_data, test_data, evaluator_type):
             mask_initialW=mask_initialW,
         )
     else:
-        raise ValueError
+        raise ValueError('Unsupported model: {}'.format(args.model))
     model = cmr.models.MaskRCNNTrainChain(mask_rcnn)
     if args.multi_node or args.gpu >= 0:
         model.to_gpu()
