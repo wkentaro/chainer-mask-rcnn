@@ -18,6 +18,11 @@ and same dataset for both training and testing.
 ```
 
 
+![](.readme/custom_dataset_result.jpg)
+
+*Fig 1. Training result after training with given images around 200 times (top: ground truth, bottom: inference result)*
+
+
 ## VOC-like dataset
 
 ```bash
