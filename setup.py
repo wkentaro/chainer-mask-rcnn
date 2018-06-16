@@ -10,8 +10,9 @@ version = '0.5.9'
 
 if sys.argv[-1] == 'release':
     commands = [
+        'git push origin master',
         'git tag v{0}'.format(version),
-        'git push origin master --tags',
+        'git push origin --tags',
         'python setup.py sdist upload',
     ]
     for cmd in commands:
