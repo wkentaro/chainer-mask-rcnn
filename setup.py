@@ -24,9 +24,7 @@ setup(
     name='chainer-mask-rcnn',
     version=version,
     packages=find_packages(),
-    package_data={
-        'chainer_mask_rcnn.datasets.voc': ['data/*'],
-    },
+    include_package_data=True,
     install_requires=open('requirements.txt').readlines(),
     author='Kentaro Wada',
     author_email='www.kentaro.wada@gmail.com',
