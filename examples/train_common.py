@@ -190,9 +190,15 @@ def train(args, train_data, test_data, evaluator_type):
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=args.weight_decay))
 
-    for link in mask_rcnn.links():
-        if isinstance(link, cmr.links.AffineChannel2D):
-            link.disable_update()
+    if args.model in ['resnet50', 'resnet101']:
+        # ResNetExtractor.freeze_at is not enough to freeze params
+        # since WeightDecay updates the param little by little.
+        mask_rcnn.extractor.conv1.disable_update()
+        mask_rcnn.extractor.bn1.disable_update()
+        mask_rcnn.extractor.res2.disable_update()
+        for link in mask_rcnn.links():
+            if isinstance(link, cmr.links.AffineChannel2D):
+                link.disable_update()
 
     train_data = chainer.datasets.TransformDataset(
         train_data,
