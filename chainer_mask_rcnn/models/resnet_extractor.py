@@ -65,9 +65,8 @@ class ResNetExtractorBase(object):
     def functions(self):
         return collections.OrderedDict([
             ('conv1', [self.conv1, self.bn1, F.relu]),
-            # pad=1 and cover_all=False is different from chainer
-            ('pool1', [lambda x: F.max_pooling_2d(x, 3, stride=2, pad=1,
-                                                  cover_all=False)]),
+            # pad=1 is different from original resnet but needed for mask-rcnn
+            ('pool1', [lambda x: F.max_pooling_2d(x, 3, stride=2, pad=1)]),
             ('res2', [self.res2]),
             ('res3', [self.res3]),
             ('res4', [self.res4]),
