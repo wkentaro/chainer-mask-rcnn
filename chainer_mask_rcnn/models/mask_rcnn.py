@@ -38,6 +38,8 @@ import chainer.functions as F
 from chainercv.links.model.faster_rcnn.utils.loc2bbox import loc2bbox
 from chainercv.utils import non_maximum_suppression
 
+from ..datasets import concat_examples
+
 
 def expand_boxes(boxes, scale):
     """Expand an array of boxes by a given scale."""
@@ -144,6 +146,7 @@ class MaskRCNN(chainer.Chain):
 
     def prepare(self, imgs):
         prepared_imgs = []
+        sizes = []
         scales = []
         for img in imgs:
             _, H, W = img.shape
@@ -163,8 +166,9 @@ class MaskRCNN(chainer.Chain):
             img = (img - self.mean).astype(np.float32, copy=False)
 
             prepared_imgs.append(img)
+            sizes.append((H, W))
             scales.append(scale)
-        return prepared_imgs, scales
+        return prepared_imgs, sizes, scales
 
     def _suppress(self, raw_cls_bbox, raw_prob):
         bbox = list()
@@ -192,32 +196,24 @@ class MaskRCNN(chainer.Chain):
         score = np.concatenate(score, axis=0).astype(np.float32)
         return bbox, label, score
 
-    def predict(self, imgs):
-        imgs, scales = self.prepare(imgs)
+    def _to_bboxes(self, roi_cls_locs, roi_scores, rois, roi_indices, sizes,
+                   scales):
+        if isinstance(roi_cls_locs, chainer.Variable):
+            roi_cls_locs = roi_cls_locs.array
+        probs = F.softmax(roi_scores).array
+        del roi_scores
 
         bboxes = []
-        masks = []
         labels = []
         scores = []
-        for img, scale in zip(imgs, scales):
-            size = (int(round(img.shape[1] / scale)),
-                    int(round(img.shape[2] / scale)))
-            with chainer.using_config('train', False), \
-                    chainer.function.no_backprop_mode():
-                img_var = chainer.Variable(self.xp.asarray(img[None]))
+        for index in range(len(sizes)):
+            scale = scales[index]
+            size = sizes[index]
 
-                img_size = img_var.shape[2:]
-
-                h = self.extractor(img_var)
-                rpn_locs, rpn_scores, rois, roi_indices, anchor =\
-                    self.rpn(h, img_size, [scale])
-                roi_cls_locs, roi_scores, _, = self.head(
-                    h, rois, roi_indices, pred_mask=False)
-            # We are assuming that batch size is 1.
-            roi_cls_loc = roi_cls_locs.data
-            roi_score = roi_scores.data
-            roi = rois / scale
-            roi_index = roi_indices
+            keep = roi_indices == index
+            roi_cls_loc = roi_cls_locs[keep]
+            prob = probs[keep]
+            roi = rois[keep] / scale
 
             # Convert predictions to bounding boxes in image coordinates.
             # Bounding boxes are scaled to the scale of the input images.
@@ -238,10 +234,6 @@ class MaskRCNN(chainer.Chain):
             roi[:, 0::2] = self.xp.clip(roi[:, 0::2], 0, size[0])
             roi[:, 1::2] = self.xp.clip(roi[:, 1::2], 0, size[1])
 
-            prob = F.softmax(roi_score).data
-
-            roi_index = self.xp.broadcast_to(
-                roi_index[:, None], roi_cls_loc.shape[:2])
             raw_cls_bbox = cuda.to_cpu(cls_bbox)
             raw_prob = cuda.to_cpu(prob)
 
@@ -265,6 +257,17 @@ class MaskRCNN(chainer.Chain):
             bboxes.append(bbox)
             labels.append(label)
             scores.append(score)
+        return bboxes, labels, scores
+
+    def _get_masks(self, h, bboxes, labels, scores, sizes, scales):
+        masks = []
+        for index in range(len(sizes)):
+            h_i = h[index:index + 1]
+            bbox = bboxes[index]
+            label = labels[index]
+            score = scores[index]
+            size = sizes[index]
+            scale = scales[index]
 
             if len(bbox) == 0:
                 masks.append(np.zeros((0, size[0], size[1]), dtype=bool))
@@ -277,7 +280,7 @@ class MaskRCNN(chainer.Chain):
                 roi_indices = self.xp.zeros(
                     (len(bbox),), dtype=np.int32)
                 _, _, roi_masks = self.head(
-                    x=h, rois=rois, roi_indices=roi_indices,
+                    x=h_i, rois=rois, roi_indices=roi_indices,
                     pred_bbox=False, pred_mask=True)
                 roi_masks = F.sigmoid(roi_masks)
             roi_mask = cuda.to_cpu(roi_masks.data)
@@ -291,5 +294,28 @@ class MaskRCNN(chainer.Chain):
                 mask_size=self.head.mask_size,
             )
             masks.append(mask)
+        return masks
+
+    def predict(self, imgs):
+        imgs, sizes, scales = self.prepare(imgs)
+
+        batch = list(zip(imgs, scales))
+        x, scales = concat_examples(batch, padding=0)
+        x = self.xp.asarray(x)
+
+        with chainer.using_config('train', False), chainer.no_backprop_mode():
+            h = self.extractor(x)
+            rpn_locs, rpn_scores, rois, roi_indices, anchor = self.rpn(
+                h, x.shape[2:], scales,
+            )
+            roi_cls_locs, roi_scores, _ = self.head(
+                h, rois, roi_indices, pred_mask=False,
+            )
+
+        bboxes, labels, scores = self._to_bboxes(
+            roi_cls_locs, roi_scores, rois, roi_indices, sizes, scales,
+        )
+
+        masks = self._get_masks(h, bboxes, labels, scores, sizes, scales)
 
         return bboxes, masks, labels, scores
