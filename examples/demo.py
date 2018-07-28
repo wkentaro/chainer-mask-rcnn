@@ -5,6 +5,7 @@ from __future__ import print_function
 import argparse
 import os.path as osp
 import pprint
+import tempfile
 
 import chainer
 import numpy as np
@@ -23,7 +24,8 @@ def main():
     parser.add_argument(
         '--img',
         '-i',
-        default=default_img,
+        nargs='+',
+        default=[default_img],
         help='img file or url',
     )
     parser.add_argument('--gpu', '-g', type=int, default=0, help='gpu id')
@@ -104,30 +106,50 @@ def main():
         mask_rcnn.to_gpu()
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    img = skimage.io.imread(args.img)
-    img_chw = img.transpose(2, 0, 1)
-    bboxes, masks, labels, scores = mask_rcnn.predict([img_chw])
-    bboxes, masks, labels, scores = bboxes[0], masks[0], labels[0], scores[0]
-    k = scores >= 0.7
-    bboxes, masks, labels, scores = bboxes[k], masks[k], labels[k], scores[k]
-    i = np.argsort(scores)
-    bboxes, masks, labels, scores = bboxes[i], masks[i], labels[i], scores[i]
+    imgs_chw = []
+    for img_file in args.img:
+        img = skimage.io.imread(img_file)
+        img_chw = img.transpose(2, 0, 1)
+        imgs_chw.append(img_chw)
+        del img, img_chw
 
-    captions = ['{}: {:.1%}'.format(class_names[l], s)
-                for l, s in zip(labels, scores)]
-    for caption in captions:
-        print(caption)
-    viz = cmr.utils.draw_instance_bboxes(
-        img=img,
-        bboxes=bboxes,
-        labels=labels + 1,
-        n_class=len(class_names) + 1,
-        captions=captions,
-        masks=masks,
-    )
-    out_file = 'result.jpg'
-    skimage.io.imsave(out_file, viz)
-    print('Saved result: {}'.format(out_file))
+    def batch_predict(mask_rcnn, imgs_chw):
+        for batch in cmr.utils.batch(imgs_chw, n=2):
+            bboxes, masks, labels, scores = mask_rcnn.predict(batch)
+            for bbox, mask, label, score in zip(bboxes, masks, labels, scores):
+                yield bbox, mask, label, score
+
+    results = batch_predict(mask_rcnn, imgs_chw)
+
+    out_dir = tempfile.mkdtemp(dir='.')
+
+    for img_file, img_chw, (bbox, mask, label, score) in \
+            zip(args.img, imgs_chw, results):
+        img = img_chw.transpose(1, 2, 0)
+        del img_chw
+
+        k = score >= 0.7
+        bbox, mask, label, score = bbox[k], mask[k], label[k], score[k]
+        i = np.argsort(score)
+        bbox, mask, label, score = bbox[i], mask[i], label[i], score[i]
+
+        captions = [
+            '{}: {:.1%}'.format(class_names[l], s)
+            for l, s in zip(label, score)
+        ]
+        for caption in captions:
+            print(caption)
+        viz = cmr.utils.draw_instance_bboxes(
+            img=img,
+            bboxes=bbox,
+            labels=label + 1,
+            n_class=len(class_names) + 1,
+            captions=captions,
+            masks=mask,
+        )
+        out_file = osp.join(out_dir, osp.basename(img_file))
+        skimage.io.imsave(out_file, viz)
+        print('Saved result: {}'.format(out_file))
 
 
 if __name__ == '__main__':
