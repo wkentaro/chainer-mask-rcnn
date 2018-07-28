@@ -142,23 +142,29 @@ class MaskRCNN(chainer.Chain):
             h, rois, roi_indices)
         return roi_cls_locs, roi_scores, rois, roi_indices, roi_masks
 
-    def prepare(self, img):
-        _, H, W = img.shape
+    def prepare(self, imgs):
+        prepared_imgs = []
+        scales = []
+        for img in imgs:
+            _, H, W = img.shape
 
-        scale = 1.
+            scale = 1.
 
-        if self.min_size:
-            scale = self.min_size / min(H, W)
+            if self.min_size:
+                scale = self.min_size / min(H, W)
 
-        if self.max_size and scale * max(H, W) > self.max_size:
-            scale = self.max_size / max(H, W)
+            if self.max_size and scale * max(H, W) > self.max_size:
+                scale = self.max_size / max(H, W)
 
-        img = img.transpose(1, 2, 0)
-        img = cv2.resize(img, None, fx=scale, fy=scale)
-        img = img.transpose(2, 0, 1)
+            img = img.transpose(1, 2, 0)
+            img = cv2.resize(img, None, fx=scale, fy=scale)
+            img = img.transpose(2, 0, 1)
 
-        img = (img - self.mean).astype(np.float32, copy=False)
-        return img
+            img = (img - self.mean).astype(np.float32, copy=False)
+
+            prepared_imgs.append(img)
+            scales.append(scale)
+        return prepared_imgs, scales
 
     def _suppress(self, raw_cls_bbox, raw_prob):
         bbox = list()
@@ -187,20 +193,15 @@ class MaskRCNN(chainer.Chain):
         return bbox, label, score
 
     def predict(self, imgs):
-        prepared_imgs = list()
-        scales = list()
-        for img in imgs:
-            size = img.shape[1:]
-            img = self.prepare(img.astype(np.float32))
-            prepared_imgs.append(img)
-            scale = img.shape[2] / size[1]
-            scales.append(scale)
+        imgs, scales = self.prepare(imgs)
 
-        bboxes = list()
-        masks = list()
-        labels = list()
-        scores = list()
-        for img, scale in zip(prepared_imgs, scales):
+        bboxes = []
+        masks = []
+        labels = []
+        scores = []
+        for img, scale in zip(imgs, scales):
+            size = (int(round(img.shape[1] / scale)),
+                    int(round(img.shape[2] / scale)))
             with chainer.using_config('train', False), \
                     chainer.function.no_backprop_mode():
                 img_var = chainer.Variable(self.xp.asarray(img[None]))
