@@ -2,6 +2,8 @@
 
 from ._shutil import git_hash
 
+from ._itertools import batch
+
 from .evaluations import eval_instseg_voc
 from .evaluations import eval_instseg_coco
 
