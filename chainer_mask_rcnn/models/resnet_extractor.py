@@ -5,8 +5,8 @@ import os.path as osp
 import chainer
 import chainer.functions as F
 import chainer.links as L
-from chainer.links.model.vision.resnet import ResNet50Layers
 from chainer.links.model.vision.resnet import ResNet101Layers
+from chainer.links.model.vision.resnet import ResNet50Layers
 
 import fcn
 
