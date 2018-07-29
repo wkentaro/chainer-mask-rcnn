@@ -61,6 +61,9 @@ def expand_boxes(boxes, scale):
 
 
 def segm_results(bbox, label, roi_mask, im_h, im_w):
+    if len(bbox) == 0:
+        return np.zeros((0, im_h, im_w), dtype=bool)
+
     mask_size = roi_mask.shape[2]
     assert roi_mask.shape[3] == mask_size
     ref_boxes = bbox[:, [1, 0, 3, 2]]
@@ -262,9 +265,13 @@ class MaskRCNN(chainer.Chain):
         return bboxes, labels, scores
 
     def _to_roi_masks(self, h, bboxes, roi_indices, scales):
-        # use predicted bbox as rois
+        batch_size = h.shape[0]
         bboxes = np.concatenate(bboxes, axis=0)
+        if bboxes.size == 0:
+            return [None] * batch_size
+
         with chainer.using_config('train', False), chainer.no_backprop_mode():
+            # use predicted bbox as rois
             rois = bboxes * scales[roi_indices][:, None]
             rois = self.xp.asarray(rois, dtype=np.float32)
             _, _, roi_masks = self.head(
@@ -275,8 +282,6 @@ class MaskRCNN(chainer.Chain):
             )
             roi_masks = F.sigmoid(roi_masks)
         roi_masks = cuda.to_cpu(roi_masks.array)
-
-        batch_size = h.shape[0]
         return [roi_masks[roi_indices == i] for i in range(batch_size)]
 
     def _to_masks(self, bboxes, labels, scores, roi_masks, sizes):
