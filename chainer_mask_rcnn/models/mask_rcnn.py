@@ -280,7 +280,6 @@ class MaskRCNN(chainer.Chain):
                 roi_indices=self.xp.asarray(roi_indices),
                 pred_bbox=False,
             )
-            roi_masks = F.sigmoid(roi_masks)
         roi_masks = cuda.to_cpu(roi_masks.array)
         return [roi_masks[roi_indices == i] for i in range(batch_size)]
 
@@ -288,6 +287,7 @@ class MaskRCNN(chainer.Chain):
         masks = []
         for bbox, label, score, roi_mask, size in \
                 zip(bboxes, labels, scores, roi_masks, sizes):
+            roi_mask = F.sigmoid(roi_mask).array
             mask = segm_results(
                 bbox=bbox,
                 label=label,
