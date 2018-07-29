@@ -25,10 +25,12 @@ class MaskRCNNTransform(object):
             else:
                 raise ValueError
 
-        _, H, W = img.shape
-        img = self.mask_rcnn.prepare(img)
+        imgs, sizes, scales = self.mask_rcnn.prepare([img])
+        img = imgs[0]
+        H, W = sizes[0]
+        scale = scales[0]
         _, o_H, o_W = img.shape
-        scale = o_H / H
+
         if len(bbox) > 0:
             bbox = transforms.resize_bbox(bbox, (H, W), (o_H, o_W))
         if len(mask) > 0:
