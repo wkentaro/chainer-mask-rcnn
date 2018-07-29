@@ -268,7 +268,13 @@ class MaskRCNN(chainer.Chain):
         batch_size = h.shape[0]
         bboxes = np.concatenate(bboxes, axis=0)
         if bboxes.size == 0:
-            return [None] * batch_size
+            n_fg_class = self.n_class - 1
+            mask_size = self.head.mask_size
+            return [
+                np.zeros((0, n_fg_class, mask_size, mask_size),
+                         dtype=np.float32)
+                for _ in range(batch_size)
+            ]
 
         with chainer.using_config('train', False), chainer.no_backprop_mode():
             # use predicted bbox as rois
