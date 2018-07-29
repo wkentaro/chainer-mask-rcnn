@@ -287,7 +287,8 @@ if not osp.exists(link_file):
 yaml_file = osp.join(log_dir, 'params.yaml')
 with open(yaml_file, 'w') as f:
     # 0: person ... 79: toothbrush
-    class_names = ['<class {:02d}>'.format(c) for c in range(80)]
+    with open('coco_class_names.txt') as f2:
+        class_names = [n.strip() for n in f2]
     params = dict(
         model='resnet50',
         pooling_func='align',
