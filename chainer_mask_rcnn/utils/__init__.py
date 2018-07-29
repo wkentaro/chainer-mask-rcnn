@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from .commands import git_hash
+from ._shutil import git_hash
 
 from .evaluations import eval_instseg_voc
 from .evaluations import eval_instseg_coco
