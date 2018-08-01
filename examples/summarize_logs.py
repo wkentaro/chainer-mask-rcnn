@@ -179,7 +179,7 @@ def summarize_logs(logs_dir, keys, target_key, objective):
             rows,
             headers=keys,
             floatfmt='.3f',
-            tablefmt='grid',
+            tablefmt='simple',
             numalign='center',
             stralign='center',
             showindex=True,
