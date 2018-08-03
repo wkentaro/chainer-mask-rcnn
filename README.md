@@ -25,8 +25,8 @@ Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 
 | Model | Implementation | N gpu training | mAP@50:95 | Log |
 |-------|----------------|----------------|-----------|-----|
-| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 8 | 31.4 | [Log](https://drive.google.com/open?id=1DRt96S0asaAiN5aDiWUYVcPs0bQ_USU3) |
-| Mask R-CNN, ResNet50 | [Detectron](https://github.com/facebookresearch/Detectron) | 8 | 31.4 (30.7 after copied) | [Log](https://drive.google.com/open?id=1xQBox3uMv2FoyXXpsC9ASNZ-92NgAbcT) |
+| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 8 | 31.5 - 31.8 | [Log](https://drive.google.com/open?id=1WOEtVnxqYdHl35pAyIcp-H0HtTjI-l3V) |
+| Mask R-CNN, ResNet50 | [Detectron](https://github.com/facebookresearch/Detectron) | 8 | 31.4 (30.8 after copied) | [Log](https://drive.google.com/open?id=1xQBox3uMv2FoyXXpsC9ASNZ-92NgAbcT) |
 | FCIS, ResNet50 | [FCIS](https://github.com/msracver/FCIS) | 8 | 27.1 | - |
 
 
@@ -38,16 +38,16 @@ Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 
 # COCO Example: Mask R-CNN, ResNet50, 31.4 mAP@50:95
 cd examples/coco
-LOG_DIR=logs/20180522_005447
+LOG_DIR=logs/20180730_081433
 mkdir -p $LOG_DIR
 pip install gdown
-gdown https://drive.google.com/uc?id=19sciU40y_a3tN18QyLiQcWAuGc2hZw9p -O $LOG_DIR/snapshot_model.npz
-gdown https://drive.google.com/uc?id=1rIKigHbnPPgv2kFNVHApagUdfrQylicq -O $LOG_DIR/params.yaml
+gdown https://drive.google.com/uc?id=1XC-Mx4HX0YBIy0Fbp59EjJFOF7a3XK0R -O $LOG_DIR/snapshot_model.npz
+gdown https://drive.google.com/uc?id=1fXHanL2pBakbkv83wn69QhI6nM6KjrzL -O $LOG_DIR/params.yaml
 ./demo.py $LOG_DIR
 
 # copy weight from caffe2 to chainer
 cd examples/coco
-./convert_caffe2_to_chainer.py
+./convert_caffe2_to_chainer.py  # or download from https://drive.google.com/open?id=1WOEtVnxqYdHl35pAyIcp-H0HtTjI-l3V
 ./demo.py logs/R-50-C4_x1_caffe2_to_chainer --img https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/33823288584_1d21cf0a26_k.jpg
 ./demo.py logs/R-50-C4_x1_caffe2_to_chainer --img https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/17790319373_bd19b24cfc_k.jpg
 ```
