@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument(
         '--model',
         '-m',
-        choices=['vgg16', 'resnet50', 'resnet101'],
+        choices=['resnet50', 'resnet101'],
         default='resnet50',
         help='base model',
     )
@@ -155,18 +155,7 @@ def train(args, train_data, test_data, evaluator_type):
             'Unsupported initializer: {}'.format(args.initializer)
         )
 
-    if args.model == 'vgg16':
-        mask_rcnn = cmr.models.MaskRCNNVGG16(
-            n_fg_class=len(args.class_names),
-            pretrained_model='imagenet',
-            pooling_func=pooling_func,
-            anchor_scales=args.anchor_scales,
-            roi_size=args.roi_size,
-            min_size=args.min_size,
-            max_size=args.max_size,
-            mask_initialW=mask_initialW,
-        )
-    elif args.model in ['resnet50', 'resnet101']:
+    if args.model in ['resnet50', 'resnet101']:
         n_layers = int(args.model.lstrip('resnet'))
         mask_rcnn = cmr.models.MaskRCNNResNet(
             n_layers=n_layers,
