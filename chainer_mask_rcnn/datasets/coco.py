@@ -29,15 +29,15 @@ class COCOInstanceSegmentationDataset(chainer.dataset.DatasetMixin):
             (None,  # 'a3d79f5ed8d289b7a7554ce06a5782b3',
              'http://msvocds.blob.core.windows.net/coco2014/val2014.zip',
              'val2014.zip'),
-            ('395a089042d356d97017bf416e4e99fb',
-             'https://dl.dropboxusercontent.com/s/o43o90bna78omob/instances_minival2014.json.zip',  # NOQA
-             'annotations/instances_minival2014.json.zip'),
             ('59582776b8dd745d649cd249ada5acf7',
              'http://msvocds.blob.core.windows.net/annotations-1-0-3/instances_train-val2014.zip',  # NOQA
              'instances_train-val2014.zip'),
-            (None,
+            ('395a089042d356d97017bf416e4e99fb',
+             'https://dl.dropboxusercontent.com/s/o43o90bna78omob/instances_minival2014.json.zip',  # NOQA
+             'annotations/instances_minival2014.json.zip'),
+            ('f72ed643338e184978e8228948972e84',
              'https://dl.dropboxusercontent.com/s/s3tw5zcg7395368/instances_valminusminival2014.json.zip',
-             'instances_valminusminival2014.json.zip'),
+             'annotations/instances_valminusminival2014.json.zip'),
         ]
         for md5, url, basename in data:
             path = osp.join(cls.root_dir, basename)
