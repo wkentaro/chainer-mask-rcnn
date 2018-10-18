@@ -89,7 +89,13 @@ class COCOInstanceSegmentationDataset(chainer.dataset.DatasetMixin):
         self.cat_id_to_class_id = cat_id_to_class_id
         self.class_names = class_names
 
-        self.img_ids = self.coco.getImgIds()
+        # filter images without any annotations
+        img_ids = []
+        for img_id in self.coco.getImgIds():
+            ann_ids = self.coco.getAnnIds(img_id)
+            if len(ann_ids) >= 1:
+                img_ids.append(img_id)
+        self.img_ids = img_ids
 
     def get_example(self, i):
         img_id = self.img_ids[i]

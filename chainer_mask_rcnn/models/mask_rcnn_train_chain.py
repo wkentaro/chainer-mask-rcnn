@@ -117,9 +117,6 @@ class MaskRCNNTrainChain(chainer.Chain):
         rpn_locs, rpn_scores, rois, roi_indices, anchor = self.mask_rcnn.rpn(
             features, img_size, scales)
 
-        if any(len(b) == 0 for b in bboxes):
-            return chainer.Variable(self.xp.array(0, dtype=np.float32))
-
         batch_indices = range(batch_size)
         sample_rois = []
         sample_roi_indices = []
