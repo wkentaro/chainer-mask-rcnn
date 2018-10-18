@@ -35,11 +35,18 @@ class COCOInstanceSegmentationDataset(chainer.dataset.DatasetMixin):
             ('59582776b8dd745d649cd249ada5acf7',
              'http://msvocds.blob.core.windows.net/annotations-1-0-3/instances_train-val2014.zip',  # NOQA
              'instances_train-val2014.zip'),
+            (None,
+             'https://dl.dropboxusercontent.com/s/s3tw5zcg7395368/instances_valminusminival2014.json.zip',
+             'instances_valminusminival2014.json.zip'),
         ]
         for md5, url, basename in data:
             path = osp.join(cls.root_dir, basename)
-            fcn.data.cached_download(url=url, path=path, md5=md5)
-            fcn.data.extract_file(path, to_directory=cls.root_dir)
+            fcn.data.cached_download(
+                url=url,
+                path=path,
+                md5=md5,
+                postprocess=fcn.data.extract_file,
+            )
 
     def __init__(self, split,
                  use_crowd=False, return_crowd=False, return_area=False):
