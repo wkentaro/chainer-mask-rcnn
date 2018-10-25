@@ -36,7 +36,7 @@ class COCOInstanceSegmentationDataset(chainer.dataset.DatasetMixin):
              'https://dl.dropboxusercontent.com/s/o43o90bna78omob/instances_minival2014.json.zip',  # NOQA
              'annotations/instances_minival2014.json.zip'),
             ('f72ed643338e184978e8228948972e84',
-             'https://dl.dropboxusercontent.com/s/s3tw5zcg7395368/instances_valminusminival2014.json.zip',
+             'https://dl.dropboxusercontent.com/s/s3tw5zcg7395368/instances_valminusminival2014.json.zip',  # NOQA
              'annotations/instances_valminusminival2014.json.zip'),
         ]
         for md5, url, basename in data:
