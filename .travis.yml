@@ -26,7 +26,7 @@ install:
   - pip install .
 
 script:
-  - pip install flake8 pytest
+  - pip install hacking pytest
   - flake8 .
   - pytest -v tests -m 'not gpu'
 
