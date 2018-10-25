@@ -6,7 +6,6 @@ import time
 
 import chainer
 import chainer_mask_rcnn
-import numpy as np
 import six
 import skimage.io
 import yaml
