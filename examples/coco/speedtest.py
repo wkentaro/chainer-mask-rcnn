@@ -64,13 +64,15 @@ def main():
     parser.add_argument(
         '--times', type=int, default=100, help='number of times of inference'
     )
+    default_img_file = 'https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/33823288584_1d21cf0a26_k.jpg'  # NOQA
+    parser.add_argument(
+        '--img-file', default=default_img_file, help='image file'
+    )
     args = parser.parse_args()
 
-    img_file = 'https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/33823288584_1d21cf0a26_k.jpg'  # NOQA
-
     print('==> Benchmark: gpu=%d, times=%d' % (args.gpu, args.times))
-    print('==> Image file: %s' % img_file)
-    bench_chainer(img_file, args.gpu, args.times)
+    print('==> Image file: %s' % args.img_file)
+    bench_chainer(args.img_file, args.gpu, args.times)
 
 
 if __name__ == '__main__':
