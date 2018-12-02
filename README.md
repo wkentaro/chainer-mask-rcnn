@@ -41,15 +41,15 @@ cd examples/coco
 LOG_DIR=logs/20180730_081433
 mkdir -p $LOG_DIR
 pip install gdown
-gdown https://drive.google.com/uc?id=1XC-Mx4HX0YBIy0Fbp59EjJFOF7a3XK0R -O $LOG_DIR/snapshot_model.npz
-gdown https://drive.google.com/uc?id=1fXHanL2pBakbkv83wn69QhI6nM6KjrzL -O $LOG_DIR/params.yaml
+gdown "https://drive.google.com/uc?id=1XC-Mx4HX0YBIy0Fbp59EjJFOF7a3XK0R" -O $LOG_DIR/snapshot_model.npz
+gdown "https://drive.google.com/uc?id=1fXHanL2pBakbkv83wn69QhI6nM6KjrzL" -O $LOG_DIR/params.yaml
 ./demo.py $LOG_DIR
 
 # copy weight from caffe2 to chainer
 cd examples/coco
 ./convert_caffe2_to_chainer.py  # or download from https://drive.google.com/open?id=1WOEtVnxqYdHl35pAyIcp-H0HtTjI-l3V
-./demo.py logs/R-50-C4_x1_caffe2_to_chainer --img https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/33823288584_1d21cf0a26_k.jpg
-./demo.py logs/R-50-C4_x1_caffe2_to_chainer --img https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/17790319373_bd19b24cfc_k.jpg
+./demo.py logs/R-50-C4_x1_caffe2_to_chainer --img "https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/33823288584_1d21cf0a26_k.jpg"
+./demo.py logs/R-50-C4_x1_caffe2_to_chainer --img "https://raw.githubusercontent.com/facebookresearch/Detectron/master/demo/17790319373_bd19b24cfc_k.jpg"
 ```
 
 <img src="examples/coco/.readme/R-50-C4_x1_caffe2_to_chainer_result_33823288584_1d21cf0a26_k.jpg" width="44.3%" /> <img src="examples/coco/.readme/R-50-C4_x1_caffe2_to_chainer_result_17790319373_bd19b24cfc_k.jpg" width="52%" />  
