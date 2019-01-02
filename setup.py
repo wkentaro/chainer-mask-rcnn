@@ -1,3 +1,5 @@
+import distutils.spawn
+import shlex
 import subprocess
 import sys
 
@@ -11,15 +13,22 @@ version = '0.5.15'
 
 
 if sys.argv[-1] == 'release':
+    if not distutils.spawn.find_executable('twine'):
+        print(
+            'Please install twine:\n\n\tpip install twine\n',
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     commands = [
-        'git push origin master',
-        'git tag v{0}'.format(version),
-        'git push origin --tags',
-        'python setup.py sdist upload',
+        'git tag v{:s}'.format(version),
+        'git push origin master --tag',
+        'python setup.py sdist',
+        'twine upload dist/chainer-mask-rcnn-{:s}.tar.gz'.format(version),
     ]
     for cmd in commands:
         print('+ {}'.format(cmd))
-        subprocess.check_call(cmd, shell=True)
+        subprocess.check_call(shlex.split(cmd))
     sys.exit(0)
 
 
