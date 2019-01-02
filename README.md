@@ -10,7 +10,7 @@ Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 
 - [x] ResNet50, ResNet101 backbone.
 - [x] [VOC and COCO training examples](examples).
-- [x] **[Reproduced result of original work (ResNet50, COCO)](https://github.com/wkentaro/chainer-mask-rcnn#coco-results)**.
+- [x] **[Reproduced result of original work (ResNet50, COCO)](#coco-results)**.
 - [x] Weight copy from pretrained model at [facebookresearch/Detectron](https://github.com/facebookresearch/Detectron).
 - [x] Training with batch size >= 2.
 - [ ] Support FPN backbones.
@@ -25,7 +25,7 @@ Chainer Implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870).
 
 | Model | Implementation | N gpu training | mAP@50:95 | Log |
 |-------|----------------|----------------|-----------|-----|
-| Mask R-CNN, ResNet50 | [Ours](https://github.com/wkentaro/chainer-mask-rcnn) | 8 | 31.5 - 31.8 | [Log](https://drive.google.com/open?id=1WOEtVnxqYdHl35pAyIcp-H0HtTjI-l3V) |
+| Mask R-CNN, ResNet50 | [Ours](.) | 8 | 31.5 - 31.8 | [Log](https://drive.google.com/open?id=1WOEtVnxqYdHl35pAyIcp-H0HtTjI-l3V) |
 | Mask R-CNN, ResNet50 | [Detectron](https://github.com/facebookresearch/Detectron) | 8 | 31.4 (30.8 after copied) | [Log](https://drive.google.com/open?id=1xQBox3uMv2FoyXXpsC9ASNZ-92NgAbcT) |
 | FCIS, ResNet50 | [FCIS](https://github.com/msracver/FCIS) | 8 | 27.1 | - |
 
