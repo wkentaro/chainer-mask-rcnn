@@ -7,7 +7,7 @@ from setuptools import setup
 import github2pypi
 
 
-version = '0.5.14'
+version = '0.5.15'
 
 
 if sys.argv[-1] == 'release':
