@@ -4,6 +4,8 @@ import sys
 from setuptools import find_packages
 from setuptools import setup
 
+import github2pypi
+
 
 version = '0.5.13'
 
@@ -16,8 +18,15 @@ if sys.argv[-1] == 'release':
         'python setup.py sdist upload',
     ]
     for cmd in commands:
+        print('+ {}'.format(cmd))
         subprocess.check_call(cmd, shell=True)
     sys.exit(0)
+
+
+with open('README.md') as f:
+    long_description = github2pypi.replace_url(
+        slug='wkentaro/chainer-mask-rcnn', content=f.read()
+    )
 
 
 setup(
@@ -29,6 +38,8 @@ setup(
     author='Kentaro Wada',
     author_email='www.kentaro.wada@gmail.com',
     description='Chainer Implementation of Mask R-CNN.',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     url='http://github.com/wkentaro/chainer-mask-rcnn',
     license='MIT',
     classifiers=[

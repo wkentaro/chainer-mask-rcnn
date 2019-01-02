@@ -1,3 +1,6 @@
 [submodule "examples/custom_dataset/src/labelme"]
 	path = examples/custom_dataset/src/labelme
 	url = https://github.com/wkentaro/labelme.git
+[submodule "github2pypi"]
+	path = github2pypi
+	url = https://github.com/wkentaro/github2pypi.git
