@@ -11,7 +11,7 @@ from setuptools import setup
 import github2pypi
 
 
-version = '0.5.16'
+version = '0.5.17'
 
 
 if sys.argv[-1] == 'release':
