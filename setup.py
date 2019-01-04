@@ -43,7 +43,7 @@ with open('README.md') as f:
 setup(
     name='chainer-mask-rcnn',
     version=version,
-    packages=find_packages(),
+    packages=find_packages(exclude=['github2pypi']),
     include_package_data=True,
     install_requires=open('requirements.txt').readlines(),
     author='Kentaro Wada',
