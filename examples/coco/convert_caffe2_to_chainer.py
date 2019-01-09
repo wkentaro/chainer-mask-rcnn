@@ -23,7 +23,7 @@ if osp.exists(dst_file):
 
 src_file = osp.join(dataset_dir, 'model_final.pkl')
 if not osp.exists(src_file):
-    url = 'https://s3-us-west-2.amazonaws.com/detectron/35858791/12_2017_baselines/e2e_mask_rcnn_R-50-C4_1x.yaml.01_45_57.ZgkA7hPB/output/train/coco_2014_train%3Acoco_2014_valminusminival/generalized_rcnn/model_final.pkl'  # NOQA
+    url = 'https://dl.fbaipublicfiles.com/detectron/36224121/12_2017_baselines/mask_rcnn_R-50-C4_1x.yaml.08_24_37.wdU8r5Jo/output/train/coco_2014_train%3Acoco_2014_valminusminival/generalized_rcnn/model_final.pkl'  # NOQA
     cache_path = chainercv.utils.download.cached_download(url)
     shutil.move(cache_path, src_file)
 
