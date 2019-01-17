@@ -11,6 +11,11 @@ from setuptools import setup
 import github2pypi
 
 
+if github2pypi.__file__ is None:
+    print('Please update submodule:\n\n\tgit submodule update --init')
+    sys.exit(1)
+
+
 version = '0.5.17'
 
 
