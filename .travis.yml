@@ -34,6 +34,6 @@ script:
   - (cd examples/coco && ./convert_caffe2_to_chainer.py)
 
 after_success:
-  - rm -f dist/chainer-mask-rcnn-*.tar.gz
+  - rm -f dist/*.tar.gz
   - python setup.py sdist
-  - pip install dist/chainer-mask-rcnn-*.tar.gz
+  - pip install dist/*.tar.gz
