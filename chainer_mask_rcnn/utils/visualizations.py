@@ -1,4 +1,5 @@
 import cv2
+from distutils.version import LooseVersion
 import fcn
 import numpy as np
 import skimage.color
@@ -70,8 +71,11 @@ def draw_instance_bboxes(img, bboxes, labels, n_class, masks=None,
                 img_viz[y1:y2, x1:x2][mask_inst] * (1 - alpha) +
                 color_inst * alpha
             )
-            mask_boundary = skimage.segmentation.find_boundaries(
-                mask_inst, connectivity=2)
+            if LooseVersion(skimage.__version__) >= LooseVersion('0.11.0'):
+                mask_boundary = skimage.segmentation.find_boundaries(
+                    mask_inst, connectivity=2)
+            else:
+                mask_boundary = skimage.segmentation.find_boundaries(mask_inst)
             img_viz[y1:y2, x1:x2][mask_boundary] = [200, 200, 200]
             assert img_viz.dtype == np.uint8
 
