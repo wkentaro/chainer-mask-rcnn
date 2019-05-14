@@ -1,3 +1,4 @@
+import os
 import os.path as osp
 import sys
 import warnings
@@ -69,9 +70,10 @@ class COCOInstanceSegmentationDataset(chainer.dataset.DatasetMixin):
         self._return_area = return_area
 
         # suppress loading message of annotations
-        sys.stdout = None
-        self.coco = COCO(ann_file)
-        sys.stdout = sys.__stdout__
+        with open(os.devnull, 'w') as f:
+            sys.stdout = f
+            self.coco = COCO(ann_file)
+            sys.stdout = sys.__stdout__
 
         self.img_fname = osp.join(
             self.root_dir, data_type, 'COCO_%s_{:012}.jpg' % data_type)
