@@ -5,13 +5,15 @@ os: linux
 dist: trusty
 
 python:
-  - 2.7
   - 3.6
+  - 2.7
 
 language: python
 
 cache:
-  - pip
+  directories:
+  - $HOME/.chainer
+  - $HOME/.cache/pip
 
 notifications:
   email: false
@@ -28,7 +30,7 @@ install:
 script:
   - pip install hacking pytest
   - flake8 .
-  - pytest -v tests -m 'not gpu'
+  - pytest -vs tests -m 'not gpu'
 
   # run example.
   - (cd examples/coco && ./convert_caffe2_to_chainer.py)
