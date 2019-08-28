@@ -69,7 +69,7 @@ class VOC2012InstanceSegmentationDataset(VOCInstanceSegmentationDatasetBase):
         data_file = self.files[i]
         # load image
         img_file = data_file['img']
-        img = skimage.io.imread(img_file, mode='RGB')
+        img = skimage.io.imread(img_file)
         # load class segmentaion gt
         seg_class_file = data_file['seg_class']
         lbl_cls = PIL.Image.open(seg_class_file)
