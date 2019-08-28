@@ -5,7 +5,7 @@ import chainer
 import fcn.datasets.voc
 import numpy as np
 import PIL.Image
-import scipy
+import skimage.io
 
 from ... import utils
 
@@ -69,7 +69,7 @@ class VOC2012InstanceSegmentationDataset(VOCInstanceSegmentationDatasetBase):
         data_file = self.files[i]
         # load image
         img_file = data_file['img']
-        img = scipy.misc.imread(img_file, mode='RGB')
+        img = skimage.io.imread(img_file, mode='RGB')
         # load class segmentaion gt
         seg_class_file = data_file['seg_class']
         lbl_cls = PIL.Image.open(seg_class_file)
