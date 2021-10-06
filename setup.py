@@ -22,7 +22,7 @@ if sys.argv[-1] == 'release':
 
     commands = [
         'git tag v{:s}'.format(version),
-        'git push origin master --tag',
+        'git push origin main --tags',
         'python setup.py sdist',
         'twine upload dist/chainer-mask-rcnn-{:s}.tar.gz'.format(version),
     ]
